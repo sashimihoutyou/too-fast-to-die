@@ -51,6 +51,7 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 
 func begin_turn() -> void:
 	turn_number += 1
+	state = CombatState.PLAYER_TURN
 	ap = max_ap
 	player_block = 0
 	player_block_changed.emit(player_block)
@@ -58,7 +59,6 @@ func begin_turn() -> void:
 	_update_all_intents()
 	DeckManager.draw_cards()
 	turn_started.emit(turn_number)
-	state = CombatState.PLAYER_TURN
 
 func can_play_card(card: CardData) -> bool:
 	if state != CombatState.PLAYER_TURN:
