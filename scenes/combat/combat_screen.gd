@@ -33,7 +33,6 @@ func _setup_signals() -> void:
 	DeckManager.cards_drawn.connect(_on_cards_drawn)
 	$Controls/EndTurnButton.pressed.connect(_on_end_turn)
 	$Controls/FleeButton.pressed.connect(_on_flee)
-	$Controls/RangeButton.pressed.connect(_on_toggle_range)
 	$Controls/RerollButton.pressed.connect(_on_reroll)
 
 func _build_enemy_display() -> void:
@@ -141,8 +140,6 @@ func _create_card_button(card: CardData) -> Button:
 	var cost_text := "%dAP" % card.ap_cost
 	if card.fuel_cost > 0:
 		cost_text += "+%d燃" % card.fuel_cost
-	if CombatManager._is_range_mismatch(card):
-		cost_text += " (+1)"
 
 	var tag_text := ""
 	for tag in card.tags:
@@ -220,20 +217,14 @@ func _update_player_hud() -> void:
 	$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % CombatManager.player_block
 	$PlayerHUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
-	var range_text := "騎乗" if CombatManager.player_range == CombatManager.PlayerRange.MOUNTED else "降車"
-	$PlayerHUD/RangeLabel.text = "状態: %s" % range_text
 	$PlayerHUD/DeckLabel.text = "山札: %d | 捨札: %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
 
 func _update_controls() -> void:
 	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
 	$Controls/EndTurnButton.disabled = not in_turn
 	$Controls/FleeButton.disabled = not in_turn
-	$Controls/RangeButton.disabled = not in_turn or CombatManager.ap < 1
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
-	var range_text := "降車する" if CombatManager.player_range == CombatManager.PlayerRange.MOUNTED else "騎乗する"
-	$Controls/RangeButton.text = "%s (1AP)" % range_text
-	var flee_cost := 1 if CombatManager.player_range == CombatManager.PlayerRange.MOUNTED else 2
-	$Controls/FleeButton.text = "逃走 (%d燃料)" % flee_cost
+	$Controls/FleeButton.text = "逃走 (1燃料)"
 
 func _on_end_turn() -> void:
 	selected_card = null
@@ -242,12 +233,6 @@ func _on_end_turn() -> void:
 
 func _on_flee() -> void:
 	CombatManager.flee()
-
-func _on_toggle_range() -> void:
-	CombatManager.toggle_range()
-	_update_hand()
-	_update_player_hud()
-	_update_controls()
 
 func _on_reroll() -> void:
 	CombatManager.emergency_reroll()
@@ -334,7 +319,10 @@ func _show_reward_screen(rewards: Array) -> void:
 	reward_panel.add_theme_stylebox_override("panel", style)
 	reward_panel.set_anchors_preset(Control.PRESET_CENTER)
 	reward_panel.custom_minimum_size = Vector2(700, 400)
-	reward_panel.position = Vector2(190, 120)
+	reward_panel.offset_left = -350
+	reward_panel.offset_top = -200
+	reward_panel.offset_right = 350
+	reward_panel.offset_bottom = 200
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 15)
