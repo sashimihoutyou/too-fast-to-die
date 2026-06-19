@@ -3,6 +3,9 @@ extends Control
 var card_buttons: Array[Button] = []
 var enemy_panels: Array[PanelContainer] = []
 var target_buttons: Array[Button] = []
+var hp_labels: Array[Label] = []
+var block_labels: Array[Label] = []
+var intent_labels: Array[Label] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 var reward_cards: Array[CardData] = []
@@ -38,6 +41,9 @@ func _build_enemy_display() -> void:
 		child.queue_free()
 	enemy_panels.clear()
 	target_buttons.clear()
+	hp_labels.clear()
+	block_labels.clear()
+	intent_labels.clear()
 
 	for i in CombatManager.enemies.size():
 		var enemy: Dictionary = CombatManager.enemies[i]
@@ -113,6 +119,9 @@ func _build_enemy_display() -> void:
 		$EnemyArea.add_child(panel)
 		enemy_panels.append(panel)
 		target_buttons.append(target_btn)
+		hp_labels.append(hp_label)
+		block_labels.append(block_label)
+		intent_labels.append(intent_label)
 
 func _update_hand() -> void:
 	for child in $HandArea.get_children():
@@ -264,18 +273,16 @@ func _on_enemy_defeated(idx: int) -> void:
 		target_buttons[idx].visible = false
 
 func _on_enemy_hp_changed(idx: int, hp: int, max_hp: int) -> void:
-	if idx < enemy_panels.size():
-		var label := enemy_panels[idx].get_node("VBoxContainer/HPLabel") as Label
-		label.text = "HP: %d/%d" % [hp, max_hp]
+	if idx < hp_labels.size():
+		hp_labels[idx].text = "HP: %d/%d" % [hp, max_hp]
 
 func _on_enemy_block_changed(idx: int, block: int) -> void:
-	if idx < enemy_panels.size():
-		var label := enemy_panels[idx].get_node("VBoxContainer/BlockLabel") as Label
-		label.text = "ブロック: %d" % block if block > 0 else ""
+	if idx < block_labels.size():
+		block_labels[idx].text = "ブロック: %d" % block if block > 0 else ""
 
 func _on_enemy_intent_updated(idx: int, intent: Dictionary) -> void:
-	if idx < enemy_panels.size():
-		var label := enemy_panels[idx].get_node("VBoxContainer/IntentLabel") as Label
+	if idx < intent_labels.size():
+		var label: Label = intent_labels[idx]
 		var intent_type: String = intent.get("type", "")
 		var intent_label_text: String = intent.get("label", "")
 		var val: int = intent.get("value", 0)
