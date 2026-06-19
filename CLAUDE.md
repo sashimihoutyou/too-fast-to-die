@@ -32,6 +32,18 @@ var value: int = some_dict.get("key", 0)
 - `Dictionary.get()`, `Dictionary.values()` の要素アクセス
 - 型付き配列でない `Array` の `[]` アクセス
 
+### 型付き配列への代入
+
+型付き配列プロパティ（`Array[Tag]`, `Array[CharacterRestriction]` 等）に `Dictionary.get()` やリテラル `[]` の戻り値を直接代入するとランタイムエラーになる。`assign()` を使うこと。
+
+```gdscript
+# NG: ランタイムエラー (Array を Array[Tag] に代入できない)
+card.tags = data.get("tags", [])
+
+# OK: assign() で型付き配列にコピーする
+card.tags.assign(data.get("tags", []))
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
