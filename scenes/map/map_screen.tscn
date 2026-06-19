@@ -1,0 +1,97 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/map/map_screen.gd" id="1"]
+
+[node name="MapScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.08, 0.05, 1)
+
+[node name="MapScroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1080.0
+offset_bottom = 550.0
+
+[node name="MapContainer" type="Control" parent="MapScroll"]
+layout_mode = 2
+custom_minimum_size = Vector2(1080, 1400)
+
+[node name="HUD" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -80.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="ActLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 200.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(0.9, 0.6, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "区間1"
+
+[node name="FuelLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 30.0
+offset_right = 200.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "燃料: 20/30"
+
+[node name="ScrapLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 220.0
+offset_top = 30.0
+offset_right = 400.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "スクラップ: 0"
+
+[node name="MedicineLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 420.0
+offset_top = 30.0
+offset_right = 600.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "医薬品: 1/3"
+
+[node name="KarmaLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 620.0
+offset_top = 30.0
+offset_right = 830.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "カルマ: 0 中立"
+
+[node name="DistanceLabel" type="Label" parent="HUD"]
+layout_mode = 2
+offset_left = 850.0
+offset_top = 30.0
+offset_right = 1050.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "走行: 0km"
