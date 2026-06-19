@@ -15,7 +15,7 @@ const HAND_SIZE := 5
 
 func build_starter_deck(character: CharacterData) -> void:
 	master_deck.clear()
-	for card_id in character.starter_deck_ids:
+	for card_id: StringName in character.starter_deck_ids:
 		var card := CardDatabase.get_card(card_id)
 		if card:
 			master_deck.append(card.duplicate_card())
@@ -52,7 +52,7 @@ func draw_cards(count: int = HAND_SIZE) -> Array[CardData]:
 	return drawn
 
 func discard_hand() -> void:
-	for card in hand:
+	for card: CardData in hand:
 		discard_pile.append(card)
 		card_discarded.emit(card)
 	hand.clear()

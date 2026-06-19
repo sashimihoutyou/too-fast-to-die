@@ -24,7 +24,7 @@ func _draw_map() -> void:
 	lines_node.set_anchors_preset(Control.PRESET_FULL_RECT)
 	$MapScroll/MapContainer.add_child(lines_node)
 
-	for node in map_nodes:
+	for node: Dictionary in map_nodes:
 		var btn := Button.new()
 		var node_type: MapGenerator.NodeType = node["type"]
 		btn.text = MapGenerator.get_node_type_icon(node_type)
@@ -58,7 +58,7 @@ func _draw_map() -> void:
 	_update_available_nodes()
 
 func _draw_connections() -> void:
-	for node in map_nodes:
+	for node: Dictionary in map_nodes:
 		for conn_id: String in node["connections"]:
 			var target := _find_node_by_id(conn_id)
 			if target.is_empty():
@@ -78,13 +78,13 @@ func _update_available_nodes() -> void:
 
 	if current_row == -1:
 		var first_row := MapGenerator._get_nodes_at_row(map_nodes, 0)
-		for node in first_row:
+		for node: Dictionary in first_row:
 			var nid := _node_id(node)
 			if nid in node_buttons:
 				node_buttons[nid].disabled = false
 		return
 
-	for node in map_nodes:
+	for node: Dictionary in map_nodes:
 		if node["row"] != current_row or not node["visited"]:
 			continue
 		for conn_id: String in node["connections"]:
@@ -139,9 +139,7 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]
 			if roll < 0.5:
 				enemies.append(_make_enemy(&"devilwolf_leader", "デビルフの群れリーダー", EnemyData.Category.BEAST, 65, true))
 			else:
-				var rider := _make_enemy(&"rogue_rider", "ならず者ライダー", EnemyData.Category.HUMAN, 55, true)
-				rider.range_type = EnemyData.RangeType.MOUNTED
-				enemies.append(rider)
+				enemies.append(_make_enemy(&"rogue_rider", "ならず者ライダー", EnemyData.Category.HUMAN, 55, true))
 		MapGenerator.NodeType.BOSS:
 			var boss := _make_enemy(&"alpha_devilwolf", "アルファ・デビルフ", EnemyData.Category.BEAST, 150, false, true)
 			enemies.append(boss)
@@ -186,7 +184,10 @@ func _show_notification(text: String) -> void:
 	var panel := Panel.new()
 	panel.custom_minimum_size = Vector2(400, 200)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(440, 240)
+	panel.offset_left = -200
+	panel.offset_top = -100
+	panel.offset_right = 200
+	panel.offset_bottom = 100
 	var label := Label.new()
 	label.text = text
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -197,9 +198,12 @@ func _show_notification(text: String) -> void:
 	panel.add_child(label)
 	var close_btn := Button.new()
 	close_btn.text = "閉じる"
-	close_btn.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	close_btn.position = Vector2(150, 150)
+	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	close_btn.custom_minimum_size = Vector2(100, 40)
+	close_btn.offset_left = -50
+	close_btn.offset_top = -50
+	close_btn.offset_right = 50
+	close_btn.offset_bottom = -10
 	close_btn.pressed.connect(panel.queue_free)
 	panel.add_child(close_btn)
 	add_child(panel)
@@ -208,7 +212,7 @@ func _node_id(node: Dictionary) -> String:
 	return "%d_%d" % [node["row"], node["col"]]
 
 func _find_node_by_id(nid: String) -> Dictionary:
-	for node in map_nodes:
+	for node: Dictionary in map_nodes:
 		if _node_id(node) == nid:
 			return node
 	return {}

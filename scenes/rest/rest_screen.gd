@@ -25,7 +25,7 @@ func _on_upgrade() -> void:
 	$UpgradeButton.visible = false
 	$InfoLabel.text = "強化するカードを選択:"
 
-	for card in DeckManager.master_deck:
+	for card: CardData in DeckManager.master_deck:
 		if card.upgraded:
 			continue
 		var btn := Button.new()

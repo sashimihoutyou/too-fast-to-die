@@ -15,7 +15,6 @@ signal enemy_block_changed(idx: int, block: int)
 signal enemy_intent_updated(idx: int, intent: Dictionary)
 
 enum CombatState { INACTIVE, INIT, DRAW, PLAYER_TURN, DISCARD, ENEMY_TURN, CHECK_END, VICTORY, DEFEAT, FLED }
-enum PlayerRange { MOUNTED, DISMOUNTED }
 
 var state: CombatState = CombatState.INACTIVE
 var turn_number: int = 0
@@ -24,7 +23,6 @@ var max_ap: int = 3
 var player_hp: int = 0
 var player_max_hp: int = 0
 var player_block: int = 0
-var player_range: PlayerRange = PlayerRange.MOUNTED
 
 var enemies: Array[Dictionary] = []
 
@@ -34,9 +32,8 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 	player_hp = GameManager.current_character.max_hp
 	player_max_hp = GameManager.current_character.max_hp
 	player_block = 0
-	player_range = PlayerRange.MOUNTED
 	enemies.clear()
-	for ed in enemy_list:
+	for ed: EnemyData in enemy_list:
 		enemies.append({
 			"data": ed,
 			"hp": ed.base_hp,
@@ -65,10 +62,7 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	if card.is_unplayable:
 		return false
-	var cost := card.ap_cost
-	if _is_range_mismatch(card):
-		cost += 1
-	if cost > ap:
+	if card.ap_cost > ap:
 		return false
 	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
 		return false
@@ -77,10 +71,7 @@ func can_play_card(card: CardData) -> bool:
 func play_card(card: CardData, target_idx: int = -1) -> void:
 	if not can_play_card(card):
 		return
-	var cost := card.ap_cost
-	if _is_range_mismatch(card):
-		cost += 1
-	ap -= cost
+	ap -= card.ap_cost
 	if card.fuel_cost > 0:
 		ResourceManager.consume_fuel(card.fuel_cost)
 	ap_changed.emit(ap)
@@ -103,22 +94,10 @@ func end_player_turn() -> void:
 		return
 	begin_turn()
 
-func toggle_range() -> bool:
-	if state != CombatState.PLAYER_TURN or ap < 1:
-		return false
-	ap -= 1
-	ap_changed.emit(ap)
-	if player_range == PlayerRange.MOUNTED:
-		player_range = PlayerRange.DISMOUNTED
-	else:
-		player_range = PlayerRange.MOUNTED
-	return true
-
 func flee() -> bool:
 	if state != CombatState.PLAYER_TURN:
 		return false
-	var cost := 1 if player_range == PlayerRange.MOUNTED else 2
-	if not ResourceManager.consume_fuel(cost):
+	if not ResourceManager.consume_fuel(1):
 		return false
 	state = CombatState.FLED
 	player_fled.emit()
@@ -265,7 +244,7 @@ func _get_enemy_intent(enemy: Dictionary) -> Dictionary:
 		&"rogue_rider":
 			if tc % 3 == 2:
 				return {"type": "attack", "value": 16, "label": "体当たり"}
-			elif player_range == PlayerRange.DISMOUNTED:
+			elif tc % 2 == 0:
 				return {"type": "attack", "value": 14, "label": "突撃"}
 			else:
 				return {"type": "attack", "value": 10, "label": "射撃"}
@@ -295,12 +274,3 @@ func _generate_rewards() -> Array:
 	rewards.append({"type": "fuel", "amount": fuel_amount})
 	return rewards
 
-func _is_range_mismatch(card: CardData) -> bool:
-	for tag in card.tags:
-		if tag == CardData.Tag.MELEE and player_range == PlayerRange.MOUNTED:
-			return true
-		if tag == CardData.Tag.RANGED and player_range == PlayerRange.DISMOUNTED:
-			return true
-		if tag == CardData.Tag.BIKE and player_range == PlayerRange.DISMOUNTED:
-			return true
-	return false

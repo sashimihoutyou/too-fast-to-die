@@ -77,15 +77,6 @@ theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
 theme_override_font_sizes/font_size = 14
 text = "燃料: 20/30"
 
-[node name="RangeLabel" type="Label" parent="PlayerHUD"]
-layout_mode = 1
-offset_left = 200.0
-offset_top = 48.0
-offset_right = 330.0
-offset_bottom = 68.0
-theme_override_font_sizes/font_size = 14
-text = "状態: 騎乗"
-
 [node name="DeckLabel" type="Label" parent="PlayerHUD"]
 layout_mode = 1
 offset_left = 200.0
@@ -113,12 +104,6 @@ offset_bottom = 310.0
 grow_horizontal = 2
 alignment = 1
 theme_override_constants/separation = 10
-
-[node name="RangeButton" type="Button" parent="Controls"]
-layout_mode = 2
-custom_minimum_size = Vector2(160, 45)
-theme_override_font_sizes/font_size = 14
-text = "降車する (1AP)"
 
 [node name="EndTurnButton" type="Button" parent="Controls"]
 layout_mode = 2
