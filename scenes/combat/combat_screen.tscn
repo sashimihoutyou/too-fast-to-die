@@ -1,0 +1,151 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/combat/combat_screen.gd" id="1"]
+
+[node name="CombatScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.05, 0.04, 1)
+
+[node name="PlayerHUD" type="PanelContainer" parent="."]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 350.0
+offset_bottom = 160.0
+
+[node name="HPLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 200.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "HP: 65/65"
+
+[node name="HPBar" type="ProgressBar" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 28.0
+offset_right = 330.0
+offset_bottom = 42.0
+max_value = 65.0
+value = 65.0
+show_percentage = false
+
+[node name="APLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 48.0
+offset_right = 200.0
+offset_bottom = 68.0
+theme_override_colors/font_color = Color(0.3, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "AP: 3/3"
+
+[node name="BlockLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 72.0
+offset_right = 200.0
+offset_bottom = 92.0
+theme_override_colors/font_color = Color(0.4, 0.6, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+text = "ブロック: 0"
+
+[node name="FuelLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 10.0
+offset_top = 96.0
+offset_right = 200.0
+offset_bottom = 116.0
+theme_override_colors/font_color = Color(0.9, 0.7, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "燃料: 20/30"
+
+[node name="RangeLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 200.0
+offset_top = 48.0
+offset_right = 330.0
+offset_bottom = 68.0
+theme_override_font_sizes/font_size = 14
+text = "状態: 騎乗"
+
+[node name="DeckLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 2
+offset_left = 200.0
+offset_top = 72.0
+offset_right = 330.0
+offset_bottom = 92.0
+theme_override_font_sizes/font_size = 14
+text = "山札: 10 | 捨札: 0"
+
+[node name="EnemyArea" type="HBoxContainer" parent="."]
+layout_mode = 1
+offset_left = 300.0
+offset_top = 30.0
+offset_right = 1060.0
+offset_bottom = 250.0
+alignment = 1
+theme_override_constants/separation = 15
+
+[node name="Controls" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 260.0
+offset_bottom = 310.0
+grow_horizontal = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="RangeButton" type="Button" parent="Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 45)
+theme_override_font_sizes/font_size = 14
+text = "降車する (1AP)"
+
+[node name="EndTurnButton" type="Button" parent="Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 45)
+theme_override_font_sizes/font_size = 16
+text = "ターン終了"
+
+[node name="FleeButton" type="Button" parent="Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 45)
+theme_override_font_sizes/font_size = 14
+text = "逃走 (1燃料)"
+
+[node name="RerollButton" type="Button" parent="Controls"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 45)
+theme_override_font_sizes/font_size = 14
+text = "リロール (1燃料)"
+
+[node name="HandArea" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -210.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+theme_override_constants/separation = 8
