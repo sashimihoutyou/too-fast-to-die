@@ -77,6 +77,22 @@ target_buttons.append(target_btn)
 target_buttons[i].visible = false
 ```
 
+### シグナル発火前にステート更新
+
+シグナルハンドラはUI再構築等で現在のステートを参照する。`state` の更新をシグナル発火より後に行うと、ハンドラ内で旧ステートが読まれてUIが不正になる。ステートは必ずシグナル発火前に確定させること。
+
+```gdscript
+# NG: シグナルハンドラ内でstate==CHECK_ENDのまま → can_play_card()がfalse
+DeckManager.draw_cards()
+turn_started.emit(turn_number)
+state = CombatState.PLAYER_TURN  # 遅すぎる
+
+# OK: シグナル発火前にステートを確定
+state = CombatState.PLAYER_TURN
+DeckManager.draw_cards()
+turn_started.emit(turn_number)
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
