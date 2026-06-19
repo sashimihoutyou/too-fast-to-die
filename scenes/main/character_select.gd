@@ -44,7 +44,7 @@ func _on_start() -> void:
 	character.id = selected_id
 	character.display_name = data["name"]
 	character.max_hp = data["hp"]
-	character.starter_deck_ids = data["deck"]
+	character.starter_deck_ids.assign(data["deck"])
 	character.unique_system = data["system"]
 	GameManager.start_run(character)
 	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")
