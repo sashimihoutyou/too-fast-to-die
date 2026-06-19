@@ -5,8 +5,11 @@ var current_row: int = -1
 var node_buttons: Dictionary = {}
 
 func _ready() -> void:
-	map_nodes = MapGenerator.generate_act(GameManager.current_act)
-	current_row = -1
+	if GameManager.map_nodes.is_empty():
+		GameManager.map_nodes = MapGenerator.generate_act(GameManager.current_act)
+		GameManager.map_current_row = -1
+	map_nodes = GameManager.map_nodes
+	current_row = GameManager.map_current_row
 	_draw_map()
 	_update_hud()
 	ResourceManager.fuel_changed.connect(_on_fuel_changed)
@@ -97,6 +100,7 @@ func _on_node_pressed(nid: String) -> void:
 
 	node["visited"] = true
 	current_row = node["row"]
+	GameManager.map_current_row = current_row
 	GameManager.advance_node()
 	_update_hud()
 

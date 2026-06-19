@@ -12,6 +12,8 @@ var current_act: int = 1
 var current_node_index: int = -1
 var distance_km: int = 0
 var event_flags: Dictionary = {}
+var map_nodes: Array[Dictionary] = []
+var map_current_row: int = -1
 
 func start_run(character: CharacterData) -> void:
 	current_character = character
@@ -19,6 +21,8 @@ func start_run(character: CharacterData) -> void:
 	current_node_index = -1
 	distance_km = 0
 	event_flags.clear()
+	map_nodes.clear()
+	map_current_row = -1
 	ResourceManager.reset()
 	DeckManager.build_starter_deck(character)
 	KarmaManager.reset()

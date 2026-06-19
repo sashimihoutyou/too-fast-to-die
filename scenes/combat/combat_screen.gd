@@ -334,7 +334,10 @@ func _show_reward_screen(rewards: Array) -> void:
 	reward_panel.add_theme_stylebox_override("panel", style)
 	reward_panel.set_anchors_preset(Control.PRESET_CENTER)
 	reward_panel.custom_minimum_size = Vector2(700, 400)
-	reward_panel.position = Vector2(190, 120)
+	reward_panel.offset_left = -350
+	reward_panel.offset_top = -200
+	reward_panel.offset_right = 350
+	reward_panel.offset_bottom = 200
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 15)
