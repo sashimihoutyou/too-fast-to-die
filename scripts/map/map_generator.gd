@@ -87,14 +87,14 @@ static func _build_connections(nodes: Array[Dictionary], total_rows: int) -> voi
 				source["connections"].append(_node_id(next_node))
 
 static func _assign_positions(nodes: Array[Dictionary], total_rows: int, cols: int) -> void:
-	var x_spacing := 200.0
-	var y_spacing := 100.0
+	var x_spacing := 150.0
+	var y_spacing := 150.0
 	for node in nodes:
 		var row_nodes := _get_nodes_at_row(nodes, node["row"])
 		var count := row_nodes.size()
 		var idx := row_nodes.find(node)
-		var x_offset := (float(idx) - float(count - 1) / 2.0) * x_spacing
-		node["position"] = Vector2(540.0 + x_offset, 100.0 + node["row"] * y_spacing)
+		var y_offset := (float(idx) - float(count - 1) / 2.0) * y_spacing
+		node["position"] = Vector2(100.0 + node["row"] * x_spacing, 260.0 + y_offset)
 
 static func _get_nodes_at_row(nodes: Array[Dictionary], row: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
