@@ -19,18 +19,23 @@ enum CombatState { INACTIVE, INIT, DRAW, PLAYER_TURN, DISCARD, ENEMY_TURN, CHECK
 var state: CombatState = CombatState.INACTIVE
 var turn_number: int = 0
 var ap: int = 0
-var max_ap: int = 3
+var max_ap: int = 6
+var ap_cost_halved: bool = false
 var player_hp: int = 0
 var player_max_hp: int = 0
 var player_block: int = 0
 
 var enemies: Array[Dictionary] = []
 
+func reset_player_for_new_run() -> void:
+	player_max_hp = GameManager.current_character.max_hp
+	player_hp = player_max_hp
+
 func start_combat(enemy_list: Array[EnemyData]) -> void:
 	state = CombatState.INIT
 	turn_number = 0
-	player_hp = GameManager.current_character.max_hp
 	player_max_hp = GameManager.current_character.max_hp
+	player_hp = mini(player_hp, player_max_hp)
 	player_block = 0
 	enemies.clear()
 	for ed: EnemyData in enemy_list:
@@ -50,6 +55,7 @@ func begin_turn() -> void:
 	turn_number += 1
 	state = CombatState.PLAYER_TURN
 	ap = max_ap
+	ap_cost_halved = false
 	player_block = 0
 	player_block_changed.emit(player_block)
 	ap_changed.emit(ap)
@@ -57,12 +63,17 @@ func begin_turn() -> void:
 	DeckManager.draw_cards()
 	turn_started.emit(turn_number)
 
+func get_effective_ap_cost(card: CardData) -> int:
+	if ap_cost_halved:
+		return (card.ap_cost + 1) / 2
+	return card.ap_cost
+
 func can_play_card(card: CardData) -> bool:
 	if state != CombatState.PLAYER_TURN:
 		return false
 	if card.is_unplayable:
 		return false
-	if card.ap_cost > ap:
+	if get_effective_ap_cost(card) > ap:
 		return false
 	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
 		return false
@@ -71,9 +82,11 @@ func can_play_card(card: CardData) -> bool:
 func play_card(card: CardData, target_idx: int = -1) -> void:
 	if not can_play_card(card):
 		return
-	ap -= card.ap_cost
+	ap -= get_effective_ap_cost(card)
 	if card.fuel_cost > 0:
 		ResourceManager.consume_fuel(card.fuel_cost)
+	if card.halves_ap_this_turn:
+		ap_cost_halved = true
 	ap_changed.emit(ap)
 	_apply_card_effects(card, target_idx)
 	DeckManager.play_card(card)
@@ -125,6 +138,10 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 
 	if card.draw_count > 0:
 		DeckManager.draw_cards(card.draw_count)
+
+	if card.bonus_ap > 0:
+		ap += card.bonus_ap
+		ap_changed.emit(ap)
 
 	if dmg > 0:
 		if card.is_aoe:
@@ -269,8 +286,12 @@ func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 	return {"type": "attack", "value": 10, "label": "攻撃"}
 
 func _generate_rewards() -> Array:
+	var slot_count := 3
 	var rewards := []
-	var fuel_amount := randi_range(3, 6)
-	rewards.append({"type": "fuel", "amount": fuel_amount})
+	if randf() < 0.5:
+		rewards.append({"type": "fuel", "amount": randi_range(8, 15)})
+		slot_count -= 1
+	for i in slot_count:
+		rewards.append({"type": "card"})
 	return rewards
 
