@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "if": "Bash(git commit *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -qiE '(fix|bug|修正|バグ|hotfix|patch)' && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"【自動リマインド】バグ修正のコミットを検出しました。このバグから得た知見（原因・再発防止パターン）をCLAUDE.mdの適切なセクションに追記してください。既存の構成に合わせて、コーディング規約やベストプラクティスとして記録すること。\"}}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}
