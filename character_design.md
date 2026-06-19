@@ -14,29 +14,30 @@
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 痩せ型・中背。信仰による断食で引き締まった体 |
-| 顔 | 目が異様に輝いている（狂信者の目）。口元は常に笑み。頬がこけ気味 |
-| 髪 | 坊主に近い短髪。右側頭部に炎で焦がした跡あり |
-| 服装上半身 | V8エンジンを模した紋章入りの黒いローブ。裾はボロボロに擦り切れている。ローブの下はオイルまみれの作業用つなぎ |
-| 服装下半身 | つなぎの続き。膝から下にはバイク用のすね当て |
-| アクセサリ | 首からV8エンジンのミニチュアをペンダントに。ベルトにガソリン缶を数本ぶら下げている |
-| 特徴的な傷 | 右手が焼けただれている（信仰の証。フルスロットル使用時に痛む設定） |
-| バイク | 改造チョッパー。排気管が異常に多い（V8崇拝の象徴）|
-| 配色 | 黒 + オレンジ + オイルの虹色光沢 |
-| 印象 | 純朴さと狂信が同居する不気味な青年。目だけが異常に生き生きしている |
+| 体格 | 痩せ型・中背。信仰による断食と儀式で削ぎ落とされた体。筋肉は少ないが腱と骨格がしっかり浮き出ている |
+| 顔 | 目が異様に輝いている（狂信者の目）。口元は常に穏やかな笑み。頬がこけ気味。額から鼻筋にかけてエンジンオイルで描いた部族的フェイスペイント（V8カルトの儀式模様）。左頬にV8のシンボルを模した焼印（成人の儀） |
+| 髪 | 剃り上げた頭頂部に、エンジンのピストン配列を模した儀式的な焼灼紋様。側頭部のみ短く残した髪にオイルを塗り込んで固めている |
+| 服装上半身 | 粗い麻布と獣皮を組み合わせた部族的ローブ。胸元が大きく開いており、鎖骨から胸にかけてエンジンオイルと灰で描かれた呪術的紋様が見える。袖はなく、両腕にはスパークプラグやワッシャーを紐で連ねた腕飾り |
+| 服装下半身 | ローブの下は素足に近い簡素な腰布。脛にはエキゾーストパイプの破片を革紐で巻き付けた脛当て |
+| アクセサリ | 首からV8エンジンのミニチュアをペンダントに。ベルトにガソリン缶を数本ぶら下げている。腰には小さな動物の骨と機械部品を組み合わせた呪術的なお守りが複数ぶら下がる |
+| ボディペイント | 上半身の露出した肌にエンジンオイル（黒）と赤土で描かれた回路図のような部族紋様。汗で滲んでいるが本人は気にしない。儀式のたびに描き直す |
+| 特徴的な傷 | 右手が焼けただれている（信仰の証）。両腕の内側にも小さな焼灼痕が点々と連なっている（日常的な信仰儀式の痕跡） |
+| バイク | 改造チョッパー。排気管が異常に多い。ハンドルやフレームに動物の骨・歯・羽根が呪術的に巻き付けてある |
+| 配色 | 黒 + オレンジ + オイルの虹色光沢 + 赤土 + 骨の白 |
+| 印象 | 文明の残骸を聖遺物として崇める部族の若き祭司。純朴さと狂信が同居する不気味な青年。原始的な部族文化と機械崇拝が融合した異質な存在 |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A young man in tattered black ritual robes with a V8 engine emblem on the chest, standing in a post-apocalyptic desert. Thin, ascetic build from fasting. His eyes glow with fanatical fervor, a serene smile on his gaunt face. Buzz-cut hair with burn scars on the right side of his skull. Under the robes, oil-stained mechanic coveralls are visible. A miniature V8 engine hangs from his neck as a pendant. Several small gasoline cans dangle from his belt. His right hand is heavily scarred with old burn wounds, wrapped loosely in stained bandages. Behind him, a chopper motorcycle with an excessive number of exhaust pipes. Color palette: black, burnt orange, iridescent oil-slick highlights. Semi-realistic thick-paint art style, dark atmospheric lighting, post-apocalyptic American wasteland background. Full body character design sheet.
+A young tribal cultist man standing in a post-apocalyptic desert, thin ascetic build with visible tendons and bone structure from ritual fasting. Shaved head with ritualistic burn-scar patterns on his scalp resembling engine piston arrangements, short remaining hair on the sides slicked with black motor oil. His face has tribal war paint made from engine oil — dark lines across his forehead and down his nose bridge. A V8 symbol brand scar on his left cheek. His eyes glow with fanatical fervor, serene unsettling smile on gaunt face. He wears a primitive tribal robe made of rough hemp cloth and animal hide, sleeveless, chest open to reveal ritual body paint — circuit-diagram-like tribal patterns drawn in black engine oil and red clay across his chest and shoulders, smudged with sweat. Both arms adorned with tribal bangles made of spark plugs, washers, and small machine parts strung on leather cord. A miniature V8 engine pendant hangs from his neck. A simple loincloth under the robe, shin guards made from exhaust pipe fragments bound with leather straps. Multiple fetish charms of animal bones mixed with machine parts hang from his waist. His right hand is heavily scarred with burn wounds, and small burn marks dot the insides of both forearms — traces of daily devotional rituals. Several small gasoline cans dangle from his belt. Behind him, a chopper motorcycle with excessive exhaust pipes and animal bones, teeth, and feathers tied ritualistically to the frame. Color palette: black, burnt orange, iridescent oil-slick, red clay, bone white. Semi-realistic thick-paint art style, dark atmospheric lighting, post-apocalyptic wasteland. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a young fanatical cultist, gaunt face with glowing intense eyes and a serene unsettling smile. Buzz-cut hair with burn scars on the right temple. Black tattered ritual robes with a V8 engine emblem. A miniature V8 engine pendant at his neck. His scarred, burned right hand raised near his chin. Oil-stained skin. Dramatic side lighting in orange tones, dark post-apocalyptic background with distant flames. Semi-realistic thick-paint art style, Shin Megami Tensei character design influence.
+Portrait bust shot of a young tribal cultist with gaunt face, eyes burning with fanatical devotion and a serene unsettling smile. Shaved head with ritualistic burn-scar patterns on scalp, side hair slicked with motor oil. Tribal face paint in black engine oil — lines across forehead and nose bridge. A V8 brand scar on his left cheek. Sleeveless tribal robe of rough hemp and hide, chest exposed showing ritual body paint — circuit-like tribal patterns in engine oil and red clay. Spark plug and washer bangles on both arms. A V8 engine miniature pendant at his neck. His scarred burned right hand raised near his chin, small devotional burn marks visible on his inner forearm. Animal bone and machine part fetish charms visible at his waist. Dramatic orange side lighting with distant flames, dark post-apocalyptic background. Semi-realistic thick-paint art style with Shin Megami Tensei character design influence.
 ```
 
 ---
@@ -47,31 +48,31 @@ Portrait bust shot of a young fanatical cultist, gaunt face with glowing intense
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 均整の取れたグラマラスな体型。戦闘で鍛えられつつも女性的な曲線を強調。大きな胸 |
+| 体格 | 均整の取れたグラマラスな体型。戦闘で鍛えられつつも女性的な曲線を強調。胸が大きく、服装がそれを隠さない |
 | 顔 | 左目の下に裂傷の跡。切れ長の目に濃いアイライン（戦化粧の名残）。厚めの唇。挑発的だが疲れを含んだ表情 |
-| 髪 | サイド刈り上げ、片側だけ鎖骨まで流れる非対称ヘア（赤茶色）|
-| 服装上半身 | 元コカトリスの革ジャン。ジッパーを大きく下げて胸元を強調し谷間が見える。背中の紋章はナイフで削り取った跡がある。丈が短くウエストが見え、腹筋のラインが覗く |
+| 髪 | 鎖骨より少し長い赤茶色のウェーブヘア。後ろで無造作にまとめているが、前髪と顔周りの毛束が風で散っている。手入れは最低限だが自然な艶がある |
+| 服装上半身 | 元コカトリスの黒い革ジャン。ジッパーを大きく下げ、中にインナーはなく直接素肌に着ている。大きな胸の谷間が深く露出し、胸の形が革に押し出されるように強調される。背中の紋章はナイフで削り取った跡がある。丈が短くウエストが見え、引き締まった腹筋のラインが覗く |
 | 服装下半身 | ローライズのカーゴパンツ。腰骨が見える位置で履いている。弾帯をベルト代わりに斜めに巻く |
-| 足元 | 編み上げブーツ（ヒールが少しある実戦型）|
-| アクセサリ | 胸元にドッグタグがぶら下がり谷間で揺れる。反対の腕はむき出しで腕輪を数本 |
-| 武装 | 腰に二丁拳銃のホルスター（太ももに沿うタイプ、脚線を強調）|
+| 足元 | 編み上げブーツ（ヒールが少しある実戦型） |
+| アクセサリ | 胸元にドッグタグがぶら下がり谷間に落ちている。反対の腕はむき出しで腕輪を数本 |
+| 武装 | 腰に二丁拳銃のホルスター（太ももに沿うタイプ、脚線を強調） |
 | 特徴的な傷 | 片腕にアームガードでコカトリスの焼印を隠している。左目の下の裂傷跡 |
 | バイク | スポーツタイプの改造車。速度重視。弾痕あり。跨る姿勢が映えるローポジション |
 | 配色 | ダークブラウン + 赤 + 銃金属のシルバー + 素肌のコントラスト |
-| 印象 | 殺し屋としての色気。セクシーさが武器であり鎧でもある。ワイルドさと女の美しさが同居する危険な魅力 |
+| 印象 | 殺し屋としての色気。胸元を惜しみなく見せるのは挑発であり鎧でもある。ワイルドさと女の豊満な美しさが同居する危険な魅力 |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A gorgeous 22-year-old female ex-raider standing confidently in a post-apocalyptic wasteland. Voluptuous athletic build with pronounced curves, large breasts prominently displayed. She wears a cropped black leather biker jacket unzipped low to reveal deep cleavage, dog tags hanging between her breasts. A knife-scarred patch on the jacket's back where a gang emblem was scraped off. Her toned midriff is exposed. Low-rise cargo pants sit on her hip bones, a bandolier of ammunition worn diagonally as a belt. Asymmetric reddish-brown hair: one side shaved, the other falling to her collarbone. A scar under her left eye, heavy eyeliner like war paint, full lips with a provocative yet weary expression. Dual pistol holsters strapped to her outer thighs, accentuating her legs. Lace-up combat boots with slight heels. One forearm wrapped in a leather arm guard hiding a brand mark, the other bare with multiple bangles. Sweat and dust give her leather a worn, skin-clinging texture. Behind her, a bullet-scarred sport motorcycle. Color palette: dark brown, red, gunmetal silver, warm skin tones. Semi-realistic thick-paint art style, dramatic lighting. Full body character design sheet.
+A gorgeous 22-year-old female ex-raider standing confidently in a post-apocalyptic wasteland, one hand on her hip. Voluptuous athletic build with pronounced curves and very large breasts. Reddish-brown wavy hair falling just past her collarbones, loosely tied back but with stray locks and bangs framing her face in the wind, naturally lustrous despite minimal care. She wears a cropped black leather biker jacket with nothing underneath — the zipper pulled far down, her large breasts pressing against the leather, deep cleavage fully exposed, dog tags hanging down into her cleavage. A knife-scarred patch on the jacket's back where a gang emblem was scraped off. The jacket is short enough to expose her toned midriff and defined abs. Low-rise cargo pants sitting on her hip bones, a bandolier of ammunition worn diagonally as a belt. A scar under her left eye, heavy dark eyeliner like war paint, full lips with a provocative yet weary expression. Dual pistol holsters strapped to her outer thighs, accentuating her legs. Lace-up combat boots with slight heels. One forearm wrapped in a leather arm guard hiding a brand mark, the other bare with multiple bangles. Sweat and dust make the leather cling to her skin. Behind her, a bullet-scarred low-position sport motorcycle. Color palette: dark brown, red, gunmetal silver, warm skin tones. Semi-realistic thick-paint art style, dramatic warm lighting emphasizing curves and leather. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a stunning 22-year-old female ex-raider. Voluptuous figure, black leather jacket unzipped low showing prominent cleavage with dog tags nestled between her breasts. Asymmetric reddish-brown hair, shaved on one side, flowing past the collarbone on the other. Scar under her left eye, heavy dark eyeliner, full lips, a look that is both provocative and battle-worn. One forearm in a leather guard, the other bare with bangles. Warm dramatic lighting emphasizing skin and leather contrast, dusty post-apocalyptic background. Semi-realistic thick-paint art style, dangerous beauty aesthetic.
+Portrait bust shot of a stunning 22-year-old female ex-raider with voluptuous figure and very large breasts. Black leather jacket worn with nothing underneath, zipper pulled low, her breasts pressing against the leather with deep cleavage prominently exposed, dog tags resting between them. Reddish-brown wavy hair loosely tied back, stray locks framing her face, naturally shiny. A scar under her left eye, heavy dark eyeliner, full provocative lips, a look that is battle-worn but seductive. One forearm in a leather guard, the other bare with bangles. Warm dramatic lighting emphasizing the contrast of soft skin against hard leather, dusty post-apocalyptic background. Semi-realistic thick-paint art style, dangerous beauty aesthetic.
 ```
 
 ---
@@ -82,31 +83,31 @@ Portrait bust shot of a stunning 22-year-old female ex-raider. Voluptuous figure
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 中肉やや痩せ。40代後半の落ち着いた体格。酷使された体だが姿勢は良い |
-| 顔 | 深い皺。穏やかだが遠くを見る目。白髪混じりの無精ひげ |
-| 髪 | 後ろで適当に束ねた灰色がかった茶髪。前髪が額に垂れている |
+| 体格 | 中肉でやや引き締まった体型。30代後半〜40代前半。まだ衰えていない体力を感じさせるが、長年の放浪で余分な肉は削がれている |
+| 顔 | 年齢以上に疲れた表情だが顔立ち自体はまだ若い。目尻と眉間に刻まれた皺は年齢より経験によるもの。穏やかだが遠くを見る目。薄い無精ひげ（白髪はほぼなし） |
+| 髪 | ダークブラウンの中長髪。後ろで適当に束ねているが、前髪と横髪が額や頬に垂れている。わずかに白髪が数本混じる程度 |
 | 服装上半身 | ポンチョ（砂埃で色褪せた元は紺色）。下にヘンリーネックシャツ + 実用的なカーゴベスト。ポケットが多く、すべて使い込まれている |
 | 服装下半身 | 丈夫なワークパンツ。膝にパッチ当てあり |
 | 足元 | 履き潰したデザートブーツ |
-| アクセサリ | 戦前のデジタル腕時計（壊れているが外さない）|
-| 武装 | 腰にリボルバー1丁（使い込まれて銃身が磨り減っている）|
-| 特徴 | バイクのサドルバッグに古い写真（ジョエルと写っている）。目元に深い疲労と悲しみの影 |
+| アクセサリ | 戦前のデジタル腕時計（壊れているが外さない） |
+| 武装 | 腰にリボルバー1丁（使い込まれて銃身が磨り減っている） |
+| 特徴 | バイクのサドルバッグに古い写真（ジョエルと写っている）。表情には疲労と悲しみがあるが、顔つき自体はまだ鋭さを残している |
 | バイク | 実用的なツーリングバイク。派手さゼロだが整備が行き届いている |
 | 配色 | 褪せた紺 + サンドベージュ + レザーブラウン |
-| 印象 | 静かな哀愁。戦前の世界を知る男の重み。余計なことは言わないが、すべてを見ている目 |
+| 印象 | まだ若さを残しながらも、背負ったものの重さで実年齢以上に老けて見える男。余計なことは言わないが、すべてを見ている目。戦前の記憶を持つことが彼を周囲から孤立させている |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A weathered man in his late 40s standing in a vast post-apocalyptic desert. Lean, slightly thin build with good posture despite years of hardship. He wears a faded navy poncho bleached by sun and dust over a henley shirt and a practical cargo vest with many worn pockets. Sturdy work pants with patched knees. Scuffed desert boots. Grayish-brown hair tied loosely back, bangs falling over his forehead, streaks of gray throughout. A grizzled stubble with white mixed in. Deep wrinkles, kind but distant eyes that look past the horizon, carrying grief and quiet determination. A broken pre-war digital wristwatch on his left wrist. A well-worn revolver holstered at his hip, the barrel visibly smooth from decades of use. Behind him, a plain but well-maintained touring motorcycle with leather saddlebags. Color palette: faded navy, sand beige, leather brown, muted earth tones. Semi-realistic thick-paint art style, melancholic golden-hour lighting. Full body character design sheet.
+A lean, weathered man in his late 30s to early 40s standing in a vast post-apocalyptic desert. Still physically capable — not yet old, but worn down by years of solitary wandering, all excess stripped from his frame. He wears a faded navy poncho bleached by sun and dust over a henley shirt and a practical cargo vest with many well-used pockets. Sturdy work pants with patched knees. Scuffed desert boots. Dark brown medium-length hair tied loosely back, bangs and side strands falling over his forehead and cheeks, only a few stray gray hairs visible. A thin stubble with almost no gray. His face is still relatively young in structure but carries premature lines at the eyes and brow — marks of experience rather than age. Kind but distant eyes that look past the horizon, carrying grief and quiet determination. A broken pre-war digital wristwatch on his left wrist. A well-worn revolver holstered at his hip, the barrel visibly smooth from years of use. Behind him, a plain but well-maintained touring motorcycle with leather saddlebags. Color palette: faded navy, sand beige, leather brown, muted earth tones. Semi-realistic thick-paint art style, melancholic golden-hour lighting. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a weathered man in his late 40s, the last generation to remember the pre-war world. Deep wrinkles, kind distant eyes carrying decades of grief, grizzled white-streaked stubble. Grayish-brown hair loosely tied back with bangs falling forward. Faded navy poncho over a henley shirt and cargo vest. A broken digital wristwatch on his wrist. Warm melancholic lighting, vast empty desert in soft focus behind him. Semi-realistic thick-paint art style, quiet sorrow aesthetic.
+Portrait bust shot of a weathered but still young-looking man in his late 30s to early 40s, one of the last to remember the pre-war world. His face has premature lines at the eyes and brow from hardship rather than age, but his bone structure is still youthful and sharp. Kind distant eyes carrying years of grief, thin stubble with barely any gray. Dark brown hair loosely tied back with bangs falling forward, only a few stray white hairs. Faded navy poncho over a henley shirt and cargo vest. A broken digital wristwatch on his wrist. Warm melancholic golden-hour lighting, vast empty desert in soft focus behind him. Semi-realistic thick-paint art style, quiet sorrow aesthetic.
 ```
 
 ---
@@ -117,31 +118,31 @@ Portrait bust shot of a weathered man in his late 40s, the last generation to re
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 非常に小柄で華奢。16歳だが栄養不足で12-13歳程度に見える。肋骨のラインが薄っすら見える。手足が細く長い。胸はほぼ平坦、腰も子供のように直線的 |
-| 顔 | 大きな目だが生気が薄い。虹彩が黄色がかっている（野生動物的）。無表情が基本。頬がこけ、唇が乾燥でひび割れている |
+| 体格 | 小柄で華奢。16歳だが栄養不足で発育が遅く、幼く見える。手足が細く長い。胸はほぼ平坦、腰も子供のように直線的。ただし荒野で生き延びてきた分、身のこなしに野生動物のような俊敏さがある |
+| 顔 | 大きな丸みのある目 — 本来は可愛らしい顔立ちだが、生気が薄く警戒に満ちている。虹彩が黄色がかったアンバー（野生動物的）。小さな鼻、薄い唇。頬がこけているが骨格自体は整っており、十分に食べれば可愛い少女だとわかる造形。表情は乏しいが、虎に触れる時だけ微かに和らぐ |
 | 髪 | 手入れされていない腰までの黒髪。枝・羽根・小さな骨が絡まっている。前髪が目にかかり顔の半分を隠しがち |
-| 服装上半身 | 獣皮を継ぎ接ぎしたポンチョ。肩が片方ずれ落ちて鎖骨と肩が露出。丈が短く腹部が見えるが、見えるのは薄い腹と浮く肋骨 |
-| 服装下半身 | 腰に巻いた布切れのスカート。膝上丈、片足のスリットが深い。だが露出する脚は細く、筋肉より骨と筋が目立つ |
-| 足元 | 素足（足裏が分厚く角質化している。靴を持たない）|
-| 特徴的な傷 | 首に消えない拘束具の痕（項に金属が擦れた黒ずみ）。手首と上腕に奴隷拘束具の古い擦過痕。背中に鞭打ちの古傷が複数（ポンチョの隙間から見える）|
-| 武装 | 腰に手製の鞭（獣の腱で編んだ粗雑な作り）|
-| パートナー | 常に傍にいる虎。虎の首にも同じ拘束具の痕 — 対の存在 |
+| 服装上半身 | 獣皮を継ぎ接ぎしたビスチェのような短い胴衣。肩が片方ずれ落ちて鎖骨と肩が露出。丈が短く肋骨が浮く薄い腹部が露出している |
+| 服装下半身 | 獣皮を裂いて作った極めて短いラップスカート。片側が大きく裂けており太ももの付け根近くまで脚が見える。だが露出する脚は細く筋肉より骨と筋が目立ち、膝が大きく見えるほど華奢 |
+| 足元 | 素足。足裏が角質化して硬くなっている。足首は細く、脛の骨のラインがはっきり見える |
+| 特徴的な傷 | 首に消えない拘束具の痕（項に金属が擦れた黒ずみ）。手首と上腕に奴隷拘束具の古い擦過痕。背中に鞭打ちの古傷が複数（胴衣の隙間から見える） |
+| 武装 | 腰に手製の鞭（獣の腱で編んだ粗雑な作り） |
+| パートナー | 常に傍にいる虎。虎の首にも同じ拘束具の痕 — 対の存在。虎は彼女より遥かに健康で堂々としている |
 | バイク | サイドカー付き（虎の乗車用）。装飾は骨や爪 |
 | 配色 | アーストーン（土色・枯草色・獣皮のなめし革色）。肌色が多いが暖かさではなく脆さの色 |
-| 印象 | 露出が多いのは「服を持っていない」から。色気ではなく、虐待の痕と栄養失調が語る痛々しさ。虎と並ぶと虎のほうが健康的に見える皮肉 |
+| 印象 | 人間社会の外で生きてきた野生児。露出が多いのは「まともな服を持っていない」から。脚を晒すのも無頓着の表れ。色気ではなく、細く薄い体と傷跡が語る痛々しさ。しかし顔の造作には元の可愛らしさが残っており、それが余計に痛ましい |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A frail 16-year-old girl standing beside a large tiger in a post-apocalyptic wasteland. Extremely small and thin, looks 12-13 due to severe malnutrition. Visible rib outlines under skin, flat chest, straight boyish frame, long thin limbs where bone and sinew show more than muscle. She wears a patchwork poncho made of mismatched animal hides, one shoulder slipped off exposing a bony collarbone and shoulder. The poncho is short, revealing a painfully thin stomach. A ragged cloth wrap skirt at knee length with a deep slit on one side, showing a skeletal leg. Completely barefoot with calloused soles. Long unkempt black hair reaching her waist, tangled with twigs, small feathers, and tiny bones, bangs falling over half her face. Large dull eyes with yellowish-amber irises like a wild animal. Expressionless gaunt face, cracked dry lips, sunken cheeks. Dark abrasion scars around her neck and wrists from restraints — the marks of slavery. Whip scars visible through gaps in the poncho on her back. A crude whip made of braided animal sinew at her hip. The tiger beside her has matching restraint scars on its neck — a pair of survivors. The tiger looks healthier than the girl. Color palette: earth tones, dried grass, tanned leather, bare skin conveying fragility not warmth. Semi-realistic thick-paint art style, harsh noon light casting stark shadows, emphasizing how thin and small she is. Full body character design sheet.
+A small feral girl of 16 standing barefoot beside a large tiger in a post-apocalyptic wasteland. Petite and thin with long slender limbs, flat chest, straight childlike frame, but moving with the coiled alertness of a wild animal. She has a pretty face beneath the grime — large round eyes with yellowish-amber irises like a wild cat, a small nose, delicate features that would be cute if she were healthy. But her cheeks are hollow, her expression is blank and wary, only softening faintly when touching the tiger. Long unkempt black hair reaching her waist, tangled with twigs, small feathers, and tiny animal bones, bangs falling over half her face. She wears a very short animal-hide bustier-like top, roughly stitched from patchwork pelts, one shoulder slipped off exposing a bony collarbone. The top is cropped high, revealing her thin stomach where faint rib outlines show. An extremely short wrap skirt made of torn animal hide, split high on one side nearly to the hip joint — her legs fully exposed from upper thigh down. But the exposed legs are painfully thin, knees appearing large on stick-like limbs, shin bones clearly visible, no muscle definition. Completely barefoot, soles thickened and calloused, slender ankles. Dark abrasion scars around her neck and wrists from slave restraints. Whip scars visible on her back through gaps in the bustier. A crude whip of braided animal sinew at her hip. The tiger beside her has matching restraint scars on its neck — a bonded pair. The tiger is visibly healthier and more imposing than the girl. Color palette: earth tones, dried grass, tanned leather, bare skin conveying fragility not allure. Semi-realistic thick-paint art style, harsh noon light casting stark shadows emphasizing how thin and small she is. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a malnourished 16-year-old girl who looks younger, standing next to a tiger's head. Extremely thin, bony shoulders visible where her animal-hide poncho has slipped off one side. Long tangled black hair with twigs and feathers caught in it, bangs covering half her face. Large expressionless eyes with yellowish-amber irises, animalistic and wary. Gaunt sunken cheeks, cracked lips, hollow expression. Dark scars around her neck from slave restraints. The tiger beside her presses close, its own neck bearing matching restraint marks. She is not pitiful — she is feral and broken. Harsh daylight, barren wasteland background. Semi-realistic thick-paint art style, emphasizing fragility and damage rather than beauty.
+Portrait bust shot of a feral 16-year-old girl next to a tiger's face. She has a naturally pretty face — large round eyes with yellowish-amber irises, small nose, delicate bone structure that would be cute if well-nourished. But her cheeks are sunken, her expression blank and guarded, and grime covers her skin. Long tangled black hair with twigs, feathers, and tiny bones caught in it, bangs covering half her face. A rough patchwork animal-hide bustier, one shoulder slipped off showing a thin bony collarbone. Dark restraint scars ring her neck. The tiger presses close to her, its own neck bearing matching scars. Her blank expression softens almost imperceptibly near the tiger. Harsh daylight, barren wasteland background. Semi-realistic thick-paint art style, emphasizing the contrast between her underlying cuteness and her damaged, feral state.
 ```
 
 ---
@@ -152,42 +153,43 @@ Portrait bust shot of a malnourished 16-year-old girl who looks younger, standin
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 身長190cm超。逆三角形の巨躯。ウエストは絞れ肩幅は異常に広い。全身が隆起した筋肉に覆われている |
-| 顔 | 眉間から左頬にかけて一本の深い古傷（七つの傷ではなく一本に集約し差別化）。眉が太く目は鋭いが瞳の奥に穏やかさ。無精ひげ。ところどころ白髪が混じる |
-| 髪 | 黒髪のオールバック。肩にかかる程度の長さで風になびく。ところどころ白髪混じり（ケンシロウの短髪と差別化、放浪者の野性味を出す）|
-| 服装上半身 | 長い褪せたダスターコート（元は暗褐色、砂埃と日焼けでまだら模様に退色）。前は留めずに開けており、中は裸の上半身が見える。筋肉と無数の傷跡が露出。片肩に革のショルダーガード（非対称にしてケンシロウと差別化）|
+| 体格 | 身長190cm超。逆三角形の巨躯。ウエストは絞れ肩幅は異常に広い。全身が隆起した筋肉に覆われている。肉体の全盛期にある |
+| 顔 | 眉間から左頬にかけて一本の深い古傷。眉が太く精悍な顔立ち。目は鋭いが瞳の奥に穏やかさがある。短い無精ひげ。若いが、傷と眼差しに年齢以上の凄みがある |
+| 髪 | 黒髪のオールバック。肩にかかる程度の長さで風になびく。白髪はない（ケンシロウと差別化しつつ、若い全盛期の戦士である印象） |
+| 服装上半身 | 長い褪せたダスターコート（元は暗褐色、砂埃と日焼けでまだら模様に退色）。前は留めずに開けており、中は裸の上半身。全盛期の筋肉と無数の傷跡が露出。片肩にだけ革のショルダーガード（非対称にしてケンシロウと差別化） |
 | 服装下半身 | ダメージド・カーゴパンツ。膝から下がちぎれてハーフ丈。太い革ベルトで留めている |
-| 足元 | 軍用ブーツ（唯一しっかりした装備。歩き続けるために必要）|
-| アクセサリ | 首に旅人のネックレス — シンプルな革紐に小さな金属片（形見。決して外さない。戦闘中も光る）|
+| 足元 | 軍用ブーツ（唯一しっかりした装備。歩き続けるために必要） |
+| アクセサリ | 首に旅人のネックレス — シンプルな革紐に小さな金属片（形見。決して外さない。戦闘中も光る） |
 | 武装 | 両拳にテーピングと古い包帯 — 唯一の武装。何層にも巻かれている |
-| 特徴 | 腕を組むポーズが基本の立ち姿。ダスターコートの裾が風で翻る。コートには切り傷・弾痕・焦げ跡が無数にある（彼の歴戦をコートが物語る）|
+| 特徴 | 腕を組むポーズが基本の立ち姿。ダスターコートの裾が風で翻る。コートには切り傷・弾痕・焦げ跡が無数にある（彼の歴戦をコートが物語る） |
 | バイク | なし。徒歩。この男にバイクは似合わない |
 | 配色 | 褪色ダークブラウン（コート）+ 肌色 + 砂色 + 傷跡の赤白 + ネックレスの金属光 |
-| 印象 | ケンシロウを想起させるが同一ではない。「かつてケンシロウだったかもしれない男が、目的を失って彷徨っている」。ダスターコートが砂漠の風に翻る姿は、西部劇の流れ者と北斗の拳の融合 |
+| 印象 | 肉体的な全盛期にありながら、目的なく彷徨う矛盾。若く圧倒的に強いのに、その強さを振るう理由を持たない。ダスターコートが砂漠の風に翻る姿は、西部劇の流れ者と北斗の拳の融合 |
 
 ### ケンシロウとの差別化ポイント
 
 | 要素 | ケンシロウ | 覇者 |
 |---|---|---|
 | 傷 | 北斗七星の七つの傷 | 眉間から左頬への一本傷 |
-| 髪 | 短髪 | オールバックの長めの黒髪（白髪混じり）|
+| 髪 | 短髪 | オールバックの長めの黒髪 |
 | 上着 | 革ジャン（または裸） | ダスターコート（前開き、中は裸） |
 | 肩装甲 | 両肩パッド | 片肩のみの革ショルダーガード |
-| 年齢感 | 若い | やや老い（白髪、深い皺、疲れた穏やかさ）|
-| 表情 | 正義の怒り | 目的なき穏やかさ |
+| 年齢感 | 若い（20代後半） | 同等の若さだが、眼差しだけが老成している |
+| 表情 | 正義の怒り・使命感 | 目的なき穏やかさ。怒りではなく静けさ |
+| 体格 | 理想的格闘家体型 | 同等だが傷が圧倒的に多い。全身が戦場の地図 |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A towering muscular man over 190cm tall standing in a vast post-apocalyptic desert, arms crossed. Massive inverted-triangle build with extremely broad shoulders and a narrow waist, every muscle defined and covered in countless old battle scars like a map of wars survived. He wears a long weathered duster coat, originally dark brown, now faded and mottled from sun and sandstorms. The coat is worn open in front, revealing his bare scarred torso underneath. The duster's hem catches the wind dramatically. The coat bears slash marks, bullet holes, and scorch marks across its surface. A single leather shoulder guard on one shoulder only, creating asymmetry. Damaged cargo pants torn to half-length below the knees, secured with a thick leather belt. Military boots, well-worn but sturdy — his only proper gear. Black hair swept back reaching his shoulders, blowing in the wind, streaked with gray and white. A single deep old scar running from between his eyebrows down to his left cheek. Thick eyebrows, sharp eyes that somehow hold gentleness in their depths. Grizzled stubble. Both fists wrapped in layers of old tape and bandages — his only weapons. A simple leather cord necklace with a small metal piece at his throat, catching the light. He has no motorcycle, no vehicle — he walks. Color palette: faded dark brown duster, warm skin, sand, scar red-white, metallic glint of the necklace. Semi-realistic thick-paint art style, epic wide-angle composition, wind-swept post-apocalyptic wasteland. Full body character design sheet.
+A towering muscular man in his late 20s to early 30s, over 190cm tall, standing in a vast post-apocalyptic desert with arms crossed. In the absolute prime of his physical power — massive inverted-triangle build with extremely broad shoulders and a narrow waist, every muscle perfectly defined and at peak condition, yet covered in countless old battle scars like a living map of wars survived. He wears a long weathered duster coat, originally dark brown, now faded and mottled from sun and sandstorms. The coat is worn open in front, revealing his bare scarred torso in its full muscular glory. The duster's hem catches the wind dramatically, billowing behind him. The coat itself bears slash marks, bullet holes, and scorch marks — a chronicle of battles. A single leather shoulder guard on one shoulder only, creating asymmetry. Damaged cargo pants torn to half-length below the knees, secured with a thick leather belt. Military boots, well-worn but sturdy. Black hair swept back reaching his shoulders, blowing in the wind — no gray, pure black, youthful. A single deep old scar running from between his eyebrows down to his left cheek. Thick eyebrows, a young handsome face that is fierce yet paradoxically gentle in the eyes. Short stubble. Both fists wrapped in layers of old tape and bandages — his only weapons. A simple leather cord necklace with a small metal piece at his throat, catching the light. He has no motorcycle, no vehicle — he walks alone. Color palette: faded dark brown duster, warm skin, sand, scar red-white, metallic glint of the necklace. Semi-realistic thick-paint art style, epic wide-angle composition, wind-swept post-apocalyptic wasteland. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a towering muscular warrior in a post-apocalyptic wasteland. A long faded duster coat worn open, revealing a massively scarred bare chest beneath. A single leather shoulder guard on one shoulder. Black hair swept back with streaks of white, blowing in desert wind. A single deep scar from between his eyebrows to his left cheek — not seven stars, just one long mark. Thick brows, fierce eyes that paradoxically hold quiet kindness, grizzled stubble showing age. Both fists wrapped in layered tape and bandages, arms crossed. A simple metal-piece necklace on a leather cord at his throat glinting in the light. He evokes a legendary martial artist archetype but older, wearier, purposeless yet gentle. Dramatic wind-swept lighting, endless desert behind him. Semi-realistic thick-paint art style, Fist of the North Star meets spaghetti western aesthetic.
+Portrait bust shot of a towering muscular warrior in his late 20s to early 30s in a post-apocalyptic wasteland. In the prime of his life — a body built for destruction, yet eyes that hold no malice. A long faded duster coat worn open, revealing a massively scarred bare chest of peak musculature. A single leather shoulder guard on one shoulder. Pure black hair swept back to shoulder length, blowing in desert wind — no gray, young and vital. A single deep scar from between his eyebrows to his left cheek. Thick brows, fierce handsome young face that paradoxically holds quiet kindness in the eyes. Short stubble, no signs of aging. Both fists wrapped in layered tape and bandages, arms crossed. A simple metal-piece necklace on a leather cord at his throat glinting in the light. He evokes a legendary martial artist archetype — young, impossibly strong, yet purposeless and gentle. Dramatic wind-swept lighting, endless desert behind him. Semi-realistic thick-paint art style, Fist of the North Star meets spaghetti western aesthetic.
 ```
 
 ---
@@ -196,9 +198,10 @@ Portrait bust shot of a towering muscular warrior in a post-apocalyptic wastelan
 
 | | カルティスト | ヴェスパ | ウェス | ミーシャ | 覇者 |
 |---|---|---|---|---|---|
-| **シルエット** | 細長い縦長（ローブ）| 曲線的なS字 | ポンチョの台形 | 小さく不定形 | 巨大な逆三角+コート裾 |
-| **肌の露出** | 少ない（手のみ）| 多い（意図的）| 少ない | 多い（やむを得ず）| 多い（無頓着。コートの隙間から）|
-| **露出が語るもの** | 信仰の狂気 | 色気・威嚇・自信 | 何も見せない寡黙さ | 貧困・虐待の痕・脆さ | 鍛え上げた肉体・歴戦 |
-| **主な配色** | 黒+オレンジ | 茶+赤+銀 | 紺+砂色 | 土色+枯草 | 褪色茶（コート）+肌色+砂 |
-| **見る者の印象** | 不気味な純真 | 危険で美しい | 静かな哀愁 | 痛々しく壊れそう | 畏怖と不思議な安心感 |
-| **立ち姿** | 胸の前で手を合わせる | 片腰に手、挑発的 | 遠くを見る | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
+| **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（16歳、見た目12-13） | 若い（20後半〜30前半） |
+| **シルエット** | 細長い縦長（ローブ+骨飾り） | 曲線的なS字（豊満） | ポンチョの台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
+| **肌の露出** | 中程度（儀式紋様を見せるため） | 多い（意図的、胸を強調） | 少ない（すべて覆う） | 多い（服がない。脚の露出が顕著） | 多い（コートの隙間から筋肉） |
+| **露出が語るもの** | 部族的信仰・呪術的身体 | 色気・威嚇・豊満な自信 | 何も見せない寡黙さ | 貧困・野生・華奢な脆さ | 全盛期の肉体・歴戦の傷 |
+| **主な配色** | 黒+オレンジ+赤土+骨白 | 茶+赤+銀+肌色 | 紺+砂色 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
+| **見る者の印象** | 異質で不気味な部族祭司 | 危険で豊満な美女 | 若いのに疲弊した旅人 | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
+| **立ち姿** | 胸の前で手を合わせる（祈り） | 片腰に手、胸を張る | 遠くを見る、手はポケット | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
