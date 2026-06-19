@@ -2,6 +2,7 @@ extends Control
 
 var card_buttons: Array[Button] = []
 var enemy_panels: Array[PanelContainer] = []
+var target_buttons: Array[Button] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 var reward_cards: Array[CardData] = []
@@ -36,6 +37,7 @@ func _build_enemy_display() -> void:
 	for child in $EnemyArea.get_children():
 		child.queue_free()
 	enemy_panels.clear()
+	target_buttons.clear()
 
 	for i in CombatManager.enemies.size():
 		var enemy: Dictionary = CombatManager.enemies[i]
@@ -110,6 +112,7 @@ func _build_enemy_display() -> void:
 		panel.add_child(vbox)
 		$EnemyArea.add_child(panel)
 		enemy_panels.append(panel)
+		target_buttons.append(target_btn)
 
 func _update_hand() -> void:
 	for child in $HandArea.get_children():
@@ -192,9 +195,9 @@ func _on_enemy_target(idx: int) -> void:
 	_after_card_play()
 
 func _show_target_buttons(show: bool) -> void:
-	for i in enemy_panels.size():
-		var target_btn := enemy_panels[i].get_node("VBoxContainer/TargetButton") as Button
-		target_btn.visible = show and CombatManager.enemies[i]["alive"]
+	for i in target_buttons.size():
+		if i < CombatManager.enemies.size():
+			target_buttons[i].visible = show and CombatManager.enemies[i]["alive"]
 
 func _after_card_play() -> void:
 	_update_hand()
@@ -257,8 +260,8 @@ func _on_cards_drawn(_cards: Array[CardData]) -> void:
 func _on_enemy_defeated(idx: int) -> void:
 	if idx < enemy_panels.size():
 		enemy_panels[idx].modulate = Color(0.3, 0.3, 0.3, 0.5)
-		var target_btn := enemy_panels[idx].get_node("VBoxContainer/TargetButton") as Button
-		target_btn.visible = false
+	if idx < target_buttons.size():
+		target_buttons[idx].visible = false
 
 func _on_enemy_hp_changed(idx: int, hp: int, max_hp: int) -> void:
 	if idx < enemy_panels.size():
