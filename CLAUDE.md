@@ -93,6 +93,44 @@ DeckManager.draw_cards()
 turn_started.emit(turn_number)
 ```
 
+### PRESET_CENTER での動的UI配置
+
+`set_anchors_preset(Control.PRESET_CENTER)` はアンカーを0.5に設定するだけでオフセットは変更しない。`position` を設定するとアンカー位置からの追加オフセットとなり、意図せず右下にずれる。サイズの半分を負のオフセットとして明示的に指定すること。
+
+```gdscript
+# NG: positionはアンカー(中央)からのオフセット → 右下にずれる
+panel.set_anchors_preset(Control.PRESET_CENTER)
+panel.custom_minimum_size = Vector2(700, 400)
+panel.position = Vector2(190, 120)
+
+# OK: offsetで中央配置を明示
+panel.set_anchors_preset(Control.PRESET_CENTER)
+panel.custom_minimum_size = Vector2(700, 400)
+panel.offset_left = -350   # -width/2
+panel.offset_top = -200    # -height/2
+panel.offset_right = 350   # +width/2
+panel.offset_bottom = 200  # +height/2
+```
+
+### シーン遷移で失われるローカル状態
+
+`change_scene_to_file()` で遷移すると元のシーンのスクリプト変数は全て破棄される。マップ進行状況など遷移後も必要なデータは Autoload（`GameManager` 等）に保持し、`_ready()` で毎回再生成しないこと。
+
+```gdscript
+# NG: _ready()で毎回生成 → 戦闘後に戻るとマップがリセットされる
+func _ready() -> void:
+    map_nodes = MapGenerator.generate_act(act)
+    current_row = -1
+
+# OK: Autoloadに保持し、未生成時のみ生成
+func _ready() -> void:
+    if GameManager.map_nodes.is_empty():
+        GameManager.map_nodes = MapGenerator.generate_act(act)
+        GameManager.map_current_row = -1
+    map_nodes = GameManager.map_nodes
+    current_row = GameManager.map_current_row
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
