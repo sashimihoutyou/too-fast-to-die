@@ -44,6 +44,39 @@ card.tags = data.get("tags", [])
 card.tags.assign(data.get("tags", []))
 ```
 
+### PanelContainer と子ノードの配置
+
+`PanelContainer` は子ノードを自動的に全面に引き伸ばすため、複数の子を手動配置（offset指定）しても全て重なる。手動配置が必要な場合は `Panel` を使い、子ノードの `layout_mode` を `1`（アンカー）にすること。
+
+```
+# NG: PanelContainer + layout_mode=2 → offset無視で全子ノードが重なる
+[node name="HUD" type="PanelContainer" parent="."]
+[node name="Label1" type="Label" parent="HUD"]
+layout_mode = 2
+
+# OK: Panel + layout_mode=1 → offsetが正しく適用される
+[node name="HUD" type="Panel" parent="."]
+[node name="Label1" type="Label" parent="HUD"]
+layout_mode = 1
+```
+
+### 動的生成ノードへの参照
+
+`get_node()` によるパス解決はノード名の自動リネーム等で失敗しやすい。動的に生成したノードは参照を配列等に直接保持すること。
+
+```gdscript
+# NG: パスが一致しない場合にnullエラー
+var btn := panel.get_node("VBoxContainer/TargetButton") as Button
+btn.visible = false  # null instance エラー
+
+# OK: 生成時に参照を保持
+var target_buttons: Array[Button] = []
+# 生成時:
+target_buttons.append(target_btn)
+# 使用時:
+target_buttons[i].visible = false
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける

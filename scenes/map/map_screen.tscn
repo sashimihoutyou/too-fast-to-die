@@ -31,7 +31,7 @@ offset_bottom = 550.0
 layout_mode = 2
 custom_minimum_size = Vector2(1080, 1400)
 
-[node name="HUD" type="PanelContainer" parent="."]
+[node name="HUD" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -42,7 +42,7 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="ActLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 10.0
 offset_top = 5.0
 offset_right = 200.0
@@ -52,7 +52,7 @@ theme_override_font_sizes/font_size = 16
 text = "区間1"
 
 [node name="FuelLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 10.0
 offset_top = 30.0
 offset_right = 200.0
@@ -61,7 +61,7 @@ theme_override_font_sizes/font_size = 14
 text = "燃料: 20/30"
 
 [node name="ScrapLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 220.0
 offset_top = 30.0
 offset_right = 400.0
@@ -70,7 +70,7 @@ theme_override_font_sizes/font_size = 14
 text = "スクラップ: 0"
 
 [node name="MedicineLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 420.0
 offset_top = 30.0
 offset_right = 600.0
@@ -79,7 +79,7 @@ theme_override_font_sizes/font_size = 14
 text = "医薬品: 1/3"
 
 [node name="KarmaLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 620.0
 offset_top = 30.0
 offset_right = 830.0
@@ -88,7 +88,7 @@ theme_override_font_sizes/font_size = 14
 text = "カルマ: 0 中立"
 
 [node name="DistanceLabel" type="Label" parent="HUD"]
-layout_mode = 2
+layout_mode = 1
 offset_left = 850.0
 offset_top = 30.0
 offset_right = 1050.0
