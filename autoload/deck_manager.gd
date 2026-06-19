@@ -45,7 +45,7 @@ func draw_cards(count: int = HAND_SIZE) -> Array[CardData]:
 			discard_pile.clear()
 			shuffle_draw_pile()
 		if not draw_pile.is_empty():
-			var card := draw_pile.pop_back()
+			var card: CardData = draw_pile.pop_back()
 			hand.append(card)
 			drawn.append(card)
 	cards_drawn.emit(drawn)
