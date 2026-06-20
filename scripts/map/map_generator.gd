@@ -94,7 +94,7 @@ static func _assign_positions(nodes: Array[Dictionary], total_rows: int, cols: i
 		var count := row_nodes.size()
 		var idx := row_nodes.find(node)
 		var y_offset := (float(idx) - float(count - 1) / 2.0) * y_spacing
-		node["position"] = Vector2(100.0 + node["row"] * x_spacing, 260.0 + y_offset)
+		node["position"] = Vector2(100.0 + node["row"] * x_spacing, 480.0 + y_offset)
 
 static func _get_nodes_at_row(nodes: Array[Dictionary], row: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

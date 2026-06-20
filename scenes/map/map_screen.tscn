@@ -22,14 +22,15 @@ color = Color(0.1, 0.08, 0.05, 1)
 
 [node name="MapScroll" type="ScrollContainer" parent="."]
 layout_mode = 1
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 1080.0
-offset_bottom = 550.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="MapContainer" type="Control" parent="MapScroll"]
 layout_mode = 2
-custom_minimum_size = Vector2(1900, 520)
+custom_minimum_size = Vector2(1900, 960)
 
 [node name="HUD" type="Panel" parent="."]
 layout_mode = 1
