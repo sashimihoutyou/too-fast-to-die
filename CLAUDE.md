@@ -131,6 +131,18 @@ func _ready() -> void:
     current_row = GameManager.map_current_row
 ```
 
+### 基底クラスメソッドのシャドウイング回避
+
+関数パラメータやローカル変数に `show`, `hide`, `print` など基底クラス（`CanvasItem`, `Node` 等）のメソッド名を使うと `SHADOWED_VARIABLE_BASE_CLASS` 警告が出る。意味の明確な別名を使うこと。
+
+```gdscript
+# NG: CanvasItem.show() をシャドウイング
+func _show_target_buttons(show: bool) -> void:
+
+# OK: 別名を使う
+func _show_target_buttons(visible_flag: bool) -> void:
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
