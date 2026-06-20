@@ -10,7 +10,7 @@ Godot上で動作するインゲームリソースエディター。デバッグ
 |---|---|
 | 起動方法 | タイトル画面ボタン + 全画面共通ショートカット(F12) |
 | 表示方式 | オーバーレイ（ゲーム画面の上に重ねて表示） |
-| ビューポート | 1080x600 → 拡大（エディターと同時に変更） |
+| ビューポート | 1080x600 → 1920x1080に拡大（**別フェーズ**で実施。エディターは現行解像度でも動作する設計とする） |
 | Texture2D編集 | プレビュー表示 + FileDialogで画像選択 |
 | リソース対応 | 汎用（`get_property_list()`でリフレクション） |
 | 保存方式 | 保存ボタン + 確認ダイアログ → `ResourceSaver.save()` |
@@ -99,7 +99,12 @@ DebugEditorManager="*res://scripts/debug/debug_editor_manager.gd"
 2. _unhandled_input(): F12検知 → toggle_editor()
 3. toggle_editor(): オーバーレイの表示/非表示切替
    - 表示時: get_tree().paused = true（ゲームを一時停止）
-   - 非表示時: get_tree().paused = false
+   - 非表示時: 未保存変更チェック → 確認ダイアログ表示後にget_tree().paused = false
+4. 閉じる時の未保存チェック:
+   - dirty flag が立っている場合、「保存されていない変更があります」ダイアログ表示
+   - [保存] → 保存処理実行後に閉じる
+   - [破棄] → 変更を破棄して閉じる
+   - [キャンセル] → エディターを開いたままにする
 
 注意: process_mode = PROCESS_MODE_ALWAYS に設定し、
       ポーズ中も入力を受け付ける
@@ -112,7 +117,11 @@ DebugEditorManager="*res://scripts/debug/debug_editor_manager.gd"
 - resources/ 以下のディレクトリ構造をTree UIで表示
 - フォルダの展開/折りたたみ
 - .tres ファイル選択時にPropertyEditorへ通知
-- 検索フィルタ（ファイル名の部分一致）
+- 検索フィルタ（ファイル名 + id + display_name の部分一致）
+
+検索インデックス:
+- ツリー構築時に各.tresをロードし、id/display_nameをメタデータに保持
+- 検索時はメタデータをフィルタ（リソースの再ロード不要）
 
 ツリー構造:
 resources/
@@ -211,11 +220,19 @@ Array[EventChoiceData] の場合:
 #### 5.4.4 Dictionary プロパティ (BikePartData.stats等)
 
 ```
-├── キー: LineEdit | 値: LineEdit  [×削除]
-├── キー: LineEdit | 値: LineEdit  [×削除]
+既存エントリ:
+├── キー: LineEdit | [int ▼] 値: SpinBox  [×削除]
+├── キー: LineEdit | [float▼] 値: SpinBox  [×削除]
 └── [+ エントリ追加] ボタン
 
-型推定: 値の内容から int/float/String を自動判別
+型の扱い:
+- 既存エントリ: typeof() で現在の値の型を検出し、適切なウィジェットを自動選択
+  - TYPE_INT → SpinBox (整数)
+  - TYPE_FLOAT → SpinBox (step=0.01)
+  - TYPE_STRING → LineEdit
+- 新規エントリ: 型選択ドロップダウン [int / float / String] を表示
+  → 型を選択してからウィジェットを生成
+- 文字列からの型推定は行わない（"01"→1 等の誤変換を防止）
 ```
 
 #### 5.4.5 Texture2D プロパティ
@@ -303,13 +320,19 @@ Array[EventChoiceData] の場合:
 3. 必要に応じてリロード完了シグナルを発行
    → UIが更新される場合に備える
 
-注意: 進行中の戦闘やイベントに影響する可能性があるため、
-      現在のゲームステートは変更しない（次回参照時に新データを使用）
+注意:
+- 進行中の戦闘やイベントが保持する既存のResourceインスタンス参照は
+  更新されない（次回参照時に新データを使用）
+- GameManager.current_state == COMBAT の場合、保存成功後に
+  「戦闘中の変更は次回の戦闘から反映されます」という警告トーストを表示
+- リロード自体は常に実行する（Database経由の新規参照には即反映）
 ```
 
 ## 6. UI レイアウト
 
-### 6.1 ビューポート変更
+### 6.1 ビューポート変更（別フェーズ — Phase 0）
+
+エディターとは独立した改修として切り出す。
 
 ```
 変更前: 1080 x 600
@@ -320,13 +343,30 @@ project.godot:
   window/size/viewport_height=1080
 ```
 
-既存UIへの影響と対応:
-- アンカー`PRESET_FULL_RECT`や`PRESET_CENTER`を使っているシーンは自動追従
-- 固定サイズ（`custom_minimum_size`, `offset_*`）のノードは位置確認が必要
-- 対象シーン: title_screen, character_select, map_screen, combat_screen,
-  shop_screen, event_screen, rest_screen, result_screen, game_over_screen
+既存UIへの影響調査結果:
 
-### 6.2 エディターレイアウト (1920x1080基準)
+| シーン | レイアウト方式 | 影響 |
+|---|---|---|
+| title_screen | CENTER アンカー | 自動追従、**修正不要** |
+| character_select | 要確認 | 要確認 |
+| combat_screen | offset固定 (EnemyArea=1060, PlayerHUD=350) | **要修正** |
+| map_screen | offset固定 (MapScroll=1080) | **要修正** |
+| event_screen | CENTER_TOP アンカー | 自動追従、**修正不要** |
+| shop_screen | CENTER_TOP アンカー | 自動追従、**修正不要** |
+| rest_screen | 要確認 | 要確認 |
+| game_over | 要確認 | 要確認 |
+
+主な修正対象:
+- `combat_screen.tscn`: EnemyArea の offset_right を画面幅追従に変更
+- `map_screen.tscn`: MapScroll の offset_right をアンカーベースに変更
+
+### 6.2 エディターレイアウト
+
+エディターは**ビューポートサイズに依存しない**レイアウトとする。
+アンカーとマージンを使い、1080x600でも1920x1080でも動作する。
+
+左パネル: 画面幅の30%（最小250px、最大400px）
+右パネル: 残り幅
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -372,39 +412,53 @@ project.godot:
 
 ## 8. 実装順序
 
-### Phase 1: 基盤
+### Phase 0: ビューポート変更（独立タスク — エディターと別ブランチ推奨）
 
-1. ビューポートサイズ変更 (1920x1080)
-2. 既存UIのレイアウト確認・調整
-3. `DebugEditorManager` Autoload作成（F12トグル、ポーズ制御）
-4. `ResourceEditorOverlay` シーン・基本レイアウト作成
+1. `project.godot` のビューポートサイズを 1920x1080 に変更
+2. `combat_screen.tscn` のレイアウト修正（offset固定 → アンカーベース）
+3. `map_screen.tscn` のレイアウト修正（MapScroll, HUD）
+4. その他画面の確認・調整（character_select, rest_screen, game_over）
+5. 全画面の動作確認
+
+※ Phase 0 はエディターの前提条件ではない。エディターは現行1080x600でも動作する。
+
+### Phase 1: 基盤（MVP最小構成）
+
+1. `DebugEditorManager` Autoload作成（F12トグル、ポーズ制御、未保存チェック付き閉じる）
+2. `ResourceEditorOverlay` シーン・基本レイアウト作成（アンカーベース、解像度非依存）
 
 ### Phase 2: リソースブラウザ
 
-5. `resources/` 以下のディレクトリスキャン → Treeノード生成
-6. フォルダ展開/折りたたみ
-7. .tres ファイル選択 → シグナル発火
-8. 検索フィルタ
+3. `resources/` 以下のディレクトリスキャン → Treeノード生成
+4. フォルダ展開/折りたたみ
+5. .tres ファイル選択 → シグナル発火
+6. 検索フィルタ（ファイル名 + id + display_name）
 
 ### Phase 3: プロパティエディター
 
-9. `get_property_list()` によるプロパティ検出・フィルタリング
-10. 基本ウィジェット生成（int, String, bool, enum）
-11. 配列ウィジェット（Array[Enum]）
-12. Texture2Dウィジェット（プレビュー + FileDialog）
-13. Dictionaryウィジェット
-14. サブリソースウィジェット（EventChoiceData等）
+7. `get_property_list()` によるプロパティ検出・フィルタリング
+8. 基本ウィジェット生成（int, float, String, StringName, bool, enum）
+9. 配列ウィジェット（Array[Enum]）
+10. Dictionaryウィジェット（既存エントリ: typeof()で型検出、新規: 型選択ドロップダウン）
+11. Texture2Dウィジェット（プレビュー + FileDialog）
+12. サブリソースウィジェット（EventChoiceData等）
 
-### Phase 4: CRUD・保存
+### Phase 4: 保存・CRUD
 
-15. 保存機能（バリデーション + 確認ダイアログ + ResourceSaver）
-16. 新規作成（タイプ選択 + ファイルパス入力）
-17. 複製機能
-18. 削除機能（確認ダイアログ付き）
+13. 保存機能（バリデーション + 確認ダイアログ + ResourceSaver）
+14. 未保存マーク（`*`）・ステータスバー
+15. 新規作成（タイプ選択 + ファイルパス入力）
+16. 複製機能（duplicate(true) → EventData等のサブリソース複製テスト必須）
+17. 削除機能（確認ダイアログ付き）
 
-### Phase 5: ホットリロード・仕上げ
+### Phase 5: ホットリロード
 
-19. Database系Autoloadのリロード処理
-20. タイトル画面へのエディターボタン追加
-21. 未保存マーク・ステータスバー
+18. Database系Autoloadのリロード処理
+19. 戦闘中保存時の警告トースト
+20. リロード完了シグナル発行
+
+### Phase 6: 仕上げ・追加機能
+
+21. タイトル画面へのエディターボタン追加
 22. エッジケース対応・テスト
+23. （将来）Undo/Redo（GodotのUndoRedoクラスを利用）
