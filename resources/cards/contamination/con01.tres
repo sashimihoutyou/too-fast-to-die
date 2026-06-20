@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"con01"
+display_name = "放射線被曝"
+description = "ドロー時AP-1。使用不可"
+tags = []
+is_unplayable = true

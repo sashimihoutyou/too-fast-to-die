@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"deco_med"
+display_name = "聖水タンク"
+slot = 4
+rarity = 0
+stats = {}
+special_effect = "医薬品所持上限+1（4個）"

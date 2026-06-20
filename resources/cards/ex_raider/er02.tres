@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"er02"
+display_name = "戦場の本能"
+description = "5ブロック+ヒート+5"
+ap_cost = 1
+tags = [5]
+restriction = 2
+is_starter = true
+base_block = 5
+upgraded_block = 8
+status_effect = &"heat"
+status_stacks = 5

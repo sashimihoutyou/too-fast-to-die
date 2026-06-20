@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co02"
+display_name = "闘気呼法"
+description = "6ブロック"
+ap_cost = 1
+tags = [3, 5]
+restriction = 5
+is_starter = true
+base_block = 6
+upgraded_block = 9

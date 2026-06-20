@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"frm_mod"
+display_name = "モジュラーフレーム"
+slot = 2
+rarity = 1
+stats = { "max_durability": 20, "collision_reduction": -3 }
+special_effect = "装飾スロット+1"

@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "指導者派を支持"
+requirement = ""
+result_text = "秩序は保たれた。だが反乱派の目には復讐の火が灯っている。"
+fuel_change = 5
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "反乱派を支持"
+requirement = ""
+result_text = "古い支配が終わり、新しい混乱が始まった。"
+karma_change = -2
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "不干渉"
+requirement = ""
+result_text = "他人の揉め事に首を突っ込む余裕はない。"
+
+[resource]
+script = ExtResource("1")
+id = &"divided_village"
+title = "分裂する村"
+body_text = "指導者派と反乱派が対立している。どちらかに加担するか、無視するか。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

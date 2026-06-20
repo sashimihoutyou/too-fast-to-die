@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"deviluf_leader"
+display_name = "デビルフの群れリーダー"
+category = 1
+base_hp = 65
+act = 1
+is_elite = true

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wa03"
+display_name = "デッドアイ"
+description = "14ダメ。捨札から1枚をデッキトップへ"
+ap_cost = 2
+tags = [5]
+restriction = 3
+base_damage = 14
+upgraded_damage = 21

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"con04"
+display_name = "死の灰"
+description = "ドロー時AP-1、全敵+2ブロック。使用不可"
+tags = []
+is_unplayable = true

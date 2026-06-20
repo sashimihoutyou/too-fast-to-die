@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co10"
+display_name = "一撃必殺"
+description = "12ダメ、闘気+15。80%以上で3倍ダメージ"
+ap_cost = 2
+tags = [0, 5]
+rarity = 2
+restriction = 5
+base_damage = 12
+upgraded_damage = 18
+status_effect = &"aura"
+status_stacks = 15

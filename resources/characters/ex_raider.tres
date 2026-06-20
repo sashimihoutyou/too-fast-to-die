@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ex_raider"
+display_name = "元レイダー（ヴェスパ）"
+max_hp = 70
+starter_deck_ids = [&"st_ve01", &"st_ve01", &"st_ve01", &"st_ve02", &"st_ve02", &"defend", &"defend", &"defend", &"er01", &"er02"]
+unique_system = &"heat"
+unlock_condition = "累積走行距離100km"

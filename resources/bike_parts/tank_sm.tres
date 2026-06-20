@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tank_sm"
+display_name = "小型タンク"
+slot = 3
+rarity = 0
+stats = { "capacity": 25 }
+special_effect = "ラン開始時燃料+5"

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"runaway_killer_robot"
+display_name = "暴走キラーロボット"
+category = 2
+base_hp = 200
+act = 2
+is_boss = true

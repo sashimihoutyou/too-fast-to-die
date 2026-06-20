@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co08"
+display_name = "闘気開放"
+description = "闘気50%以上: 闘気÷2の全体ダメ。闘気リセット"
+tags = [5]
+rarity = 1
+restriction = 5
+is_aoe = true

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co09"
+display_name = "不動の構え"
+description = "6ブロック、闘気+10。50%以上で+4ブロック"
+ap_cost = 1
+tags = [3, 5]
+restriction = 5
+is_starter = true
+base_block = 6
+upgraded_block = 9
+status_effect = &"aura"
+status_stacks = 10

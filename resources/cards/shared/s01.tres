@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"s01"
+display_name = "アドレナリン"
+description = "2枚ドロー"
+ap_cost = 1
+tags = [4]
+rarity = 1
+draw_count = 2

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"d06"
+display_name = "鉄壁"
+description = "30ブロック"
+ap_cost = 3
+tags = [3]
+rarity = 2
+base_block = 30
+upgraded_block = 45

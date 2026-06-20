@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "試練を受ける"
+requirement = ""
+result_text = "試練を超えた者には敬意が払われる。"
+triggers_combat = true
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "燃料8で通行料を払う"
+requirement = "fuel>=8"
+result_text = "金で道を買った。門番の目に侮蔑が浮かぶ。"
+fuel_change = -8
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "引き返す"
+requirement = ""
+result_text = "別ルートへ迂回する。"
+fuel_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"lacedaemon_trial"
+title = "戦士の試練"
+body_text = "ラケダイモーンの門番が通行を許可する代わりに「試練」を課す。"
+required_act = 4
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

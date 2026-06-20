@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "戦う"
+requirement = ""
+result_text = "追手を撃退した。だが、目撃者がいたかもしれない。"
+triggers_combat = true
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "逃走する"
+requirement = "fuel>=3"
+result_text = "燃料を消費して振り切った。"
+fuel_change = -3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "変装アイテムを使用"
+requirement = "item==disguise"
+result_text = "変装で追手をやり過ごした。"
+
+[resource]
+script = ExtResource("1")
+id = &"ex_raider_pursuer"
+title = "コカトリスの追手"
+body_text = "コカトリスの斥候が追いついてきた。"
+required_character = &"ex_raider"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

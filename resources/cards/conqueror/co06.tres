@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co06"
+display_name = "地割れ"
+description = "20ダメ、脆弱2付与、闘気+25"
+ap_cost = 3
+tags = [0, 5]
+rarity = 1
+restriction = 5
+base_damage = 20
+upgraded_damage = 30
+status_effect = &"aura"
+status_stacks = 25

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cu09"
+display_name = "永遠のハイウェイ"
+description = "15ダメージ×3回"
+ap_cost = 3
+fuel_cost = 3
+tags = [5]
+rarity = 2
+restriction = 1
+base_damage = 15
+hit_count = 3
+upgraded_damage = 22

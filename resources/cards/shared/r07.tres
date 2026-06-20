@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"r07"
+display_name = "フラググレネード"
+description = "全体10ダメージ"
+ap_cost = 2
+tags = [1]
+rarity = 2
+excluded_characters = [5]
+base_damage = 10
+is_aoe = true
+upgraded_damage = 15

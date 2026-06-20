@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"refugee"
+display_name = "避難民の母子"
+companion_type = 4
+duration_nodes = 5
+passive_description = ""
+risk_description = "死亡時カルマ-10"
+departure_reward_description = "カルマ+15"

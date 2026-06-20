@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"s05"
+display_name = "奮起"
+description = "+1AP、1ドロー。消耗"
+ap_cost = 1
+tags = [4]
+rarity = 2
+is_exhaustible = true
+draw_count = 1
+bonus_ap = 1

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"d04"
+display_name = "フォーティファイ"
+description = "10ブロック（ターン終了時持続）"
+ap_cost = 2
+tags = [3]
+rarity = 1
+base_block = 10
+upgraded_block = 15

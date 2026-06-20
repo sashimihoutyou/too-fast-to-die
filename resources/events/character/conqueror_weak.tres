@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "助ける"
+requirement = ""
+result_text = "連中を蹴散らした。旅人は涙を流して感謝した。"
+karma_change = 10
+triggers_combat = true
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "見捨てる"
+requirement = ""
+result_text = "…背を向ける。足が、少しだけ重い。"
+
+[resource]
+script = ExtResource("1")
+id = &"conqueror_weak"
+title = "道中の弱者"
+body_text = "武装した連中が旅人を囲んでいる。介入するか。"
+required_character = &"conqueror"
+choices = [SubResource("choice_1"), SubResource("choice_2")]

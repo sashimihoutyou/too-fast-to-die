@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"r01"
+display_name = "ピストルショット"
+description = "6ダメージ"
+ap_cost = 1
+tags = [1]
+excluded_characters = [5]
+base_damage = 6
+upgraded_damage = 9

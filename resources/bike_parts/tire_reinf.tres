@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tire_reinf"
+display_name = "強化タイヤ"
+slot = 1
+rarity = 1
+stats = { "fuel_efficiency": 0, "terrain_penalty_reduction": -30 }
+special_effect = "バイク耐久+2"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cu01"
+display_name = "フルスロットル"
+description = "このターンの全カードAPコスト半減（端数切上）。自分に5ダメ+毒1"
+fuel_cost = 3
+tags = [5]
+restriction = 1
+is_starter = true
+self_damage = 5
+halves_ap_this_turn = true

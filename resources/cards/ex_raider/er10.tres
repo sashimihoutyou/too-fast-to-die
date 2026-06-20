@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"er10"
+display_name = "怒りの咆哮"
+description = "ヒート+20。全敵の次攻撃力-2"
+tags = [5]
+rarity = 1
+restriction = 2
+status_effect = &"heat"
+status_stacks = 20
