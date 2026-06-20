@@ -224,10 +224,10 @@ func _on_enemy_target(idx: int) -> void:
 	_show_target_buttons(false)
 	_after_card_play()
 
-func _show_target_buttons(show: bool) -> void:
+func _show_target_buttons(visible_flag: bool) -> void:
 	for i in target_buttons.size():
 		if i < CombatManager.enemies.size():
-			target_buttons[i].visible = show and CombatManager.enemies[i]["alive"]
+			target_buttons[i].visible = visible_flag and CombatManager.enemies[i]["alive"]
 
 func _after_card_play() -> void:
 	_update_hand()
