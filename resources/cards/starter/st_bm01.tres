@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_bm01"
+display_name = "爆竹"
+description = "ダメージなし。50%で敵全体を1ターンスタン。消耗 → 強化: 3ブロック追加"
+ap_cost = 1
+tags = [4]
+restriction = 4
+is_starter = true
+is_exhaustible = true
+upgraded_block = 3

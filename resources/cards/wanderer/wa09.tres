@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wa09"
+display_name = "ワンマンアーミー"
+description = "同行者なし: 全攻撃+4"
+ap_cost = 2
+tags = [5]
+rarity = 2
+restriction = 3

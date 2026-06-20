@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"tire_off"
+display_name = "オフロードタイヤ"
+slot = 1
+rarity = 0
+stats = { "fuel_efficiency": 0, "terrain_penalty_reduction": -20 }
+special_effect = ""

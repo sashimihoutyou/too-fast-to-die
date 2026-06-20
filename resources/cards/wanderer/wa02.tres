@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wa02"
+display_name = "孤狼の勘"
+description = "2ドロー。同行者なし: 3ドロー"
+ap_cost = 1
+tags = [5]
+restriction = 3
+is_starter = true
+draw_count = 2

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co01"
+display_name = "鉄拳"
+description = "8ダメ、闘気+10"
+ap_cost = 1
+tags = [0, 5]
+restriction = 5
+is_starter = true
+base_damage = 8
+upgraded_damage = 12
+status_effect = &"aura"
+status_stacks = 10

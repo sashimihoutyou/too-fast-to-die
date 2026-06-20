@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cu02"
+display_name = "加速の祈り"
+description = "3ブロック+1ドロー"
+ap_cost = 1
+tags = [5]
+restriction = 1
+is_starter = true
+base_block = 3
+draw_count = 1
+upgraded_block = 5

@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "保全派の依頼: 技術を回収"
+requirement = ""
+result_text = "データディスクを渡すと、エージェントは静かに消えた。"
+fuel_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "活用派の依頼: 技術を集落に届ける"
+requirement = ""
+result_text = "集落の技術者が目を輝かせた。人が一人でも多く救われる。"
+fuel_change = 3
+karma_change = 8
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "技術を自分のものにする"
+requirement = ""
+result_text = "知識は力だ。他人に渡す義理はない。"
+karma_change = -5
+
+[resource]
+script = ExtResource("1")
+id = &"noosphere_choice"
+title = "知識の選択"
+body_text = "ノウアスフィアの二人のエージェントが現れた。一人は技術の回収を、もう一人は技術の集落への提供を依頼してくる。"
+required_act = 5
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

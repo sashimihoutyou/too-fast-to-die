@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"d07"
+display_name = "タクティカルリトリート"
+description = "6ブロック+1ドロー"
+ap_cost = 1
+tags = [3]
+rarity = 1
+base_block = 6
+draw_count = 1
+upgraded_block = 9

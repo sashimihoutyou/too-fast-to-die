@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bm02"
+display_name = "獣の号令"
+description = "場の全獣が即座に攻撃"
+tags = [5]
+restriction = 4
+is_starter = true
+upgraded_block = 3

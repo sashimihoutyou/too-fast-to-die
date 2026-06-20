@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "事情を話す"
+requirement = ""
+result_text = "彼女は涙を流した。しばらくして、一緒に旅をさせてほしいと言った。"
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "何も言わず立ち去る"
+requirement = ""
+result_text = "振り返らずに歩き出した。背後で呼び止める声がしたが、無視した。"
+
+[resource]
+script = ExtResource("1")
+id = &"conqueror_sister"
+title = "旅人の妹"
+body_text = "若い女性が兄を探していると声をかけてくる。首飾りを見て動揺する。"
+required_character = &"conqueror"
+required_act = 2
+choices = [SubResource("choice_1"), SubResource("choice_2")]

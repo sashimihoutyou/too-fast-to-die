@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BikePartData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/bike_part_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"deco_skull"
+display_name = "ドクロの飾り"
+slot = 4
+rarity = 0
+stats = {}
+special_effect = "20%の確率で弱敵が戦闘前に逃走"

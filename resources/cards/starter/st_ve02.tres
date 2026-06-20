@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_ve02"
+display_name = "即席グレネード"
+description = "全体6ダメージ、ヒート+10 → 強化: 全体9ダメージ"
+ap_cost = 2
+tags = [1]
+restriction = 2
+is_starter = true
+base_damage = 6
+is_aoe = true
+upgraded_damage = 9
+status_effect = &"heat"
+status_stacks = 10

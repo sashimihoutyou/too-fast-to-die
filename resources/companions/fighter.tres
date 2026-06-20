@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fighter"
+display_name = "傭兵ジャック"
+companion_type = 0
+duration_nodes = 4
+passive_description = "毎ターン敵全体1ダメ"
+risk_description = ""
+departure_reward_description = "アンコモンカード"

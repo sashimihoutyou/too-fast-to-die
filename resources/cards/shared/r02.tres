@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"r02"
+display_name = "ショットガンブラスト"
+description = "全体4ダメージ"
+ap_cost = 2
+tags = [1]
+excluded_characters = [5]
+base_damage = 4
+is_aoe = true
+upgraded_damage = 6

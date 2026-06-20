@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_at01"
+display_name = "部族の槍"
+description = "6ダメージ → 強化: 9"
+ap_cost = 1
+tags = [0]
+restriction = 1
+is_starter = true
+base_damage = 6
+upgraded_damage = 9

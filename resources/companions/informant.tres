@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"informant"
+display_name = "情報屋モーガン"
+companion_type = 3
+duration_nodes = 3
+passive_description = ""
+risk_description = ""
+departure_reward_description = "次の情報ノードで信頼度+1段階"

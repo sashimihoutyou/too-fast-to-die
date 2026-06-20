@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "補給を受ける"
+requirement = ""
+result_text = "同胞の残した物資を頂く。"
+fuel_change = 3
+medicine_change = 1
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "物資を残していく"
+requirement = "fuel>=3"
+result_text = "後に続く者のために。"
+fuel_change = -3
+karma_change = 5
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "立ち去る"
+requirement = ""
+result_text = "礼拝所を静かに後にした。"
+
+[resource]
+script = ExtResource("1")
+id = &"cultist_pitstop"
+title = "ピットイン発見"
+body_text = "V8カルトの隠し紋章を見つけた。壁の奥に小さな礼拝所がある。"
+required_character = &"cultist"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

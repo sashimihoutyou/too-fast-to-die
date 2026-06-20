@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"r05"
+display_name = "モロトフカクテル"
+description = "8ダメージ+炎上3"
+ap_cost = 2
+fuel_cost = 1
+tags = [1]
+rarity = 1
+excluded_characters = [5]
+base_damage = 8
+upgraded_damage = 12
+status_effect = &"burn"
+status_stacks = 3

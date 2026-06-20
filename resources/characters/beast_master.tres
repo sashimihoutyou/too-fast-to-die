@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"beast_master"
+display_name = "調教師（ミーシャ）"
+max_hp = 55
+starter_deck_ids = [&"bm01", &"bm01", &"bm01", &"st_bm01", &"st_bm01", &"defend", &"defend", &"defend", &"bm02", &"bm02"]
+unique_system = &"beast"
+unlock_condition = "累積走行距離200km"
+can_use_heavy_weapons = false

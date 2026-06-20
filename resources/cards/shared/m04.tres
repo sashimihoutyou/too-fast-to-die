@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"m04"
+display_name = "バックスタブ"
+description = "16ダメージ（最初のターンなら+8）"
+ap_cost = 2
+tags = [0]
+rarity = 1
+base_damage = 16
+upgraded_damage = 24

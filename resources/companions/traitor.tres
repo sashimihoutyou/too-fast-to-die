@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"traitor"
+display_name = "旅人ヴィクター"
+companion_type = 5
+duration_nodes = 4
+passive_description = "毎ターン1ドロー"
+risk_description = "3ノード目にリソース窃盗+逃亡"
+departure_reward_description = ""

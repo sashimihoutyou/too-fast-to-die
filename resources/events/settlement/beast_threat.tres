@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "討伐する"
+requirement = ""
+result_text = "獣を仕留めた。集落に安堵の空気が広がる。"
+fuel_change = 6
+karma_change = 5
+triggers_combat = true
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "獣を手懐ける"
+requirement = "character==beast_master"
+result_text = "獣は静かに従った。住民はあなたを畏怖と感謝の混じった目で見つめている。"
+karma_change = 8
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "見捨てる"
+requirement = ""
+result_text = "獣の咆哮が遠ざかるまで走り続けた。"
+
+[resource]
+script = ExtResource("1")
+id = &"beast_threat"
+title = "獣の影"
+body_text = "集落を変異生物が脅かしている。住民は怯えている。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

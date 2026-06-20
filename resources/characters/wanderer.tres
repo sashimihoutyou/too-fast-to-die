@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wanderer"
+display_name = "放浪者（ウェス）"
+max_hp = 60
+starter_deck_ids = [&"st_we01", &"st_we01", &"st_we01", &"st_we02", &"st_we02", &"defend", &"defend", &"defend", &"wa01", &"wa02"]
+unique_system = &"lone_wolf"
+unlock_condition = "累積走行距離100km"
+deck_limit = 25

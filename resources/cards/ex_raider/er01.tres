@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"er01"
+display_name = "ランページ"
+description = "ヒート÷3のダメージ（100%時≒33）"
+ap_cost = 2
+tags = [5]
+restriction = 2
+is_starter = true

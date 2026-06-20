@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"er06"
+display_name = "バーサーカースラッシュ"
+description = "8ダメ、ヒート+10。50%以上で+5"
+ap_cost = 1
+tags = [5]
+restriction = 2
+base_damage = 8
+upgraded_damage = 12
+status_effect = &"heat"
+status_stacks = 10

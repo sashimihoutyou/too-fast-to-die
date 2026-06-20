@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_we02"
+display_name = "サバイバルナイフ"
+description = "5ダメージ。デッキ15枚以下なら+2 → 強化: 8(+3)"
+ap_cost = 1
+tags = [0]
+restriction = 3
+is_starter = true
+base_damage = 5
+upgraded_damage = 8

@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "依頼を受ける"
+requirement = ""
+result_text = "報酬は約束通り。血の匂いがガソリンに混じる。"
+fuel_change = 10
+karma_change = -8
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "断って競合商人に警告する"
+requirement = ""
+result_text = "競合商人は感謝し、旅に使える品をくれた。名士の目が冷たくなった。"
+karma_change = 5
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "両方に情報を売る"
+requirement = ""
+result_text = "二人の争いは激化するだろう。あなたには関係ない。"
+fuel_change = 5
+karma_change = -3
+
+[resource]
+script = ExtResource("1")
+id = &"new_eden_merchant"
+title = "名士の取引"
+body_text = "ニューエデンの有力商人から密かに依頼がある。競合商人の荷を「事故に見せかけて」処理してほしい。"
+required_act = 1
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

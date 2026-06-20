@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"merchant"
+display_name = "行商人ルイ"
+companion_type = 2
+duration_nodes = 3
+passive_description = "次ショップで全品10%割引"
+risk_description = "移動ごとに燃料+1消費"
+departure_reward_description = "燃料8"

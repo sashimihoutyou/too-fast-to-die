@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"co07"
+display_name = "百裂拳"
+description = "闘気100%時: 1ダメ×100ヒット。闘気リセット"
+ap_cost = 3
+tags = [0, 5]
+rarity = 2
+restriction = 5
+base_damage = 1
+hit_count = 100

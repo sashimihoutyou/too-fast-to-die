@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"dog"
+display_name = "ダスト"
+companion_type = 6
+duration_nodes = -1
+passive_description = "夜間戦闘で先制1ターン"
+risk_description = ""
+departure_reward_description = ""

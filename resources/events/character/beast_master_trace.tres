@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "荷車を調べる"
+requirement = ""
+result_text = "残された記録から、チェインリンクの活動拠点が見えてきた。"
+scrap_change = 2
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "破壊する"
+requirement = ""
+result_text = "怒りのままに荷車を壊した。虎が呼応するように吠えた。"
+karma_change = -2
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "立ち去る"
+requirement = ""
+result_text = "過去に囚われている暇はない。先を急ぐ。"
+
+[resource]
+script = ExtResource("1")
+id = &"beast_master_trace"
+title = "奴隷商の痕跡"
+body_text = "チェインリンクのマークが刻まれた荷車を見つけた。記憶がフラッシュバックする。"
+required_character = &"beast_master"
+required_act = 2
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"alpha_deviluf"
+display_name = "アルファ・デビルフ"
+category = 1
+base_hp = 150
+act = 1
+is_boss = true

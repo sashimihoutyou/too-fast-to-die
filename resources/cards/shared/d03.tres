@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"d03"
+display_name = "回避ロール"
+description = "4ブロック+1ドロー"
+ap_cost = 1
+tags = [3]
+rarity = 1
+base_block = 4
+draw_count = 1
+upgraded_block = 7

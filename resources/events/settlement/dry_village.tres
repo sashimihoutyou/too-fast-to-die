@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "スクラップ3を使って修理を試みる"
+requirement = "scrap>=3"
+result_text = "浄水装置が再び動き始めた。村長が涙を流しながら東の噂を教えてくれた。"
+fuel_change = 4
+karma_change = 5
+scrap_change = -3
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "技術者の同行者がいれば修理"
+requirement = "companion==technician"
+result_text = "サラの手際は見事だった。住民が次々と安堵の表情を見せ、村長が詳しい地図を取り出した。"
+fuel_change = 6
+karma_change = 8
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "見捨てて立ち去る"
+requirement = ""
+result_text = "背後で子供の泣き声がした。振り返らなかった。"
+
+[sub_resource type="Resource" id="choice_4"]
+script = ExtResource("2")
+label = "水の在処を教える代わりに物資を要求する"
+requirement = ""
+result_text = "取引は成立した。彼らの目に光は戻らなかった。"
+fuel_change = 3
+karma_change = -3
+
+[resource]
+script = ExtResource("1")
+id = &"dry_village"
+title = "乾いた村"
+body_text = "浄水装置が故障した集落。住民は渇きに苦しんでいる。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3"), SubResource("choice_4")]
