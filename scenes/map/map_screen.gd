@@ -222,7 +222,7 @@ func _show_notification(text: String) -> void:
 	add_child(panel)
 
 func _draw_start_node() -> void:
-	var start_pos := Vector2(25, 260)
+	var start_pos := Vector2(25, 480)
 	var btn := Button.new()
 	btn.text = "▶"
 	btn.tooltip_text = "スタート"

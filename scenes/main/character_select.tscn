@@ -40,15 +40,16 @@ layout_mode = 1
 offset_left = 60.0
 offset_top = 120.0
 offset_right = 500.0
-offset_bottom = 500.0
+offset_bottom = 900.0
 theme_override_constants/separation = 10
 
 [node name="DescriptionLabel" type="Label" parent="."]
 layout_mode = 1
+anchor_right = 1.0
 offset_left = 540.0
 offset_top = 120.0
-offset_right = 1020.0
-offset_bottom = 400.0
+offset_right = -60.0
+offset_bottom = 800.0
 theme_override_colors/font_color = Color(0.8, 0.7, 0.5, 1)
 theme_override_font_sizes/font_size = 18
 text = "キャラクターを選択してください"
