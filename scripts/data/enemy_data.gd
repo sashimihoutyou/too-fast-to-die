@@ -10,3 +10,4 @@ enum Category { HUMAN, BEAST, MACHINE }
 @export var is_elite: bool = false
 @export var is_boss: bool = false
 @export var art: Texture2D
+@export var weaknesses: Array[CardData.Tag] = []

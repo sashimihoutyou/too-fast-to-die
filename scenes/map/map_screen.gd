@@ -128,24 +128,24 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]
 		MapGenerator.NodeType.COMBAT:
 			var roll := randf()
 			if roll < 0.4:
-				enemies.append(_make_enemy(&"devilwolf", "デビルフ", EnemyData.Category.BEAST, 28))
+				enemies.append(_make_enemy(&"devilwolf", "デビルフ", EnemyData.Category.BEAST, 28, false, false, [CardData.Tag.RANGED]))
 			elif roll < 0.7:
-				enemies.append(_make_enemy(&"bandit", "荒野の盗賊", EnemyData.Category.HUMAN, 35))
+				enemies.append(_make_enemy(&"bandit", "荒野の盗賊", EnemyData.Category.HUMAN, 35, false, false, [CardData.Tag.MELEE]))
 			else:
 				for i in 3:
-					enemies.append(_make_enemy(&"wild_dog", "野犬", EnemyData.Category.BEAST, 15))
+					enemies.append(_make_enemy(&"wild_dog", "野犬", EnemyData.Category.BEAST, 15, false, false, [CardData.Tag.MELEE]))
 		MapGenerator.NodeType.ELITE:
 			var roll := randf()
 			if roll < 0.5:
-				enemies.append(_make_enemy(&"devilwolf_leader", "デビルフの群れリーダー", EnemyData.Category.BEAST, 65, true))
+				enemies.append(_make_enemy(&"devilwolf_leader", "デビルフの群れリーダー", EnemyData.Category.BEAST, 65, true, false, [CardData.Tag.RANGED]))
 			else:
-				enemies.append(_make_enemy(&"rogue_rider", "ならず者ライダー", EnemyData.Category.HUMAN, 55, true))
+				enemies.append(_make_enemy(&"rogue_rider", "ならず者ライダー", EnemyData.Category.HUMAN, 55, true, false, [CardData.Tag.BIKE]))
 		MapGenerator.NodeType.BOSS:
-			var boss := _make_enemy(&"alpha_devilwolf", "アルファ・デビルフ", EnemyData.Category.BEAST, 150, false, true)
+			var boss := _make_enemy(&"alpha_devilwolf", "アルファ・デビルフ", EnemyData.Category.BEAST, 150, false, true, [CardData.Tag.RANGED])
 			enemies.append(boss)
 	return enemies
 
-func _make_enemy(id: StringName, display: String, cat: EnemyData.Category, hp: int, elite: bool = false, boss: bool = false) -> EnemyData:
+func _make_enemy(id: StringName, display: String, cat: EnemyData.Category, hp: int, elite: bool = false, boss: bool = false, weaknesses: Array[CardData.Tag] = []) -> EnemyData:
 	var e := EnemyData.new()
 	e.id = id
 	e.display_name = display
@@ -154,6 +154,7 @@ func _make_enemy(id: StringName, display: String, cat: EnemyData.Category, hp: i
 	e.is_elite = elite
 	e.is_boss = boss
 	e.act = GameManager.current_act
+	e.weaknesses.assign(weaknesses)
 	return e
 
 func _enter_event() -> void:

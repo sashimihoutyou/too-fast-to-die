@@ -147,23 +147,34 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
-					_damage_enemy(i, dmg * card.hit_count)
+					_damage_enemy(i, dmg * card.hit_count, card.tags)
 		else:
 			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 				for h in card.hit_count:
 					if enemies[target_idx]["alive"]:
-						_damage_enemy(target_idx, dmg)
+						_damage_enemy(target_idx, dmg, card.tags)
 
 	if card.status_effect != &"" and target_idx >= 0:
 		pass
 
-func _damage_enemy(idx: int, amount: int) -> void:
+func is_weak_against(idx: int, tags: Array[CardData.Tag]) -> bool:
+	if idx < 0 or idx >= enemies.size():
+		return false
+	var data: EnemyData = enemies[idx]["data"]
+	for tag in tags:
+		if tag in data.weaknesses:
+			return true
+	return false
+
+func _damage_enemy(idx: int, amount: int, source_tags: Array[CardData.Tag] = []) -> void:
 	if idx < 0 or idx >= enemies.size():
 		return
 	var enemy := enemies[idx]
 	if not enemy["alive"]:
 		return
 	var remaining := amount
+	if is_weak_against(idx, source_tags):
+		remaining = int(remaining * 1.5)
 	if enemy["block"] > 0:
 		if enemy["block"] >= remaining:
 			enemy["block"] -= remaining

@@ -90,6 +90,14 @@ func _build_enemy_display() -> void:
 		hp_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 		vbox.add_child(hp_label)
 
+		if not data.weaknesses.is_empty():
+			var weakness_label := Label.new()
+			weakness_label.text = "弱点: %s" % _tags_to_text(data.weaknesses)
+			weakness_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			weakness_label.add_theme_font_size_override("font_size", 12)
+			weakness_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+			vbox.add_child(weakness_label)
+
 		var block_label := Label.new()
 		block_label.name = "BlockLabel"
 		block_label.text = ""
@@ -131,6 +139,28 @@ func _update_hand() -> void:
 		$HandArea.add_child(btn)
 		card_buttons.append(btn)
 
+func _tag_name(tag: CardData.Tag) -> String:
+	match tag:
+		CardData.Tag.MELEE: return "近接"
+		CardData.Tag.RANGED: return "射撃"
+		CardData.Tag.BIKE: return "バイク"
+		CardData.Tag.DEFENSE: return "防御"
+		CardData.Tag.SKILL: return "スキル"
+		CardData.Tag.CHARACTER: return "固有"
+	return ""
+
+func _tags_to_bracket_text(tags: Array[CardData.Tag]) -> String:
+	var text := ""
+	for tag in tags:
+		text += "[%s]" % _tag_name(tag)
+	return text
+
+func _tags_to_text(tags: Array[CardData.Tag]) -> String:
+	var names: Array[String] = []
+	for tag in tags:
+		names.append(_tag_name(tag))
+	return "・".join(names)
+
 func _create_card_button(card: CardData) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(140, 190)
@@ -143,15 +173,7 @@ func _create_card_button(card: CardData) -> Button:
 	if card.fuel_cost > 0:
 		cost_text += "+%d燃" % card.fuel_cost
 
-	var tag_text := ""
-	for tag in card.tags:
-		match tag:
-			CardData.Tag.MELEE: tag_text += "[近接]"
-			CardData.Tag.RANGED: tag_text += "[射撃]"
-			CardData.Tag.BIKE: tag_text += "[バイク]"
-			CardData.Tag.DEFENSE: tag_text += "[防御]"
-			CardData.Tag.SKILL: tag_text += "[スキル]"
-			CardData.Tag.CHARACTER: tag_text += "[固有]"
+	var tag_text := _tags_to_bracket_text(card.tags)
 
 	btn.text = "%s\n%s\n%s\n%s" % [cost_text, card.display_name, tag_text, card.description]
 	btn.disabled = not can_play or card.is_unplayable
