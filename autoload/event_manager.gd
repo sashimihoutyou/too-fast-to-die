@@ -23,6 +23,14 @@ func get_available_events(character_id: StringName, karma: int, act: int) -> Arr
 		available.append(event)
 	return available
 
+func reload() -> void:
+	_events.clear()
+	_load_events_from_directory("res://resources/events/settlement")
+	_load_events_from_directory("res://resources/events/faction")
+	_load_events_from_directory("res://resources/events/character")
+	_load_events_from_directory("res://resources/events/travel")
+
+
 func _load_events_from_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:

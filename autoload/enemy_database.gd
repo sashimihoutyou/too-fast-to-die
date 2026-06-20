@@ -29,6 +29,12 @@ func get_boss_for_act(act: int) -> EnemyData:
 			return enemy
 	return null
 
+func reload() -> void:
+	_enemies.clear()
+	for act_num: int in range(1, 6):
+		_load_enemies_from_directory("res://resources/enemies/act%d" % act_num)
+
+
 func _load_enemies_from_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
