@@ -26,6 +26,7 @@ func start_run(character: CharacterData) -> void:
 	ResourceManager.reset()
 	DeckManager.build_starter_deck(character)
 	KarmaManager.reset()
+	CombatManager.reset_player_for_new_run()
 	run_started.emit(character)
 	change_state(GameState.MAP)
 

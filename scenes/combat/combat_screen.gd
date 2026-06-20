@@ -8,7 +8,6 @@ var block_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
-var reward_cards: Array[CardData] = []
 
 func _ready() -> void:
 	_setup_signals()
@@ -91,6 +90,14 @@ func _build_enemy_display() -> void:
 		hp_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 		vbox.add_child(hp_label)
 
+		if not data.weaknesses.is_empty():
+			var weakness_label := Label.new()
+			weakness_label.text = "弱点: %s" % _tags_to_text(data.weaknesses)
+			weakness_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			weakness_label.add_theme_font_size_override("font_size", 12)
+			weakness_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+			vbox.add_child(weakness_label)
+
 		var block_label := Label.new()
 		block_label.name = "BlockLabel"
 		block_label.text = ""
@@ -132,24 +139,41 @@ func _update_hand() -> void:
 		$HandArea.add_child(btn)
 		card_buttons.append(btn)
 
+func _tag_name(tag: CardData.Tag) -> String:
+	match tag:
+		CardData.Tag.MELEE: return "近接"
+		CardData.Tag.RANGED: return "射撃"
+		CardData.Tag.BIKE: return "バイク"
+		CardData.Tag.DEFENSE: return "防御"
+		CardData.Tag.SKILL: return "スキル"
+		CardData.Tag.CHARACTER: return "固有"
+	return ""
+
+func _tags_to_bracket_text(tags: Array[CardData.Tag]) -> String:
+	var text := ""
+	for tag in tags:
+		text += "[%s]" % _tag_name(tag)
+	return text
+
+func _tags_to_text(tags: Array[CardData.Tag]) -> String:
+	var names: Array[String] = []
+	for tag in tags:
+		names.append(_tag_name(tag))
+	return "・".join(names)
+
 func _create_card_button(card: CardData) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(140, 190)
 
 	var can_play := CombatManager.can_play_card(card)
-	var cost_text := "%dAP" % card.ap_cost
+	var effective_cost := CombatManager.get_effective_ap_cost(card)
+	var cost_text := "%dAP" % effective_cost
+	if effective_cost != card.ap_cost:
+		cost_text = "%dAP(半額)" % effective_cost
 	if card.fuel_cost > 0:
 		cost_text += "+%d燃" % card.fuel_cost
 
-	var tag_text := ""
-	for tag in card.tags:
-		match tag:
-			CardData.Tag.MELEE: tag_text += "[近接]"
-			CardData.Tag.RANGED: tag_text += "[射撃]"
-			CardData.Tag.BIKE: tag_text += "[バイク]"
-			CardData.Tag.DEFENSE: tag_text += "[防御]"
-			CardData.Tag.SKILL: tag_text += "[スキル]"
-			CardData.Tag.CHARACTER: tag_text += "[固有]"
+	var tag_text := _tags_to_bracket_text(card.tags)
 
 	btn.text = "%s\n%s\n%s\n%s" % [cost_text, card.display_name, tag_text, card.description]
 	btn.disabled = not can_play or card.is_unplayable
@@ -334,38 +358,35 @@ func _show_reward_screen(rewards: Array) -> void:
 	title_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
 	vbox.add_child(title_label)
 
-	for reward: Dictionary in rewards:
-		var type: String = reward.get("type", "")
-		var amount: int = reward.get("amount", 0)
-		match type:
-			"fuel":
-				ResourceManager.add_fuel(amount)
-				var label := Label.new()
-				label.text = "燃料 +%d" % amount
-				label.add_theme_font_size_override("font_size", 18)
-				label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-				vbox.add_child(label)
-
 	var card_label := Label.new()
-	card_label.text = "カードを1枚選択（スキップ可）:"
+	card_label.text = "報酬を1つ選択（スキップ可）:"
 	card_label.add_theme_font_size_override("font_size", 16)
 	card_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(card_label)
 
-	var card_hbox := HBoxContainer.new()
-	card_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	card_hbox.add_theme_constant_override("separation", 10)
+	var choice_hbox := HBoxContainer.new()
+	choice_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	choice_hbox.add_theme_constant_override("separation", 10)
 
 	var pool := CardDatabase.get_reward_pool(GameManager.current_act, GameManager.current_character.id)
 	pool.shuffle()
-	reward_cards.clear()
-	for i in mini(3, pool.size()):
-		reward_cards.append(pool[i])
-		var btn := _create_card_button(pool[i])
-		btn.disabled = false
-		btn.pressed.connect(_on_reward_card_picked.bind(i))
-		card_hbox.add_child(btn)
-	vbox.add_child(card_hbox)
+	var pool_idx := 0
+	for reward: Dictionary in rewards:
+		match reward.get("type", "card"):
+			"fuel":
+				var amount: int = reward.get("amount", 0)
+				var fuel_btn := _create_fuel_reward_button(amount)
+				fuel_btn.pressed.connect(_on_reward_fuel_picked.bind(amount))
+				choice_hbox.add_child(fuel_btn)
+			_:
+				if pool_idx < pool.size():
+					var card: CardData = pool[pool_idx]
+					pool_idx += 1
+					var btn := _create_card_button(card)
+					btn.disabled = false
+					btn.pressed.connect(_on_reward_card_picked.bind(card))
+					choice_hbox.add_child(btn)
+	vbox.add_child(choice_hbox)
 
 	var skip_btn := Button.new()
 	skip_btn.text = "スキップ"
@@ -379,9 +400,31 @@ func _show_reward_screen(rewards: Array) -> void:
 	add_child(reward_panel)
 	awaiting_reward = true
 
-func _on_reward_card_picked(idx: int) -> void:
-	if idx < reward_cards.size():
-		DeckManager.add_card_to_deck(reward_cards[idx])
+func _create_fuel_reward_button(amount: int) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(140, 190)
+	btn.text = "燃料\n+%d" % amount
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.25, 0.15, 0.9)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	style.border_color = Color(0.3, 0.6, 0.4)
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_font_size_override("font_size", 16)
+	return btn
+
+func _on_reward_fuel_picked(amount: int) -> void:
+	ResourceManager.add_fuel(amount)
+	_return_to_map()
+
+func _on_reward_card_picked(card: CardData) -> void:
+	DeckManager.add_card_to_deck(card)
 	_return_to_map()
 
 func _return_to_map() -> void:
