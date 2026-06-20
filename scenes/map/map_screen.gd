@@ -24,6 +24,8 @@ func _draw_map() -> void:
 	lines_node.set_anchors_preset(Control.PRESET_FULL_RECT)
 	$MapScroll/MapContainer.add_child(lines_node)
 
+	_draw_start_node()
+
 	for node: Dictionary in map_nodes:
 		var btn := Button.new()
 		var node_type: MapGenerator.NodeType = node["type"]
@@ -37,21 +39,30 @@ func _draw_map() -> void:
 		style.corner_radius_top_right = 8
 		style.corner_radius_bottom_left = 8
 		style.corner_radius_bottom_right = 8
-		btn.add_theme_stylebox_override("normal", style)
-		var hover_style := style.duplicate()
-		hover_style.bg_color = style.bg_color.lightened(0.2)
-		btn.add_theme_stylebox_override("hover", hover_style)
-		var pressed_style := style.duplicate()
-		pressed_style.bg_color = style.bg_color.darkened(0.2)
-		btn.add_theme_stylebox_override("pressed", pressed_style)
-		btn.add_theme_font_size_override("font_size", 22)
 
 		var nid := _node_id(node)
+		var is_current := (nid == GameManager.map_current_node_id)
+
+		if is_current:
+			_apply_border(style)
+
+		btn.add_theme_stylebox_override("normal", style)
+		var hover_style: StyleBoxFlat = style.duplicate()
+		hover_style.bg_color = style.bg_color.lightened(0.2)
+		btn.add_theme_stylebox_override("hover", hover_style)
+		var pressed_style: StyleBoxFlat = style.duplicate()
+		pressed_style.bg_color = style.bg_color.darkened(0.2)
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		var disabled_style: StyleBoxFlat = style.duplicate()
+		disabled_style.bg_color = style.bg_color.darkened(0.3)
+		btn.add_theme_stylebox_override("disabled", disabled_style)
+		btn.add_theme_font_size_override("font_size", 22)
+
 		btn.pressed.connect(_on_node_pressed.bind(nid))
 		$MapScroll/MapContainer.add_child(btn)
 		node_buttons[nid] = btn
 
-		if node["visited"]:
+		if node["visited"] and not is_current:
 			btn.modulate = Color(0.5, 0.5, 0.5, 0.7)
 
 	_draw_connections()
@@ -101,6 +112,7 @@ func _on_node_pressed(nid: String) -> void:
 	node["visited"] = true
 	current_row = node["row"]
 	GameManager.map_current_row = current_row
+	GameManager.map_current_node_id = nid
 	GameManager.advance_node()
 	_update_hud()
 
@@ -208,6 +220,49 @@ func _show_notification(text: String) -> void:
 	close_btn.pressed.connect(panel.queue_free)
 	panel.add_child(close_btn)
 	add_child(panel)
+
+func _draw_start_node() -> void:
+	var start_pos := Vector2(25, 260)
+	var btn := Button.new()
+	btn.text = "▶"
+	btn.tooltip_text = "スタート"
+	btn.custom_minimum_size = Vector2(50, 50)
+	btn.position = start_pos - Vector2(25, 25)
+	btn.disabled = true
+	btn.add_theme_font_size_override("font_size", 22)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.2, 0.5, 0.2)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+
+	if current_row == -1:
+		_apply_border(style)
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_stylebox_override("disabled", style)
+	$MapScroll/MapContainer.add_child(btn)
+
+	if current_row >= 0:
+		btn.modulate = Color(0.5, 0.5, 0.5, 0.7)
+
+	var first_row := MapGenerator._get_nodes_at_row(map_nodes, 0)
+	for node: Dictionary in first_row:
+		var line := Line2D.new()
+		line.add_point(start_pos)
+		line.add_point(node["position"])
+		line.width = 2.0
+		line.default_color = Color(0.4, 0.35, 0.25, 0.6)
+		$MapScroll/MapContainer.add_child(line)
+		$MapScroll/MapContainer.move_child(line, 0)
+
+func _apply_border(style: StyleBoxFlat) -> void:
+	style.border_color = Color.WHITE
+	style.border_width_top = 3
+	style.border_width_bottom = 3
+	style.border_width_left = 3
+	style.border_width_right = 3
 
 func _node_id(node: Dictionary) -> String:
 	return "%d_%d" % [node["row"], node["col"]]
