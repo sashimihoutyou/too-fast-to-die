@@ -38,6 +38,18 @@ func _character_id_to_restriction(id: StringName) -> CardData.CharacterRestricti
 		&"conqueror": return CardData.CharacterRestriction.CONQUEROR
 	return CardData.CharacterRestriction.NONE
 
+func reload() -> void:
+	_cards.clear()
+	_load_cards_from_directory("res://resources/cards/starter")
+	_load_cards_from_directory("res://resources/cards/shared")
+	_load_cards_from_directory("res://resources/cards/cultist")
+	_load_cards_from_directory("res://resources/cards/ex_raider")
+	_load_cards_from_directory("res://resources/cards/wanderer")
+	_load_cards_from_directory("res://resources/cards/beast_master")
+	_load_cards_from_directory("res://resources/cards/conqueror")
+	_load_cards_from_directory("res://resources/cards/contamination")
+
+
 func _load_cards_from_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:

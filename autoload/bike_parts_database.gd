@@ -22,6 +22,11 @@ func get_parts_by_rarity(rarity: BikePartData.PartRarity) -> Array[BikePartData]
 			result.append(part)
 	return result
 
+func reload() -> void:
+	_parts.clear()
+	_load_parts_from_directory("res://resources/bike_parts")
+
+
 func _load_parts_from_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	if dir == null:
