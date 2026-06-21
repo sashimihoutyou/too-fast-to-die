@@ -3,8 +3,11 @@ extends Control
 var map_nodes: Array[Dictionary] = []
 var current_row: int = -1
 var node_buttons: Dictionary = {}
+var _pending_act_intro: bool = false
 
 func _ready() -> void:
+	if _handle_post_boss():
+		return
 	if GameManager.map_nodes.is_empty():
 		GameManager.map_nodes = MapGenerator.generate_act(GameManager.current_act)
 		GameManager.map_current_row = -1
@@ -13,6 +16,24 @@ func _ready() -> void:
 	_draw_map()
 	_update_hud()
 	ResourceManager.fuel_changed.connect(_on_fuel_changed)
+	if _pending_act_intro:
+		_pending_act_intro = false
+		_show_notification("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act)
+
+# ボス撃破後にこの画面へ戻った場合の処理。
+# 最終区間ならクリア画面へ、そうでなければ次の区間へ進める。
+# 戻り値が true のとき呼び出し元はこのフレームの描画を中止する（クリア画面へ遷移するため）。
+func _handle_post_boss() -> bool:
+	if not GameManager.boss_cleared:
+		return false
+	GameManager.boss_cleared = false
+	if GameManager.current_act >= GameManager.MAX_ACT:
+		GameManager.pending_result = &"victory"
+		get_tree().change_scene_to_file("res://scenes/main/game_over.tscn")
+		return true
+	GameManager.advance_act()
+	_pending_act_intro = true
+	return false
 
 func _draw_map() -> void:
 	for child in $MapScroll/MapContainer.get_children():
@@ -135,27 +156,71 @@ func _enter_combat(node_type: MapGenerator.NodeType) -> void:
 	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
 
 func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]:
+	var act := GameManager.current_act
 	var enemies: Array[EnemyData] = []
 	match node_type:
 		MapGenerator.NodeType.COMBAT:
+			var pool := EnemyDatabase.get_enemies_for_act(act)
+			if pool.is_empty():
+				pool = EnemyDatabase.get_enemies_for_act(1)
+			if pool.is_empty():
+				enemies.append(_fallback_enemy(act, false, false))
+				return enemies
+			pool.shuffle()
+			var count := 1
 			var roll := randf()
-			if roll < 0.4:
-				enemies.append(_make_enemy(&"devilwolf", "デビルフ", EnemyData.Category.BEAST, 28, false, false, [CardData.Tag.RANGED]))
-			elif roll < 0.7:
-				enemies.append(_make_enemy(&"bandit", "荒野の盗賊", EnemyData.Category.HUMAN, 35, false, false, [CardData.Tag.MELEE]))
-			else:
-				for i in 3:
-					enemies.append(_make_enemy(&"wild_dog", "野犬", EnemyData.Category.BEAST, 15, false, false, [CardData.Tag.MELEE]))
+			if roll < 0.30 and pool.size() >= 3:
+				count = 3
+			elif roll < 0.55 and pool.size() >= 2:
+				count = 2
+			for i in count:
+				enemies.append(pool[i % pool.size()])
 		MapGenerator.NodeType.ELITE:
-			var roll := randf()
-			if roll < 0.5:
-				enemies.append(_make_enemy(&"devilwolf_leader", "デビルフの群れリーダー", EnemyData.Category.BEAST, 65, true, false, [CardData.Tag.RANGED]))
+			var elites := EnemyDatabase.get_elites_for_act(act)
+			if elites.is_empty():
+				elites = EnemyDatabase.get_elites_for_act(1)
+			if elites.is_empty():
+				enemies.append(_fallback_enemy(act, true, false))
 			else:
-				enemies.append(_make_enemy(&"rogue_rider", "ならず者ライダー", EnemyData.Category.HUMAN, 55, true, false, [CardData.Tag.BIKE]))
+				elites.shuffle()
+				enemies.append(elites[0])
 		MapGenerator.NodeType.BOSS:
-			var boss := _make_enemy(&"alpha_devilwolf", "アルファ・デビルフ", EnemyData.Category.BEAST, 150, false, true, [CardData.Tag.RANGED])
+			var boss: EnemyData = _get_boss_for_current_act(act)
+			if boss == null:
+				boss = _fallback_enemy(act, false, true)
 			enemies.append(boss)
 	return enemies
+
+# 最終区間（区間5）のボスはGDD通りプレイキャラ固有の因縁ボスにする。
+func _get_boss_for_current_act(act: int) -> EnemyData:
+	if act >= GameManager.MAX_ACT:
+		var boss := _get_character_final_boss()
+		if boss != null:
+			return boss
+	return EnemyDatabase.get_boss_for_act(act)
+
+func _get_character_final_boss() -> EnemyData:
+	var boss_by_character := {
+		&"cultist": &"v8cult_high_priest",
+		&"ex_raider": &"cockatrice_boss",
+		&"wanderer": &"chainlink_informant",
+		&"beast_master": &"chainlink_executive",
+		&"conqueror": &"gatekeeper",
+	}
+	var char_id: StringName = GameManager.current_character.id
+	var boss_id: StringName = boss_by_character.get(char_id, &"")
+	if boss_id != &"":
+		return EnemyDatabase.get_enemy(boss_id)
+	return null
+
+# DBに該当する敵が無い場合の保険。区間に応じてHPだけスケールさせた汎用敵を生成する。
+func _fallback_enemy(act: int, elite: bool, boss: bool) -> EnemyData:
+	var hp := 30 + act * 10
+	if elite:
+		hp = 60 + act * 20
+	if boss:
+		hp = 150 + act * 25
+	return _make_enemy(&"wasteland_threat", "荒野の脅威", EnemyData.Category.HUMAN, hp, elite, boss)
 
 func _make_enemy(id: StringName, display: String, cat: EnemyData.Category, hp: int, elite: bool = false, boss: bool = false, weaknesses: Array[CardData.Tag] = []) -> EnemyData:
 	var e := EnemyData.new()

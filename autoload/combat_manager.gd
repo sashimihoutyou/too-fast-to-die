@@ -13,23 +13,27 @@ signal ap_changed(ap: int)
 signal enemy_hp_changed(idx: int, hp: int, max_hp: int)
 signal enemy_block_changed(idx: int, block: int)
 signal enemy_intent_updated(idx: int, intent: Dictionary)
+signal enemy_status_changed(idx: int, status: Dictionary)
+signal player_status_changed(status: Dictionary)
 
 enum CombatState { INACTIVE, INIT, DRAW, PLAYER_TURN, DISCARD, ENEMY_TURN, CHECK_END, VICTORY, DEFEAT, FLED }
 
 var state: CombatState = CombatState.INACTIVE
 var turn_number: int = 0
 var ap: int = 0
-var max_ap: int = 6
+var max_ap: int = 5
 var ap_cost_halved: bool = false
 var player_hp: int = 0
 var player_max_hp: int = 0
 var player_block: int = 0
+var player_status: Dictionary = {}
 
 var enemies: Array[Dictionary] = []
 
 func reset_player_for_new_run() -> void:
 	player_max_hp = GameManager.current_character.max_hp
 	player_hp = player_max_hp
+	player_status = _new_status_dict()
 
 func start_combat(enemy_list: Array[EnemyData]) -> void:
 	state = CombatState.INIT
@@ -37,6 +41,8 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 	player_max_hp = GameManager.current_character.max_hp
 	player_hp = mini(player_hp, player_max_hp)
 	player_block = 0
+	player_status = _new_status_dict()
+	player_status_changed.emit(player_status)
 	enemies.clear()
 	for ed: EnemyData in enemy_list:
 		enemies.append({
@@ -47,6 +53,7 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 			"alive": true,
 			"intent": {},
 			"turn_counter": 0,
+			"status": _new_status_dict(),
 		})
 	DeckManager.start_combat()
 	begin_turn()
@@ -58,6 +65,11 @@ func begin_turn() -> void:
 	ap_cost_halved = false
 	player_block = 0
 	player_block_changed.emit(player_block)
+	_tick_player_statuses()
+	if player_hp <= 0:
+		state = CombatState.DEFEAT
+		combat_lost.emit()
+		return
 	ap_changed.emit(ap)
 	_update_all_intents()
 	DeckManager.draw_cards()
@@ -67,6 +79,21 @@ func get_effective_ap_cost(card: CardData) -> int:
 	if ap_cost_halved:
 		return (card.ap_cost + 1) / 2
 	return card.ap_cost
+
+# 指定した敵にこのカードを使った場合の与ダメージ（ブロック前・全ヒット合計）を予測する。
+# 筋力・弱体・弱点・脆弱を反映。UIのダメージプレビュー用。
+func preview_damage(card: CardData, idx: int) -> int:
+	if idx < 0 or idx >= enemies.size():
+		return 0
+	var base := card.get_effective_damage()
+	if base <= 0:
+		return 0
+	var per_hit := _apply_player_attack_mods(base)
+	if is_weak_against(idx, card.tags):
+		per_hit = int(per_hit * 1.5)
+	if int(enemies[idx]["status"].get("vulnerable", 0)) > 0:
+		per_hit = int(per_hit * 1.5)
+	return per_hit * card.hit_count
 
 func can_play_card(card: CardData) -> bool:
 	if state != CombatState.PLAYER_TURN:
@@ -100,6 +127,9 @@ func end_player_turn() -> void:
 	DeckManager.discard_hand()
 	state = CombatState.ENEMY_TURN
 	_execute_enemy_turns()
+	_check_enemies_alive()
+	if state == CombatState.VICTORY:
+		return
 	state = CombatState.CHECK_END
 	if player_hp <= 0:
 		state = CombatState.DEFEAT
@@ -110,11 +140,20 @@ func end_player_turn() -> void:
 func flee() -> bool:
 	if state != CombatState.PLAYER_TURN:
 		return false
+	if has_boss_enemy():
+		return false
 	if not ResourceManager.consume_fuel(1):
 		return false
 	state = CombatState.FLED
 	player_fled.emit()
 	return true
+
+func has_boss_enemy() -> bool:
+	for enemy: Dictionary in enemies:
+		var data: EnemyData = enemy["data"]
+		if data.is_boss:
+			return true
+	return false
 
 func emergency_reroll() -> bool:
 	if state != CombatState.PLAYER_TURN:
@@ -144,18 +183,26 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		ap_changed.emit(ap)
 
 	if dmg > 0:
+		var hit_dmg := _apply_player_attack_mods(dmg)
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
-					_damage_enemy(i, dmg * card.hit_count, card.tags)
+					_damage_enemy(i, hit_dmg * card.hit_count, card.tags)
 		else:
 			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 				for h in card.hit_count:
 					if enemies[target_idx]["alive"]:
-						_damage_enemy(target_idx, dmg, card.tags)
+						_damage_enemy(target_idx, hit_dmg, card.tags)
 
-	if card.status_effect != &"" and target_idx >= 0:
-		pass
+	if card.status_effect != &"" and card.status_stacks != 0:
+		var mapped := _map_status(card.status_effect)
+		if mapped != &"":
+			if card.is_aoe:
+				for i in enemies.size():
+					if enemies[i]["alive"]:
+						_add_enemy_status(i, mapped, card.status_stacks)
+			elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+				_add_enemy_status(target_idx, mapped, card.status_stacks)
 
 func is_weak_against(idx: int, tags: Array[CardData.Tag]) -> bool:
 	if idx < 0 or idx >= enemies.size():
@@ -175,6 +222,9 @@ func _damage_enemy(idx: int, amount: int, source_tags: Array[CardData.Tag] = [])
 	var remaining := amount
 	if is_weak_against(idx, source_tags):
 		remaining = int(remaining * 1.5)
+	var enemy_status: Dictionary = enemy["status"]
+	if int(enemy_status.get("vulnerable", 0)) > 0:
+		remaining = int(remaining * 1.5)
 	if enemy["block"] > 0:
 		if enemy["block"] >= remaining:
 			enemy["block"] -= remaining
@@ -187,8 +237,10 @@ func _damage_enemy(idx: int, amount: int, source_tags: Array[CardData.Tag] = [])
 		enemy["hp"] = maxi(0, enemy["hp"] - remaining)
 		enemy_hp_changed.emit(idx, enemy["hp"], enemy["max_hp"])
 
-func _damage_player(amount: int) -> void:
+func _damage_player(amount: int, from_enemy: bool = false) -> void:
 	var remaining := amount
+	if from_enemy and int(player_status.get("vulnerable", 0)) > 0:
+		remaining = int(remaining * 1.5)
 	if player_block > 0:
 		if player_block >= remaining:
 			player_block -= remaining
@@ -217,23 +269,33 @@ func _execute_enemy_turns() -> void:
 	for i in enemies.size():
 		if not enemies[i]["alive"]:
 			continue
+		# ターン開始時：継続ダメージ（炎上・出血）を適用
+		if _apply_dot_to_enemy(i):
+			continue  # 継続ダメージで撃破された
+		var status: Dictionary = enemies[i]["status"]
+		var weak_active := int(status.get("weak", 0)) > 0
 		var intent: Dictionary = enemies[i]["intent"]
 		enemies[i]["block"] = 0
 		enemy_block_changed.emit(i, 0)
 		match intent.get("type", ""):
 			"attack":
-				var dmg: int = intent.get("value", 0)
-				_damage_player(dmg)
+				var dmg: int = _apply_weak(intent.get("value", 0), weak_active)
+				var hits: int = intent.get("hits", 1)
+				for h in hits:
+					_damage_player(dmg, true)
 			"defend":
 				var blk: int = intent.get("value", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 			"attack_defend":
-				var dmg: int = intent.get("attack", 0)
+				var dmg: int = _apply_weak(intent.get("attack", 0), weak_active)
 				var blk: int = intent.get("block", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
-				_damage_player(dmg)
+				_damage_player(dmg, true)
+		# ターン終了時：弱体・脆弱を1減衰
+		_decay_debuffs(status)
+		enemy_status_changed.emit(i, status)
 		enemies[i]["turn_counter"] += 1
 
 func _update_all_intents() -> void:
@@ -250,59 +312,154 @@ func _get_enemy_intent(enemy: Dictionary) -> Dictionary:
 
 	if data.is_boss:
 		return _get_boss_intent(data, tc, hp_pct)
+	return _get_scaled_intent(data, tc, hp_pct)
 
-	match data.id:
-		&"devilwolf":
-			if (tc % 3) == 2:
-				return {"type": "attack", "value": 12, "label": "飛びかかり"}
-			else:
-				return {"type": "attack", "value": 8, "label": "噛みつき"}
-		&"bandit":
-			if tc % 3 == 0:
-				return {"type": "defend", "value": 6, "label": "身構える"}
-			else:
-				return {"type": "attack", "value": 9, "label": "ナイフ"}
-		&"wild_dog":
-			return {"type": "attack", "value": 5, "label": "噛みつき"}
-		&"devilwolf_leader":
-			if hp_pct > 0.5:
-				return {"type": "attack", "value": 12, "label": "引き裂く"}
-			else:
-				return {"type": "attack", "value": 18, "label": "猛襲"}
-		&"rogue_rider":
+# 区間（act）・カテゴリ・残HPに応じてザコ/エリートの行動を生成する。
+# 敵データに固有ムーブセットが無くても、区間が進むほど脅威が増すよう数値をスケールさせる。
+func _get_scaled_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
+	var act := clampi(data.act, 1, GameManager.MAX_ACT)
+	var atk := 5 + act * 3
+	var blk := 3 + act * 2
+	if data.is_elite:
+		atk = int(atk * 1.4)
+		blk = int(blk * 1.4)
+
+	match data.category:
+		EnemyData.Category.BEAST:
 			if tc % 3 == 2:
-				return {"type": "attack", "value": 16, "label": "体当たり"}
-			elif tc % 2 == 0:
-				return {"type": "attack", "value": 14, "label": "突撃"}
+				return {"type": "attack", "value": maxi(1, int(atk * 0.6)), "hits": 2, "label": "連撃"}
+			elif hp_pct < 0.4:
+				return {"type": "attack", "value": int(atk * 1.5), "label": "手負いの猛攻"}
 			else:
-				return {"type": "attack", "value": 10, "label": "射撃"}
+				return {"type": "attack", "value": atk, "label": "噛みつき"}
+		EnemyData.Category.MACHINE:
+			if tc % 3 == 0:
+				return {"type": "defend", "value": int(blk * 1.3), "label": "装甲展開"}
+			else:
+				return {"type": "attack", "value": int(atk * 1.2), "label": "砲撃"}
 		_:
-			return {"type": "attack", "value": 6, "label": "攻撃"}
+			if tc % 4 == 1:
+				return {"type": "defend", "value": blk, "label": "身構える"}
+			elif tc % 4 == 3:
+				return {"type": "attack", "value": int(atk * 1.3), "label": "狙い撃ち"}
+			else:
+				return {"type": "attack", "value": atk, "label": "攻撃"}
 
 func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
-	match data.id:
-		&"alpha_devilwolf":
-			if hp_pct > 0.5:
-				if tc % 4 == 3:
-					return {"type": "attack", "value": 24, "label": "二連撃"}
-				elif tc % 2 == 0:
-					return {"type": "attack", "value": 12, "label": "噛みつき"}
-				else:
-					return {"type": "attack", "value": 6, "label": "遠吠え"}
-			else:
-				if tc % 3 == 2:
-					return {"type": "attack", "value": 25, "label": "飛びかかり"}
-				else:
-					return {"type": "attack", "value": 18, "label": "猛攻"}
-	return {"type": "attack", "value": 10, "label": "攻撃"}
+	var act := clampi(data.act, 1, GameManager.MAX_ACT)
+	var atk := 8 + act * 4
+	if hp_pct <= 0.5:
+		# 後半フェイズ（激昂）
+		if tc % 3 == 2:
+			return {"type": "attack", "value": maxi(1, int(atk * 0.9)), "hits": 2, "label": "猛襲（二連）"}
+		else:
+			return {"type": "attack", "value": int(atk * 1.4), "label": "激昂の一撃"}
+	else:
+		if tc % 4 == 3:
+			return {"type": "attack", "value": int(atk * 1.6), "label": "渾身の一撃"}
+		elif tc % 4 == 1:
+			return {"type": "defend", "value": 8 + act * 3, "label": "防御態勢"}
+		else:
+			return {"type": "attack", "value": atk, "label": "攻撃"}
 
 func _generate_rewards() -> Array:
-	var slot_count := 3
+	var act := clampi(GameManager.current_act, 1, GameManager.MAX_ACT)
+	var is_elite := false
+	var has_machine := false
+	for e: Dictionary in enemies:
+		var d: EnemyData = e["data"]
+		if d.is_elite or d.is_boss:
+			is_elite = true
+		if d.category == EnemyData.Category.MACHINE:
+			has_machine = true
+
 	var rewards := []
-	if randf() < 0.5:
-		rewards.append({"type": "fuel", "amount": randi_range(8, 15)})
-		slot_count -= 1
-	for i in slot_count:
+	# 燃料：区間とエリートでスケール
+	var fuel_min := 6 + act * 2
+	var fuel_max := 11 + act * 3
+	if is_elite:
+		fuel_min += 6
+		fuel_max += 8
+	rewards.append({"type": "fuel", "amount": randi_range(fuel_min, fuel_max)})
+	# 機械系の敵を含む場合はスクラップを選択肢に追加
+	if has_machine:
+		rewards.append({"type": "scrap", "amount": randi_range(3, 6)})
+	# カード報酬（エリート/ボスは選択肢が増える）
+	var card_slots := 2 if is_elite else 1
+	for i in card_slots:
 		rewards.append({"type": "card"})
 	return rewards
+
+# ===== ステータス効果システム =====
+# weak（弱体）= 与ダメ -25% / vulnerable（脆弱）= 被ダメ +50%
+# burn（炎上）/ bleed（出血）= ターン開始時に固定ダメージ、毎ターン1減衰
+# strength（筋力）= 攻撃に +固定値（将来用）
+# heat / aura / beast はキャラ固有ゲージのため、ここでは扱わない（無視）。
+
+func _new_status_dict() -> Dictionary:
+	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0}
+
+func _map_status(se: StringName) -> StringName:
+	match se:
+		&"weaken", &"weak":
+			return &"weak"
+		&"vulnerable", &"vuln":
+			return &"vulnerable"
+		&"burn":
+			return &"burn"
+		&"bleed":
+			return &"bleed"
+		&"strength":
+			return &"strength"
+	return &""
+
+func _apply_player_attack_mods(base: int) -> int:
+	var dmg := base + int(player_status.get("strength", 0))
+	if int(player_status.get("weak", 0)) > 0:
+		dmg = int(dmg * 0.75)
+	return maxi(0, dmg)
+
+func _apply_weak(base: int, weak_active: bool) -> int:
+	if weak_active:
+		return int(base * 0.75)
+	return base
+
+func _add_enemy_status(idx: int, status: StringName, stacks: int) -> void:
+	if idx < 0 or idx >= enemies.size():
+		return
+	if not enemies[idx]["alive"]:
+		return
+	var s: Dictionary = enemies[idx]["status"]
+	s[status] = int(s.get(status, 0)) + stacks
+	enemy_status_changed.emit(idx, s)
+
+func _decay_debuffs(status: Dictionary) -> void:
+	status["weak"] = maxi(0, int(status.get("weak", 0)) - 1)
+	status["vulnerable"] = maxi(0, int(status.get("vulnerable", 0)) - 1)
+	status["burn"] = maxi(0, int(status.get("burn", 0)) - 1)
+	status["bleed"] = maxi(0, int(status.get("bleed", 0)) - 1)
+
+# 敵への継続ダメージを適用。撃破されたら true。
+func _apply_dot_to_enemy(idx: int) -> bool:
+	var enemy := enemies[idx]
+	var s: Dictionary = enemy["status"]
+	var dot: int = int(s.get("burn", 0)) + int(s.get("bleed", 0))
+	if dot > 0:
+		enemy["hp"] = maxi(0, enemy["hp"] - dot)
+		enemy_hp_changed.emit(idx, enemy["hp"], enemy["max_hp"])
+		if enemy["hp"] <= 0:
+			enemy["alive"] = false
+			_decay_debuffs(s)
+			enemy_status_changed.emit(idx, s)
+			enemy_defeated.emit(idx)
+			return true
+	return false
+
+func _tick_player_statuses() -> void:
+	var dot: int = int(player_status.get("burn", 0)) + int(player_status.get("bleed", 0))
+	if dot > 0:
+		player_hp = maxi(0, player_hp - dot)
+		player_hp_changed.emit(player_hp, player_max_hp)
+	_decay_debuffs(player_status)
+	player_status_changed.emit(player_status)
 

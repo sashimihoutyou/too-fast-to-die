@@ -149,6 +149,58 @@ func _show_target_buttons(visible_flag: bool) -> void:
 - `for` ループの変数にも型を付ける（例: `for card: CardData in hand:`）
 - シグナル引数にも型を指定する
 
+## データ設計のベストプラクティス
+
+### データベースAutoloadを単一の参照元にする
+
+`EnemyDatabase` / `EventManager` / `CardDatabase` 等は `.tres` を読み込んで保持する。
+画面スクリプト側でコンテンツをハードコードすると、DBに作り込んだ大量の資産（敵・イベント等）が
+**読み込まれているのに一度も使われない死蔵コンテンツ**になる。実際に区間進行が「Act1の敵を
+ハードコードし続ける」「イベントが固定5種だけ」というバグが発生した。
+
+```gdscript
+# NG: 画面スクリプトが内容を直書き → DBのAct2〜5の敵が永遠に使われない
+func _get_enemies_for_node(node_type):
+    enemies.append(_make_enemy(&"devilwolf", "デビルフ", ..., 28, ...))
+
+# OK: DBを参照元にし、区間(act)等の条件で取得する
+func _get_enemies_for_node(node_type):
+    var pool := EnemyDatabase.get_enemies_for_act(GameManager.current_act)
+```
+
+### ハードコードIDはデータのIDと一致させる
+
+`match data.id:` のようにIDで分岐するロジックと、`.tres` の `id` が食い違うと、
+**エラーにならず一般default（例: 一律6ダメージ）に静かに落ちる**ため発覚しにくい。
+実例: コード側 `&"devilwolf"` / `&"wild_dog"` に対し `.tres` は `&"deviluf"` / `&"wild_dog_pack"`。
+
+- ID分岐に頼らず、`category` や `act` 等のデータ駆動の属性でスケールさせる設計を優先する。
+- どうしてもID分岐が必要なら、default節に落ちたら警告を出す等で不一致を検出可能にする。
+
+### 宣言したデータフィールドは必ず消費側で読む
+
+`CardData.status_effect` / `CharacterData.unique_system` / `can_use_guns` /
+`ResourceManager.bike_durability` のように、Resource に `@export` したフィールドが
+**消費側ロジックで一度も読まれていない**と、エラーも警告も出ずに静かに無効化される。
+カードの説明文（「萎縮2付与」「炎上3」等）だけが残り、実際には何も起きない＝
+**説明文が嘘になる**バグが発生した（実例: `_apply_card_effects` が `status_effect` を
+`pass` で握りつぶしていた）。
+
+- 新しいフィールドを追加したら、それを読む側のコードを必ず同時に実装する。
+- 仮実装（stub）で `pass` する場合は `# TODO` を残し、説明文・データを伴わせない。
+- 「データはあるのに動かない」を検出するため、対応する効果が未実装の `status_effect` 等は
+  既知値へのマッピングで弾き（`_map_status` が未知を `&""` で返す）、明示的に無視と分かる形にする。
+- 対価（燃料消費等）は効果を適用する直前に行う。実例: ショップの「カード削除」が
+  `consume_fuel()` 後に `pass` で何もせず、**燃料だけ失う**バグがあった。`match` の分岐や
+  選択フローで対価を先払いする場合、その分岐が実際に効果を持つことを必ず確認する。
+
+### 完結したゲームループを保証する
+
+区間進行・勝利条件・次区間生成のような「ループを閉じる」処理が無いと、ボス撃破後に
+行き止まり（クリック可能ノードが無い無限待機）になる。`change_scene_to_file()` で遷移が
+分断される本作では、進行状態は Autoload（`GameManager.current_act` 等）に集約し、
+ボス撃破→`advance_act()`→マップ再生成→最終区間で結果画面、という遷移を明示的に実装すること。
+
 ## ディレクトリ構成
 
 ```
