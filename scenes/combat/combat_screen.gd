@@ -274,7 +274,8 @@ func _show_target_buttons(visible_flag: bool) -> void:
 	for i in target_buttons.size():
 		if i >= CombatManager.enemies.size():
 			continue
-		var show_it := visible_flag and CombatManager.enemies[i]["alive"]
+		var alive: bool = CombatManager.enemies[i]["alive"]
+		var show_it: bool = visible_flag and alive
 		target_buttons[i].visible = show_it
 		if show_it and selected_card != null:
 			var preview: int = CombatManager.preview_damage(selected_card, i)

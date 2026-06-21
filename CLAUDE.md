@@ -32,6 +32,24 @@ var value: int = some_dict.get("key", 0)
 - `Dictionary.get()`, `Dictionary.values()` の要素アクセス
 - 型付き配列でない `Array` の `[]` アクセス
 
+**Variantは演算をまたいで伝播する。** `and` / `or` / 比較 / 算術の被演算子に素のVariant
+（辞書アクセス等）が一つでも混ざると、式全体がVariant扱いになり `:=` で受けるとパースエラーになる。
+「結果は明らかに `bool`」と思っても推論は通らない。Variantは**式に入れる前に明示キャスト**で潰すか、
+受け側に型注釈を付けること（実例: `enemies[i]["alive"]` を `and` に直接混ぜてパースエラー）。
+
+```gdscript
+# NG: enemies[i]["alive"] が Variant → and の結果も Variant → 推論エラー
+var show_it := visible_flag and enemies[i]["alive"]
+
+# OK-1: 受け側に型注釈を付ける
+var alive: bool = enemies[i]["alive"]
+var show_it: bool = visible_flag and alive
+
+# OK-2: 式に入れる前に明示キャストで潰す（本コードベースの標準イディオム）
+var dmg := base + int(player_status.get("strength", 0))
+var hp_pct := float(enemy["hp"]) / float(enemy["max_hp"])
+```
+
 ### 型付き配列への代入
 
 型付き配列プロパティ（`Array[Tag]`, `Array[CharacterRestriction]` 等）に `Dictionary.get()` やリテラル `[]` の戻り値を直接代入するとランタイムエラーになる。`assign()` を使うこと。
