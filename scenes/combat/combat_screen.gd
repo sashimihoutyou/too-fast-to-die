@@ -11,15 +11,35 @@ var status_labels: Array[Label] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 var _last_player_hp: int = 0
+var _heat_label: Label = null
 
 func _ready() -> void:
 	_last_player_hp = CombatManager.player_hp
 	_setup_signals()
 	_build_enemy_display()
 	_show_target_buttons(false)
+	_setup_heat_meter()
 	_update_player_hud()
 	_update_hand()
 	_update_controls()
+
+# 元レイダー（ヒート＝激情システム）のときだけ、HUDにヒートメーターを生成する。
+func _setup_heat_meter() -> void:
+	if GameManager.current_character.unique_system != &"heat":
+		return
+	_heat_label = Label.new()
+	_heat_label.offset_left = 200.0
+	_heat_label.offset_top = 96.0
+	_heat_label.offset_right = 340.0
+	_heat_label.offset_bottom = 116.0
+	_heat_label.add_theme_font_size_override("font_size", 14)
+	_heat_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
+	$PlayerHUD.add_child(_heat_label)
+	_on_heat_changed(CombatManager.player_heat, CombatManager.HEAT_MAX)
+
+func _on_heat_changed(value: int, max_value: int) -> void:
+	if _heat_label != null:
+		_heat_label.text = "🔥ヒート %d/%d" % [value, max_value]
 	for btn: Button in [$Controls/EndTurnButton, $Controls/FleeButton, $Controls/RerollButton]:
 		btn.focus_mode = Control.FOCUS_NONE
 	$Controls/EndTurnButton.text = "ターン終了 (Space)"
@@ -34,6 +54,7 @@ func _setup_signals() -> void:
 	CombatManager.enemy_intent_updated.connect(_on_enemy_intent_updated)
 	CombatManager.enemy_status_changed.connect(_on_enemy_status_changed)
 	CombatManager.player_status_changed.connect(_on_player_status_changed)
+	CombatManager.heat_changed.connect(_on_heat_changed)
 	CombatManager.player_hp_changed.connect(_on_player_hp_changed)
 	CombatManager.player_block_changed.connect(_on_player_block_changed)
 	CombatManager.ap_changed.connect(_on_ap_changed)
@@ -253,7 +274,7 @@ func _on_card_hover(btn: Button, hovering: bool) -> void:
 func _on_card_selected(card: CardData) -> void:
 	if not CombatManager.can_play_card(card):
 		return
-	var needs_target := (card.base_damage > 0 or _targets_enemy_status(card)) and not card.is_aoe
+	var needs_target := (card.base_damage > 0 or card.requires_target or _targets_enemy_status(card)) and not card.is_aoe
 	if needs_target:
 		selected_card = card
 		_highlight_selected_card(card)
@@ -452,6 +473,7 @@ func _format_status(status: Dictionary) -> String:
 	var weak: int = int(status.get("weak", 0))
 	var vuln: int = int(status.get("vulnerable", 0))
 	var strg: int = int(status.get("strength", 0))
+	var atk_down: int = int(status.get("atk_down", 0))
 	if burn > 0:
 		parts.append("🔥%d" % burn)
 	if bleed > 0:
@@ -462,6 +484,8 @@ func _format_status(status: Dictionary) -> String:
 		parts.append("脆%d" % vuln)
 	if strg > 0:
 		parts.append("力%d" % strg)
+	if atk_down > 0:
+		parts.append("攻-%d" % atk_down)
 	return " ".join(parts)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:
