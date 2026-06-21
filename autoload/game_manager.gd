@@ -6,6 +6,8 @@ signal run_ended(result: StringName, distance: int)
 
 enum GameState { TITLE, CHARACTER_SELECT, MAP, COMBAT, EVENT, SHOP, REST, GAME_OVER, RESULT }
 
+const MAX_ACT := 5
+
 var current_state: GameState = GameState.TITLE
 var current_character: CharacterData
 var current_act: int = 1
@@ -15,6 +17,8 @@ var event_flags: Dictionary = {}
 var map_nodes: Array[Dictionary] = []
 var map_current_row: int = -1
 var map_current_node_id: String = ""
+var boss_cleared: bool = false
+var pending_result: StringName = &"defeat"
 
 func start_run(character: CharacterData) -> void:
 	current_character = character
@@ -25,6 +29,8 @@ func start_run(character: CharacterData) -> void:
 	map_nodes.clear()
 	map_current_row = -1
 	map_current_node_id = ""
+	boss_cleared = false
+	pending_result = &"defeat"
 	ResourceManager.reset()
 	DeckManager.build_starter_deck(character)
 	KarmaManager.reset()
@@ -40,6 +46,13 @@ func advance_node() -> void:
 	current_node_index += 1
 	distance_km += randi_range(3, 6)
 	ResourceManager.consume_fuel(2)
+
+func advance_act() -> void:
+	current_act += 1
+	current_node_index = -1
+	map_nodes.clear()
+	map_current_row = -1
+	map_current_node_id = ""
 
 func end_run(result: StringName) -> void:
 	MetaProgression.add_distance(distance_km)

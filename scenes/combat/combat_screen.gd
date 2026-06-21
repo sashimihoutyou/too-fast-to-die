@@ -245,10 +245,11 @@ func _update_player_hud() -> void:
 
 func _update_controls() -> void:
 	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
+	var is_boss := CombatManager.has_boss_enemy()
 	$Controls/EndTurnButton.disabled = not in_turn
-	$Controls/FleeButton.disabled = not in_turn
+	$Controls/FleeButton.disabled = not in_turn or is_boss
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
-	$Controls/FleeButton.text = "逃走 (1燃料)"
+	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1燃料)"
 
 func _on_end_turn() -> void:
 	selected_card = null
@@ -295,13 +296,22 @@ func _on_enemy_intent_updated(idx: int, intent: Dictionary) -> void:
 		var intent_type: String = intent.get("type", "")
 		var intent_label_text: String = intent.get("label", "")
 		var val: int = intent.get("value", 0)
+		var hits: int = intent.get("hits", 1)
 		match intent_type:
 			"attack":
-				label.text = "⚔ %s (%d)" % [intent_label_text, val]
+				if hits > 1:
+					label.text = "⚔ %s (%d×%d)" % [intent_label_text, val, hits]
+				else:
+					label.text = "⚔ %s (%d)" % [intent_label_text, val]
 				label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 			"defend":
 				label.text = "🛡 %s (%d)" % [intent_label_text, val]
 				label.add_theme_color_override("font_color", Color(0.3, 0.6, 0.9))
+			"attack_defend":
+				var atk_val: int = intent.get("attack", 0)
+				var blk_val: int = intent.get("block", 0)
+				label.text = "⚔🛡 %s (%d/%d)" % [intent_label_text, atk_val, blk_val]
+				label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
 			_:
 				label.text = "? %s" % intent_label_text
 
@@ -318,9 +328,12 @@ func _on_ap_changed(new_ap: int) -> void:
 	_update_controls()
 
 func _on_combat_won(rewards: Array) -> void:
+	if CombatManager.has_boss_enemy():
+		GameManager.boss_cleared = true
 	_show_reward_screen(rewards)
 
 func _on_combat_lost() -> void:
+	GameManager.pending_result = &"defeat"
 	await get_tree().create_timer(0.5).timeout
 	get_tree().change_scene_to_file("res://scenes/main/game_over.tscn")
 

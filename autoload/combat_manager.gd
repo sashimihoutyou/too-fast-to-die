@@ -110,11 +110,20 @@ func end_player_turn() -> void:
 func flee() -> bool:
 	if state != CombatState.PLAYER_TURN:
 		return false
+	if has_boss_enemy():
+		return false
 	if not ResourceManager.consume_fuel(1):
 		return false
 	state = CombatState.FLED
 	player_fled.emit()
 	return true
+
+func has_boss_enemy() -> bool:
+	for enemy: Dictionary in enemies:
+		var data: EnemyData = enemy["data"]
+		if data.is_boss:
+			return true
+	return false
 
 func emergency_reroll() -> bool:
 	if state != CombatState.PLAYER_TURN:
@@ -223,7 +232,9 @@ func _execute_enemy_turns() -> void:
 		match intent.get("type", ""):
 			"attack":
 				var dmg: int = intent.get("value", 0)
-				_damage_player(dmg)
+				var hits: int = intent.get("hits", 1)
+				for h in hits:
+					_damage_player(dmg)
 			"defend":
 				var blk: int = intent.get("value", 0)
 				enemies[i]["block"] = blk
@@ -250,51 +261,55 @@ func _get_enemy_intent(enemy: Dictionary) -> Dictionary:
 
 	if data.is_boss:
 		return _get_boss_intent(data, tc, hp_pct)
+	return _get_scaled_intent(data, tc, hp_pct)
 
-	match data.id:
-		&"devilwolf":
-			if (tc % 3) == 2:
-				return {"type": "attack", "value": 12, "label": "飛びかかり"}
-			else:
-				return {"type": "attack", "value": 8, "label": "噛みつき"}
-		&"bandit":
-			if tc % 3 == 0:
-				return {"type": "defend", "value": 6, "label": "身構える"}
-			else:
-				return {"type": "attack", "value": 9, "label": "ナイフ"}
-		&"wild_dog":
-			return {"type": "attack", "value": 5, "label": "噛みつき"}
-		&"devilwolf_leader":
-			if hp_pct > 0.5:
-				return {"type": "attack", "value": 12, "label": "引き裂く"}
-			else:
-				return {"type": "attack", "value": 18, "label": "猛襲"}
-		&"rogue_rider":
+# 区間（act）・カテゴリ・残HPに応じてザコ/エリートの行動を生成する。
+# 敵データに固有ムーブセットが無くても、区間が進むほど脅威が増すよう数値をスケールさせる。
+func _get_scaled_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
+	var act := clampi(data.act, 1, GameManager.MAX_ACT)
+	var atk := 5 + act * 3
+	var blk := 3 + act * 2
+	if data.is_elite:
+		atk = int(atk * 1.4)
+		blk = int(blk * 1.4)
+
+	match data.category:
+		EnemyData.Category.BEAST:
 			if tc % 3 == 2:
-				return {"type": "attack", "value": 16, "label": "体当たり"}
-			elif tc % 2 == 0:
-				return {"type": "attack", "value": 14, "label": "突撃"}
+				return {"type": "attack", "value": maxi(1, int(atk * 0.6)), "hits": 2, "label": "連撃"}
+			elif hp_pct < 0.4:
+				return {"type": "attack", "value": int(atk * 1.5), "label": "手負いの猛攻"}
 			else:
-				return {"type": "attack", "value": 10, "label": "射撃"}
+				return {"type": "attack", "value": atk, "label": "噛みつき"}
+		EnemyData.Category.MACHINE:
+			if tc % 3 == 0:
+				return {"type": "defend", "value": int(blk * 1.3), "label": "装甲展開"}
+			else:
+				return {"type": "attack", "value": int(atk * 1.2), "label": "砲撃"}
 		_:
-			return {"type": "attack", "value": 6, "label": "攻撃"}
+			if tc % 4 == 1:
+				return {"type": "defend", "value": blk, "label": "身構える"}
+			elif tc % 4 == 3:
+				return {"type": "attack", "value": int(atk * 1.3), "label": "狙い撃ち"}
+			else:
+				return {"type": "attack", "value": atk, "label": "攻撃"}
 
 func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
-	match data.id:
-		&"alpha_devilwolf":
-			if hp_pct > 0.5:
-				if tc % 4 == 3:
-					return {"type": "attack", "value": 24, "label": "二連撃"}
-				elif tc % 2 == 0:
-					return {"type": "attack", "value": 12, "label": "噛みつき"}
-				else:
-					return {"type": "attack", "value": 6, "label": "遠吠え"}
-			else:
-				if tc % 3 == 2:
-					return {"type": "attack", "value": 25, "label": "飛びかかり"}
-				else:
-					return {"type": "attack", "value": 18, "label": "猛攻"}
-	return {"type": "attack", "value": 10, "label": "攻撃"}
+	var act := clampi(data.act, 1, GameManager.MAX_ACT)
+	var atk := 8 + act * 4
+	if hp_pct <= 0.5:
+		# 後半フェイズ（激昂）
+		if tc % 3 == 2:
+			return {"type": "attack", "value": maxi(1, int(atk * 0.9)), "hits": 2, "label": "猛襲（二連）"}
+		else:
+			return {"type": "attack", "value": int(atk * 1.4), "label": "激昂の一撃"}
+	else:
+		if tc % 4 == 3:
+			return {"type": "attack", "value": int(atk * 1.6), "label": "渾身の一撃"}
+		elif tc % 4 == 1:
+			return {"type": "defend", "value": 8 + act * 3, "label": "防御態勢"}
+		else:
+			return {"type": "attack", "value": atk, "label": "攻撃"}
 
 func _generate_rewards() -> Array:
 	var slot_count := 3
