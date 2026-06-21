@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"s06"
 display_name = "毒の投擲"
-description = "出血4付与"
-ap_cost = 1
+description = "出血4付与（毎ターンダメージ、ブロック無視）"
+ap_cost = 2
 tags = [4]
 rarity = 1
 status_effect = &"bleed"

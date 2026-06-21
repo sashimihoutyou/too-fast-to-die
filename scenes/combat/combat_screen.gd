@@ -6,6 +6,7 @@ var target_buttons: Array[Button] = []
 var hp_labels: Array[Label] = []
 var block_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
+var status_labels: Array[Label] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 
@@ -23,6 +24,8 @@ func _setup_signals() -> void:
 	CombatManager.enemy_hp_changed.connect(_on_enemy_hp_changed)
 	CombatManager.enemy_block_changed.connect(_on_enemy_block_changed)
 	CombatManager.enemy_intent_updated.connect(_on_enemy_intent_updated)
+	CombatManager.enemy_status_changed.connect(_on_enemy_status_changed)
+	CombatManager.player_status_changed.connect(_on_player_status_changed)
 	CombatManager.player_hp_changed.connect(_on_player_hp_changed)
 	CombatManager.player_block_changed.connect(_on_player_block_changed)
 	CombatManager.ap_changed.connect(_on_ap_changed)
@@ -42,6 +45,7 @@ func _build_enemy_display() -> void:
 	hp_labels.clear()
 	block_labels.clear()
 	intent_labels.clear()
+	status_labels.clear()
 
 	for i in CombatManager.enemies.size():
 		var enemy: Dictionary = CombatManager.enemies[i]
@@ -114,6 +118,14 @@ func _build_enemy_display() -> void:
 		intent_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
 		vbox.add_child(intent_label)
 
+		var status_label := Label.new()
+		status_label.name = "StatusLabel"
+		status_label.text = _format_status(enemy.get("status", {}))
+		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		status_label.add_theme_font_size_override("font_size", 13)
+		status_label.add_theme_color_override("font_color", Color(0.85, 0.55, 0.85))
+		vbox.add_child(status_label)
+
 		var target_btn := Button.new()
 		target_btn.text = "攻撃対象"
 		target_btn.add_theme_font_size_override("font_size", 12)
@@ -128,6 +140,7 @@ func _build_enemy_display() -> void:
 		hp_labels.append(hp_label)
 		block_labels.append(block_label)
 		intent_labels.append(intent_label)
+		status_labels.append(status_label)
 
 func _update_hand() -> void:
 	for child in $HandArea.get_children():
@@ -208,7 +221,7 @@ func _create_card_button(card: CardData) -> Button:
 func _on_card_selected(card: CardData) -> void:
 	if not CombatManager.can_play_card(card):
 		return
-	var needs_target := card.base_damage > 0 and not card.is_aoe
+	var needs_target := (card.base_damage > 0 or _targets_enemy_status(card)) and not card.is_aoe
 	if needs_target:
 		selected_card = card
 		_show_target_buttons(true)
@@ -242,6 +255,7 @@ func _update_player_hud() -> void:
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % CombatManager.player_block
 	$PlayerHUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
 	$PlayerHUD/DeckLabel.text = "山札: %d | 捨札: %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
+	$PlayerHUD/StatusLabel.text = _format_status(CombatManager.player_status)
 
 func _update_controls() -> void:
 	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
@@ -314,6 +328,39 @@ func _on_enemy_intent_updated(idx: int, intent: Dictionary) -> void:
 				label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
 			_:
 				label.text = "? %s" % intent_label_text
+
+func _on_enemy_status_changed(idx: int, status: Dictionary) -> void:
+	if idx < status_labels.size():
+		status_labels[idx].text = _format_status(status)
+
+func _on_player_status_changed(status: Dictionary) -> void:
+	$PlayerHUD/StatusLabel.text = _format_status(status)
+
+func _targets_enemy_status(card: CardData) -> bool:
+	if card.status_stacks == 0:
+		return false
+	return CombatManager._map_status(card.status_effect) != &""
+
+func _format_status(status: Dictionary) -> String:
+	if status.is_empty():
+		return ""
+	var parts: Array[String] = []
+	var burn: int = int(status.get("burn", 0))
+	var bleed: int = int(status.get("bleed", 0))
+	var weak: int = int(status.get("weak", 0))
+	var vuln: int = int(status.get("vulnerable", 0))
+	var strg: int = int(status.get("strength", 0))
+	if burn > 0:
+		parts.append("🔥%d" % burn)
+	if bleed > 0:
+		parts.append("🩸%d" % bleed)
+	if weak > 0:
+		parts.append("弱%d" % weak)
+	if vuln > 0:
+		parts.append("脆%d" % vuln)
+	if strg > 0:
+		parts.append("力%d" % strg)
+	return " ".join(parts)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:
 	$PlayerHUD/HPLabel.text = "HP: %d/%d" % [hp, max_hp]
