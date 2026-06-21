@@ -6,10 +6,10 @@
 script = ExtResource("1")
 id = &"cu01"
 display_name = "フルスロットル"
-description = "このターンの全カードAPコスト半減（端数切上）。自分に5ダメ+毒1"
+description = "このターン全カードAPコスト-1（下限0）。自分に5ダメ"
 fuel_cost = 3
 tags = [5]
 restriction = 1
 is_starter = true
 self_damage = 5
-halves_ap_this_turn = true
+ap_cost_reduction = 1

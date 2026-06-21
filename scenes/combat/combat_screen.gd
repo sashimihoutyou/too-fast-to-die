@@ -152,6 +152,8 @@ func _build_enemy_display() -> void:
 		vbox.add_child(target_btn)
 
 		panel.add_child(vbox)
+		panel.gui_input.connect(_on_enemy_panel_clicked.bind(i))
+		panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		$EnemyArea.add_child(panel)
 		enemy_panels.append(panel)
 		target_buttons.append(target_btn)
@@ -201,7 +203,7 @@ func _create_card_button(card: CardData) -> Button:
 	var effective_cost := CombatManager.get_effective_ap_cost(card)
 	var cost_text := "%dAP" % effective_cost
 	if effective_cost != card.ap_cost:
-		cost_text = "%dAP(半額)" % effective_cost
+		cost_text = "%dAP(-%d)" % [effective_cost, card.ap_cost - effective_cost]
 	if card.fuel_cost > 0:
 		cost_text += "+%d燃" % card.fuel_cost
 
@@ -262,6 +264,17 @@ func _on_card_selected(card: CardData) -> void:
 		CombatManager.play_card(card, 0)
 		_after_card_play()
 
+func _on_enemy_panel_clicked(event: InputEvent, idx: int) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if selected_card == null:
+		return
+	if idx < CombatManager.enemies.size() and CombatManager.enemies[idx]["alive"]:
+		_on_enemy_target(idx)
+
 func _on_enemy_target(idx: int) -> void:
 	if selected_card == null:
 		return
@@ -277,6 +290,11 @@ func _show_target_buttons(visible_flag: bool) -> void:
 		var alive: bool = CombatManager.enemies[i]["alive"]
 		var show_it: bool = visible_flag and alive
 		target_buttons[i].visible = show_it
+		if i < enemy_panels.size():
+			if show_it:
+				enemy_panels[i].mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			else:
+				enemy_panels[i].mouse_default_cursor_shape = Control.CURSOR_ARROW
 		if show_it and selected_card != null:
 			var preview: int = CombatManager.preview_damage(selected_card, i)
 			if preview > 0:
@@ -343,6 +361,8 @@ func _after_card_play() -> void:
 	_update_hand()
 	_update_player_hud()
 	_update_controls()
+	if CombatManager.state == CombatManager.CombatState.PLAYER_TURN and not CombatManager.has_playable_card():
+		_auto_end_turn()
 
 func _update_player_hud() -> void:
 	$PlayerHUD/HPLabel.text = "HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp]
@@ -362,6 +382,26 @@ func _update_controls() -> void:
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
 	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1燃料)"
 
+func _auto_end_turn() -> void:
+	var msg := Label.new()
+	msg.text = "使用できるカードがありません！"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	msg.add_theme_font_size_override("font_size", 24)
+	msg.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	msg.offset_left = -200
+	msg.offset_right = 200
+	msg.offset_top = -20
+	msg.offset_bottom = 20
+	msg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(msg)
+	var tw := create_tween()
+	tw.tween_interval(0.7)
+	tw.tween_property(msg, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(msg.queue_free)
+	tw.tween_callback(_on_end_turn)
+
 func _on_end_turn() -> void:
 	selected_card = null
 	_show_target_buttons(false)
@@ -380,6 +420,8 @@ func _on_turn_started(_turn: int) -> void:
 	_update_hand()
 	_update_player_hud()
 	_update_controls()
+	if not CombatManager.has_playable_card():
+		_auto_end_turn()
 
 func _on_card_played(_card: CardData) -> void:
 	pass

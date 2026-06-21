@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_at02"
 display_name = "ボルトアクションライフル"
-description = "7ダメージ。次に使う射撃カードのコスト+1 → 強化: 10ダメージ"
+description = "7ダメージ"
 ap_cost = 1
 tags = [1]
 restriction = 1

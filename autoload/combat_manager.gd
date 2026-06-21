@@ -22,7 +22,7 @@ var state: CombatState = CombatState.INACTIVE
 var turn_number: int = 0
 var ap: int = 0
 var max_ap: int = 5
-var ap_cost_halved: bool = false
+var ap_cost_reduction: int = 0
 var player_hp: int = 0
 var player_max_hp: int = 0
 var player_block: int = 0
@@ -62,7 +62,7 @@ func begin_turn() -> void:
 	turn_number += 1
 	state = CombatState.PLAYER_TURN
 	ap = max_ap
-	ap_cost_halved = false
+	ap_cost_reduction = 0
 	player_block = 0
 	player_block_changed.emit(player_block)
 	_tick_player_statuses()
@@ -76,8 +76,8 @@ func begin_turn() -> void:
 	turn_started.emit(turn_number)
 
 func get_effective_ap_cost(card: CardData) -> int:
-	if ap_cost_halved:
-		return (card.ap_cost + 1) / 2
+	if ap_cost_reduction > 0:
+		return maxi(0, card.ap_cost - ap_cost_reduction)
 	return card.ap_cost
 
 # 指定した敵にこのカードを使った場合の与ダメージ（ブロック前・全ヒット合計）を予測する。
@@ -106,14 +106,20 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	return true
 
+func has_playable_card() -> bool:
+	for card: CardData in DeckManager.hand:
+		if can_play_card(card):
+			return true
+	return false
+
 func play_card(card: CardData, target_idx: int = -1) -> void:
 	if not can_play_card(card):
 		return
 	ap -= get_effective_ap_cost(card)
 	if card.fuel_cost > 0:
 		ResourceManager.consume_fuel(card.fuel_cost)
-	if card.halves_ap_this_turn:
-		ap_cost_halved = true
+	if card.ap_cost_reduction > 0:
+		ap_cost_reduction = maxi(ap_cost_reduction, card.ap_cost_reduction)
 	ap_changed.emit(ap)
 	_apply_card_effects(card, target_idx)
 	DeckManager.play_card(card)

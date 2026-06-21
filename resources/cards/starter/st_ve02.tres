@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_ve02"
 display_name = "即席グレネード"
-description = "全体6ダメージ、ヒート+10 → 強化: 全体9ダメージ"
+description = "全体6ダメージ、ヒート+10"
 ap_cost = 2
 tags = [1]
 restriction = 2

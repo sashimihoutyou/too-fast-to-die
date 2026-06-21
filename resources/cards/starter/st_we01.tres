@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_we01"
 display_name = "古いリボルバー"
-description = "6ダメージ → 強化: 9"
+description = "6ダメージ"
 ap_cost = 1
 tags = [1]
 restriction = 3

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_we02"
 display_name = "サバイバルナイフ"
-description = "5ダメージ。デッキ15枚以下なら+2 → 強化: 8(+3)"
+description = "5ダメージ。デッキ15枚以下なら+2"
 ap_cost = 1
 tags = [0]
 restriction = 3
