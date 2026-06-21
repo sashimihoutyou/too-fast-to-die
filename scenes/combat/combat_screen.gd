@@ -13,9 +13,14 @@ var awaiting_reward: bool = false
 func _ready() -> void:
 	_setup_signals()
 	_build_enemy_display()
+	_show_target_buttons(false)
 	_update_player_hud()
 	_update_hand()
 	_update_controls()
+	for btn: Button in [$Controls/EndTurnButton, $Controls/FleeButton, $Controls/RerollButton]:
+		btn.focus_mode = Control.FOCUS_NONE
+	$Controls/EndTurnButton.text = "ターン終了 (Space)"
+	$Controls/EndTurnButton.tooltip_text = "数字キー=カード, Space/Enter=ターン終了, Esc/右クリック=選択解除"
 
 func _setup_signals() -> void:
 	CombatManager.turn_started.connect(_on_turn_started)
@@ -129,6 +134,7 @@ func _build_enemy_display() -> void:
 		var target_btn := Button.new()
 		target_btn.text = "攻撃対象"
 		target_btn.add_theme_font_size_override("font_size", 12)
+		target_btn.focus_mode = Control.FOCUS_NONE
 		target_btn.pressed.connect(_on_enemy_target.bind(i))
 		target_btn.name = "TargetButton"
 		vbox.add_child(target_btn)
@@ -216,6 +222,7 @@ func _create_card_button(card: CardData) -> Button:
 		CardData.Rarity.RARE: style.border_color = Color(0.8, 0.7, 0.2)
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_font_size_override("font_size", 13)
+	btn.focus_mode = Control.FOCUS_NONE
 	return btn
 
 func _on_card_selected(card: CardData) -> void:
@@ -239,8 +246,59 @@ func _on_enemy_target(idx: int) -> void:
 
 func _show_target_buttons(visible_flag: bool) -> void:
 	for i in target_buttons.size():
-		if i < CombatManager.enemies.size():
-			target_buttons[i].visible = visible_flag and CombatManager.enemies[i]["alive"]
+		if i >= CombatManager.enemies.size():
+			continue
+		var show_it := visible_flag and CombatManager.enemies[i]["alive"]
+		target_buttons[i].visible = show_it
+		if show_it and selected_card != null:
+			var preview: int = CombatManager.preview_damage(selected_card, i)
+			if preview > 0:
+				target_buttons[i].text = "攻撃 -%d" % preview
+			elif _targets_enemy_status(selected_card):
+				target_buttons[i].text = "効果付与"
+			else:
+				target_buttons[i].text = "対象"
+		else:
+			target_buttons[i].text = "攻撃対象"
+
+func _cancel_targeting() -> void:
+	if selected_card == null:
+		return
+	selected_card = null
+	_show_target_buttons(false)
+
+# キーボード/右クリック操作（数字=カード選択、Space/Enter=ターン終了、Esc/右クリック=選択解除）
+func _unhandled_input(event: InputEvent) -> void:
+	if awaiting_reward:
+		return
+	if CombatManager.state != CombatManager.CombatState.PLAYER_TURN:
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+			_cancel_targeting()
+		return
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if not key_event.pressed or key_event.echo:
+			return
+		var key := key_event.keycode
+		if key == KEY_ESCAPE:
+			_cancel_targeting()
+		elif key == KEY_SPACE or key == KEY_ENTER or key == KEY_KP_ENTER:
+			if selected_card == null:
+				_on_end_turn()
+		elif key >= KEY_1 and key <= KEY_9:
+			_select_card_by_index(key - KEY_1)
+
+func _select_card_by_index(idx: int) -> void:
+	if selected_card != null:
+		return
+	if idx < 0 or idx >= DeckManager.hand.size():
+		return
+	var card: CardData = DeckManager.hand[idx]
+	if CombatManager.can_play_card(card):
+		_on_card_selected(card)
 
 func _after_card_play() -> void:
 	_update_hand()

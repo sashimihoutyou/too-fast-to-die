@@ -80,6 +80,21 @@ func get_effective_ap_cost(card: CardData) -> int:
 		return (card.ap_cost + 1) / 2
 	return card.ap_cost
 
+# 指定した敵にこのカードを使った場合の与ダメージ（ブロック前・全ヒット合計）を予測する。
+# 筋力・弱体・弱点・脆弱を反映。UIのダメージプレビュー用。
+func preview_damage(card: CardData, idx: int) -> int:
+	if idx < 0 or idx >= enemies.size():
+		return 0
+	var base := card.get_effective_damage()
+	if base <= 0:
+		return 0
+	var per_hit := _apply_player_attack_mods(base)
+	if is_weak_against(idx, card.tags):
+		per_hit = int(per_hit * 1.5)
+	if int(enemies[idx]["status"].get("vulnerable", 0)) > 0:
+		per_hit = int(per_hit * 1.5)
+	return per_hit * card.hit_count
+
 func can_play_card(card: CardData) -> bool:
 	if state != CombatState.PLAYER_TURN:
 		return false
