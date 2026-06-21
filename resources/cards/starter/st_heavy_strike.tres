@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_heavy_strike"
+display_name = "強打"
+description = "14ダメージ"
+ap_cost = 2
+tags = [0]
+is_starter = true
+base_damage = 14
+upgraded_damage = 20

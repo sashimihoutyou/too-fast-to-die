@@ -7,5 +7,5 @@ script = ExtResource("1")
 id = &"wild_dog_pack"
 display_name = "野犬の群れ"
 category = 1
-base_hp = 15
+base_hp = 12
 act = 1
