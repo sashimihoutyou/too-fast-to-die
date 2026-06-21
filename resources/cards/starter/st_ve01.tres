@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_ve01"
 display_name = "サブマシンガン掃射"
-description = "3ダメージ×2回、ヒート+5 → 強化: 4×2"
+description = "3ダメージ×2回、ヒート+5"
 ap_cost = 1
 tags = [1]
 restriction = 2

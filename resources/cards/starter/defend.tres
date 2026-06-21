@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"defend"
 display_name = "ディフェンド"
-description = "5ブロック → 強化: 8"
+description = "5ブロック"
 ap_cost = 1
 tags = [3]
 is_starter = true

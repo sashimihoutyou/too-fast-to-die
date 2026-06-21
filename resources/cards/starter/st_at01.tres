@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"st_at01"
 display_name = "部族の槍"
-description = "6ダメージ → 強化: 9"
+description = "6ダメージ"
 ap_cost = 1
 tags = [0]
 restriction = 1
