@@ -348,12 +348,30 @@ func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 			return {"type": "attack", "value": atk, "label": "攻撃"}
 
 func _generate_rewards() -> Array:
-	var slot_count := 3
+	var act := clampi(GameManager.current_act, 1, GameManager.MAX_ACT)
+	var is_elite := false
+	var has_machine := false
+	for e: Dictionary in enemies:
+		var d: EnemyData = e["data"]
+		if d.is_elite or d.is_boss:
+			is_elite = true
+		if d.category == EnemyData.Category.MACHINE:
+			has_machine = true
+
 	var rewards := []
-	if randf() < 0.5:
-		rewards.append({"type": "fuel", "amount": randi_range(8, 15)})
-		slot_count -= 1
-	for i in slot_count:
+	# 燃料：区間とエリートでスケール
+	var fuel_min := 6 + act * 2
+	var fuel_max := 11 + act * 3
+	if is_elite:
+		fuel_min += 6
+		fuel_max += 8
+	rewards.append({"type": "fuel", "amount": randi_range(fuel_min, fuel_max)})
+	# 機械系の敵を含む場合はスクラップを選択肢に追加
+	if has_machine:
+		rewards.append({"type": "scrap", "amount": randi_range(3, 6)})
+	# カード報酬（エリート/ボスは選択肢が増える）
+	var card_slots := 2 if is_elite else 1
+	for i in card_slots:
 		rewards.append({"type": "card"})
 	return rewards
 

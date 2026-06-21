@@ -40,6 +40,12 @@ func _build_shop() -> void:
 
 func _on_buy(item: Dictionary) -> void:
 	var cost: int = item["cost"]
+	if ResourceManager.fuel < cost:
+		return
+	# カード削除は対象選択 → 確定時に燃料消費（誤購入で燃料を失わない）
+	if item["type"] == "remove_card":
+		_show_remove_card_ui(cost)
+		return
 	if not ResourceManager.consume_fuel(cost):
 		return
 	match item["type"]:
@@ -47,8 +53,39 @@ func _on_buy(item: Dictionary) -> void:
 			ResourceManager.add_medicine(1)
 		"scrap":
 			ResourceManager.add_scrap(5)
-		"remove_card":
-			pass
+	_build_shop()
+	_update_fuel_display()
+
+func _show_remove_card_ui(cost: int) -> void:
+	for child in $ItemContainer.get_children():
+		child.queue_free()
+	var info := Label.new()
+	info.text = "削除するカードを選択 (%d燃料):" % cost
+	info.add_theme_font_size_override("font_size", 18)
+	$ItemContainer.add_child(info)
+	for card: CardData in DeckManager.master_deck:
+		var btn := Button.new()
+		btn.text = "%s — %s" % [card.display_name, card.description]
+		btn.custom_minimum_size = Vector2(400, 40)
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.pressed.connect(_on_remove_card.bind(card, cost))
+		$ItemContainer.add_child(btn)
+	var cancel := Button.new()
+	cancel.text = "やめる"
+	cancel.custom_minimum_size = Vector2(400, 40)
+	cancel.add_theme_font_size_override("font_size", 15)
+	cancel.pressed.connect(_cancel_remove_card)
+	$ItemContainer.add_child(cancel)
+
+func _on_remove_card(card: CardData, cost: int) -> void:
+	if not ResourceManager.consume_fuel(cost):
+		_cancel_remove_card()
+		return
+	DeckManager.remove_card_from_deck(card)
+	_build_shop()
+	_update_fuel_display()
+
+func _cancel_remove_card() -> void:
 	_build_shop()
 	_update_fuel_display()
 

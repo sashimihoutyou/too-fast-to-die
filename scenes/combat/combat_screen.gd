@@ -438,6 +438,11 @@ func _show_reward_screen(rewards: Array) -> void:
 				var fuel_btn := _create_fuel_reward_button(amount)
 				fuel_btn.pressed.connect(_on_reward_fuel_picked.bind(amount))
 				choice_hbox.add_child(fuel_btn)
+			"scrap":
+				var amount: int = reward.get("amount", 0)
+				var scrap_btn := _create_scrap_reward_button(amount)
+				scrap_btn.pressed.connect(_on_reward_scrap_picked.bind(amount))
+				choice_hbox.add_child(scrap_btn)
 			_:
 				if pool_idx < pool.size():
 					var card: CardData = pool[pool_idx]
@@ -481,6 +486,29 @@ func _create_fuel_reward_button(amount: int) -> Button:
 
 func _on_reward_fuel_picked(amount: int) -> void:
 	ResourceManager.add_fuel(amount)
+	_return_to_map()
+
+func _create_scrap_reward_button(amount: int) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(140, 190)
+	btn.text = "スクラップ\n+%d" % amount
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.2, 0.2, 0.25, 0.9)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	style.border_color = Color(0.5, 0.5, 0.6)
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_font_size_override("font_size", 16)
+	return btn
+
+func _on_reward_scrap_picked(amount: int) -> void:
+	ResourceManager.add_scrap(amount)
 	_return_to_map()
 
 func _on_reward_card_picked(card: CardData) -> void:
