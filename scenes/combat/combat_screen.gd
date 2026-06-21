@@ -4,13 +4,16 @@ var card_buttons: Array[Button] = []
 var enemy_panels: Array[PanelContainer] = []
 var target_buttons: Array[Button] = []
 var hp_labels: Array[Label] = []
+var hp_bars: Array[ProgressBar] = []
 var block_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
 var status_labels: Array[Label] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
+var _last_player_hp: int = 0
 
 func _ready() -> void:
+	_last_player_hp = CombatManager.player_hp
 	_setup_signals()
 	_build_enemy_display()
 	_show_target_buttons(false)
@@ -48,6 +51,7 @@ func _build_enemy_display() -> void:
 	enemy_panels.clear()
 	target_buttons.clear()
 	hp_labels.clear()
+	hp_bars.clear()
 	block_labels.clear()
 	intent_labels.clear()
 	status_labels.clear()
@@ -99,6 +103,14 @@ func _build_enemy_display() -> void:
 		hp_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 		vbox.add_child(hp_label)
 
+		var hp_bar := ProgressBar.new()
+		hp_bar.name = "HPBar"
+		hp_bar.max_value = enemy["max_hp"]
+		hp_bar.value = enemy["hp"]
+		hp_bar.show_percentage = false
+		hp_bar.custom_minimum_size = Vector2(0, 10)
+		vbox.add_child(hp_bar)
+
 		if not data.weaknesses.is_empty():
 			var weakness_label := Label.new()
 			weakness_label.text = "弱点: %s" % _tags_to_text(data.weaknesses)
@@ -144,6 +156,7 @@ func _build_enemy_display() -> void:
 		enemy_panels.append(panel)
 		target_buttons.append(target_btn)
 		hp_labels.append(hp_label)
+		hp_bars.append(hp_bar)
 		block_labels.append(block_label)
 		intent_labels.append(intent_label)
 		status_labels.append(status_label)
@@ -223,7 +236,19 @@ func _create_card_button(card: CardData) -> Button:
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_font_size_override("font_size", 13)
 	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_entered.connect(_on_card_hover.bind(btn, true))
+	btn.mouse_exited.connect(_on_card_hover.bind(btn, false))
 	return btn
+
+# ホバーでカードを少し拡大し手前に表示（手触り向上）
+func _on_card_hover(btn: Button, hovering: bool) -> void:
+	btn.pivot_offset = Vector2(btn.size.x / 2.0, btn.size.y)
+	if hovering:
+		btn.scale = Vector2(1.18, 1.18)
+		btn.z_index = 1
+	else:
+		btn.scale = Vector2.ONE
+		btn.z_index = 0
 
 func _on_card_selected(card: CardData) -> void:
 	if not CombatManager.can_play_card(card):
@@ -231,6 +256,7 @@ func _on_card_selected(card: CardData) -> void:
 	var needs_target := (card.base_damage > 0 or _targets_enemy_status(card)) and not card.is_aoe
 	if needs_target:
 		selected_card = card
+		_highlight_selected_card(card)
 		_show_target_buttons(true)
 	else:
 		CombatManager.play_card(card, 0)
@@ -266,6 +292,18 @@ func _cancel_targeting() -> void:
 		return
 	selected_card = null
 	_show_target_buttons(false)
+	_restore_hand_modulate()
+
+func _highlight_selected_card(card: CardData) -> void:
+	for i in card_buttons.size():
+		if i < DeckManager.hand.size() and DeckManager.hand[i] == card:
+			card_buttons[i].modulate = Color.WHITE
+		else:
+			card_buttons[i].modulate = Color(0.5, 0.5, 0.5, 0.85)
+
+func _restore_hand_modulate() -> void:
+	for btn: Button in card_buttons:
+		btn.modulate = Color.WHITE
 
 # キーボード/右クリック操作（数字=カード選択、Space/Enter=ターン終了、Esc/右クリック=選択解除）
 func _unhandled_input(event: InputEvent) -> void:
@@ -357,6 +395,11 @@ func _on_enemy_defeated(idx: int) -> void:
 func _on_enemy_hp_changed(idx: int, hp: int, max_hp: int) -> void:
 	if idx < hp_labels.size():
 		hp_labels[idx].text = "HP: %d/%d" % [hp, max_hp]
+	if idx < hp_bars.size():
+		hp_bars[idx].max_value = max_hp
+		hp_bars[idx].value = hp
+	if idx < enemy_panels.size():
+		_pop_node(enemy_panels[idx])
 
 func _on_enemy_block_changed(idx: int, block: int) -> void:
 	if idx < block_labels.size():
@@ -422,7 +465,29 @@ func _format_status(status: Dictionary) -> String:
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:
 	$PlayerHUD/HPLabel.text = "HP: %d/%d" % [hp, max_hp]
+	$PlayerHUD/HPBar.max_value = max_hp
 	$PlayerHUD/HPBar.value = hp
+	if hp < _last_player_hp:
+		_flash_screen(Color(0.8, 0.1, 0.1, 0.35))
+	_last_player_hp = hp
+
+# 被弾時の画面赤フラッシュ（手触り）
+func _flash_screen(color: Color) -> void:
+	var rect := ColorRect.new()
+	rect.color = color
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(rect)
+	var tw := create_tween()
+	tw.tween_property(rect, "color:a", 0.0, 0.3)
+	tw.tween_callback(rect.queue_free)
+
+# ノードを一瞬拡大して戻す（ヒットの手応え）
+func _pop_node(node: Control) -> void:
+	node.pivot_offset = node.size / 2.0
+	var tw := create_tween()
+	tw.tween_property(node, "scale", Vector2(1.12, 1.12), 0.06)
+	tw.tween_property(node, "scale", Vector2.ONE, 0.10)
 
 func _on_player_block_changed(block: int) -> void:
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % block
