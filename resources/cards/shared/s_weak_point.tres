@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"s_weak_point"
+display_name = "弱点狙い"
+description = "次の遠距離攻撃のダメージ2倍"
+ap_cost = 1
+tags = [4]
+status_effect = &"ranged_double"
+status_stacks = 1

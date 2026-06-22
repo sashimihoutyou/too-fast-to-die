@@ -15,6 +15,9 @@ signal enemy_block_changed(idx: int, block: int)
 signal enemy_intent_updated(idx: int, intent: Dictionary)
 signal enemy_status_changed(idx: int, status: Dictionary)
 signal player_status_changed(status: Dictionary)
+signal acceleration_changed(gauge: int, max_gauge: int)
+signal player_buffs_changed(buffs: Dictionary)
+signal ultimate_activated()
 
 enum CombatState { INACTIVE, INIT, DRAW, PLAYER_TURN, DISCARD, ENEMY_TURN, CHECK_END, VICTORY, DEFEAT, FLED }
 
@@ -30,10 +33,22 @@ var player_status: Dictionary = {}
 
 var enemies: Array[Dictionary] = []
 
+var acceleration_gauge: int = 0
+const ACCELERATION_MAX := 30
+const ACCEL_ATTACK := 3
+const ACCEL_BUFF := 5
+const ACCEL_BLOCK_CAP := 10
+var player_buffs: Dictionary = {}
+
+func _new_buffs_dict() -> Dictionary:
+	return {"melee_power": 0, "ranged_double": 0, "overcharge": 0, "ultimate": 0}
+
 func reset_player_for_new_run() -> void:
 	player_max_hp = GameManager.current_character.max_hp
 	player_hp = player_max_hp
 	player_status = _new_status_dict()
+	player_buffs = _new_buffs_dict()
+	acceleration_gauge = 0
 
 func start_combat(enemy_list: Array[EnemyData]) -> void:
 	state = CombatState.INIT
@@ -42,7 +57,11 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 	player_hp = mini(player_hp, player_max_hp)
 	player_block = 0
 	player_status = _new_status_dict()
+	player_buffs = _new_buffs_dict()
+	acceleration_gauge = 0
 	player_status_changed.emit(player_status)
+	player_buffs_changed.emit(player_buffs)
+	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
 	enemies.clear()
 	for ed: EnemyData in enemy_list:
 		enemies.append({
@@ -76,8 +95,11 @@ func begin_turn() -> void:
 	turn_started.emit(turn_number)
 
 func get_effective_ap_cost(card: CardData) -> int:
-	if ap_cost_reduction > 0:
-		return maxi(0, card.ap_cost - ap_cost_reduction)
+	var reduction := ap_cost_reduction
+	if int(player_buffs.get("ultimate", 0)) > 0:
+		reduction += 1
+	if reduction > 0:
+		return maxi(0, card.ap_cost - reduction)
 	return card.ap_cost
 
 # 指定した敵にこのカードを使った場合の与ダメージ（ブロック前・全ヒット合計）を予測する。
@@ -88,7 +110,7 @@ func preview_damage(card: CardData, idx: int) -> int:
 	var base := card.get_effective_damage()
 	if base <= 0:
 		return 0
-	var per_hit := _apply_player_attack_mods(base)
+	var per_hit := _apply_player_attack_mods(base, card.tags, false)
 	if is_weak_against(idx, card.tags):
 		per_hit = int(per_hit * 1.5)
 	if int(enemies[idx]["status"].get("vulnerable", 0)) > 0:
@@ -100,7 +122,8 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	if card.is_unplayable:
 		return false
-	if get_effective_ap_cost(card) > ap:
+	var cost := get_effective_ap_cost(card)
+	if cost > ap and int(player_buffs.get("overcharge", 0)) <= 0:
 		return false
 	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
 		return false
@@ -115,7 +138,14 @@ func has_playable_card() -> bool:
 func play_card(card: CardData, target_idx: int = -1) -> void:
 	if not can_play_card(card):
 		return
-	ap -= get_effective_ap_cost(card)
+	var cost := get_effective_ap_cost(card)
+	var ap_before := ap
+	ap -= cost
+	if int(player_buffs.get("overcharge", 0)) > 0 and ap < 0:
+		var debt := maxi(0, cost - maxi(0, ap_before))
+		if debt > 0:
+			player_hp = maxi(0, player_hp - debt * 3)
+			player_hp_changed.emit(player_hp, player_max_hp)
 	if card.fuel_cost > 0:
 		ResourceManager.consume_fuel(card.fuel_cost)
 	if card.ap_cost_reduction > 0:
@@ -131,6 +161,7 @@ func end_player_turn() -> void:
 		return
 	state = CombatState.DISCARD
 	DeckManager.discard_hand()
+	_tick_player_buffs()
 	state = CombatState.ENEMY_TURN
 	_execute_enemy_turns()
 	_check_enemies_alive()
@@ -189,7 +220,7 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		ap_changed.emit(ap)
 
 	if dmg > 0:
-		var hit_dmg := _apply_player_attack_mods(dmg)
+		var hit_dmg := _apply_player_attack_mods(dmg, card.tags)
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
@@ -201,14 +232,20 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 						_damage_enemy(target_idx, hit_dmg, card.tags)
 
 	if card.status_effect != &"" and card.status_stacks != 0:
-		var mapped := _map_status(card.status_effect)
-		if mapped != &"":
-			if card.is_aoe:
-				for i in enemies.size():
-					if enemies[i]["alive"]:
-						_add_enemy_status(i, mapped, card.status_stacks)
-			elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
-				_add_enemy_status(target_idx, mapped, card.status_stacks)
+		if _is_player_effect(card.status_effect):
+			_apply_player_effect(card.status_effect, card.status_stacks)
+		else:
+			var mapped := _map_status(card.status_effect)
+			if mapped != &"":
+				if card.is_aoe:
+					for i in enemies.size():
+						if enemies[i]["alive"]:
+							_add_enemy_status(i, mapped, card.status_stacks)
+				elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+					_add_enemy_status(target_idx, mapped, card.status_stacks)
+
+	if _is_cultist():
+		_fill_acceleration_from_card(card)
 
 func is_weak_against(idx: int, tags: Array[CardData.Tag]) -> bool:
 	if idx < 0 or idx >= enemies.size():
@@ -247,17 +284,22 @@ func _damage_player(amount: int, from_enemy: bool = false) -> void:
 	var remaining := amount
 	if from_enemy and int(player_status.get("vulnerable", 0)) > 0:
 		remaining = int(remaining * 1.5)
+	var blocked := 0
 	if player_block > 0:
 		if player_block >= remaining:
+			blocked = remaining
 			player_block -= remaining
 			remaining = 0
 		else:
+			blocked = player_block
 			remaining -= player_block
 			player_block = 0
 		player_block_changed.emit(player_block)
 	if remaining > 0:
 		player_hp = maxi(0, player_hp - remaining)
 		player_hp_changed.emit(player_hp, player_max_hp)
+	if from_enemy and blocked > 0 and _is_cultist():
+		_add_acceleration(mini(blocked, ACCEL_BLOCK_CAP))
 
 func _check_enemies_alive() -> void:
 	var all_dead := true
@@ -419,10 +461,19 @@ func _map_status(se: StringName) -> StringName:
 			return &"strength"
 	return &""
 
-func _apply_player_attack_mods(base: int) -> int:
+func _apply_player_attack_mods(base: int, tags: Array[CardData.Tag] = [], consume: bool = true) -> int:
 	var dmg := base + int(player_status.get("strength", 0))
+	if CardData.Tag.MELEE in tags and int(player_buffs.get("melee_power", 0)) > 0:
+		dmg += 3
+	if int(player_buffs.get("overcharge", 0)) > 0 and ap <= 0:
+		dmg += 3
 	if int(player_status.get("weak", 0)) > 0:
 		dmg = int(dmg * 0.75)
+	if CardData.Tag.RANGED in tags and int(player_buffs.get("ranged_double", 0)) > 0:
+		dmg *= 2
+		if consume:
+			player_buffs["ranged_double"] = int(player_buffs.get("ranged_double", 0)) - 1
+			player_buffs_changed.emit(player_buffs)
 	return maxi(0, dmg)
 
 func _apply_weak(base: int, weak_active: bool) -> int:
@@ -468,4 +519,57 @@ func _tick_player_statuses() -> void:
 		player_hp_changed.emit(player_hp, player_max_hp)
 	_decay_debuffs(player_status)
 	player_status_changed.emit(player_status)
+
+func _tick_player_buffs() -> void:
+	var changed := false
+	for key: String in ["melee_power", "overcharge", "ultimate"]:
+		var val: int = int(player_buffs.get(key, 0))
+		if val > 0:
+			player_buffs[key] = val - 1
+			changed = true
+	if changed:
+		player_buffs_changed.emit(player_buffs)
+
+func _is_cultist() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"acceleration"
+
+func _is_player_effect(effect: StringName) -> bool:
+	match effect:
+		&"overcharge", &"melee_power", &"ranged_double":
+			return true
+	return false
+
+func _apply_player_effect(effect: StringName, stacks: int) -> void:
+	match effect:
+		&"overcharge":
+			player_buffs["overcharge"] = maxi(int(player_buffs.get("overcharge", 0)), stacks)
+		&"melee_power":
+			player_buffs["melee_power"] = maxi(int(player_buffs.get("melee_power", 0)), stacks)
+		&"ranged_double":
+			player_buffs["ranged_double"] = int(player_buffs.get("ranged_double", 0)) + stacks
+	player_buffs_changed.emit(player_buffs)
+
+func _add_acceleration(amount: int) -> void:
+	if acceleration_gauge >= ACCELERATION_MAX:
+		return
+	acceleration_gauge = mini(acceleration_gauge + amount, ACCELERATION_MAX)
+	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
+	if acceleration_gauge >= ACCELERATION_MAX:
+		_activate_ultimate()
+
+func _activate_ultimate() -> void:
+	player_buffs["ultimate"] = 3
+	acceleration_gauge = 0
+	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
+	player_buffs_changed.emit(player_buffs)
+	DeckManager.draw_cards(3)
+	ultimate_activated.emit()
+
+func _fill_acceleration_from_card(card: CardData) -> void:
+	if card.get_effective_damage() > 0:
+		_add_acceleration(ACCEL_ATTACK)
+	else:
+		_add_acceleration(ACCEL_BUFF)
 

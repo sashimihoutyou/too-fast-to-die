@@ -7,5 +7,5 @@ script = ExtResource("1")
 id = &"deviluf"
 display_name = "デビルフ"
 category = 1
-base_hp = 28
+base_hp = 22
 act = 1

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bm11"
+display_name = "猛獣の牙"
+description = "4ダメージ×3回"
+ap_cost = 2
+tags = [0, 5]
+restriction = 4
+is_starter = true
+base_damage = 4
+hit_count = 3
+upgraded_damage = 5

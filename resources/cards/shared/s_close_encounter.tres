@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"s_close_encounter"
+display_name = "接近遭遇"
+description = "3T: 近接攻撃+3ダメージ"
+ap_cost = 1
+tags = [4]
+status_effect = &"melee_power"
+status_stacks = 3
