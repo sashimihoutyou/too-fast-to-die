@@ -15,6 +15,7 @@ signal enemy_block_changed(idx: int, block: int)
 signal enemy_intent_updated(idx: int, intent: Dictionary)
 signal enemy_status_changed(idx: int, status: Dictionary)
 signal player_status_changed(status: Dictionary)
+signal heat_changed(value: int, max_value: int)
 signal acceleration_changed(gauge: int, max_gauge: int)
 signal player_buffs_changed(buffs: Dictionary)
 signal ultimate_activated()
@@ -30,6 +31,10 @@ var player_hp: int = 0
 var player_max_hp: int = 0
 var player_block: int = 0
 var player_status: Dictionary = {}
+
+# 元レイダー固有資源「ヒート（激情）」。0〜HEAT_MAX のメーター。
+const HEAT_MAX: int = 100
+var player_heat: int = 0
 
 var enemies: Array[Dictionary] = []
 
@@ -47,6 +52,7 @@ func reset_player_for_new_run() -> void:
 	player_max_hp = GameManager.current_character.max_hp
 	player_hp = player_max_hp
 	player_status = _new_status_dict()
+	player_heat = 0
 	player_buffs = _new_buffs_dict()
 	acceleration_gauge = 0
 
@@ -60,6 +66,8 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 	player_buffs = _new_buffs_dict()
 	acceleration_gauge = 0
 	player_status_changed.emit(player_status)
+	player_heat = 0
+	heat_changed.emit(player_heat, HEAT_MAX)
 	player_buffs_changed.emit(player_buffs)
 	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
 	enemies.clear()
@@ -108,6 +116,11 @@ func preview_damage(card: CardData, idx: int) -> int:
 	if idx < 0 or idx >= enemies.size():
 		return 0
 	var base := card.get_effective_damage()
+	# ヒート連動の動的ダメージをプレビューに反映（実適用と一致させる）
+	if card.id == &"er01":  # ランページ: ヒート÷3
+		base = int(player_heat / 3.0)
+	elif card.id == &"er06" and player_heat >= HEAT_MAX / 2:  # バーサーカー: 50%以上で+5
+		base += 5
 	if base <= 0:
 		return 0
 	var per_hit := _apply_player_attack_mods(base, card.tags, false)
@@ -202,8 +215,25 @@ func emergency_reroll() -> bool:
 	return true
 
 func _apply_card_effects(card: CardData, target_idx: int) -> void:
+	# --- ヒート消費系の特殊カード（ダメージ/ブロックが現在ヒートで決まる）---
+	if card.id == &"er01":  # ランページ: ヒート÷3のダメージ
+		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+			var rampage := _apply_player_attack_mods(int(player_heat / 3.0))
+			_damage_enemy(target_idx, rampage, card.tags)
+		return
+	if card.id == &"er08":  # 嵐の前の静けさ: ヒートを0にし、除去量と同値のブロック
+		if player_heat > 0:
+			player_block += player_heat
+			player_block_changed.emit(player_block)
+			_add_heat(-player_heat)
+		return
+
 	var dmg := card.get_effective_damage()
 	var blk := card.get_effective_block()
+
+	# バーサーカースラッシュ: ヒート50%以上で+5
+	if card.id == &"er06" and player_heat >= HEAT_MAX / 2:
+		dmg += 5
 
 	if blk > 0:
 		player_block += blk
@@ -219,18 +249,24 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		ap += card.bonus_ap
 		ap_changed.emit(ap)
 
+	var killed_with_card := false
 	if dmg > 0:
 		var hit_dmg := _apply_player_attack_mods(dmg, card.tags)
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
 					_damage_enemy(i, hit_dmg * card.hit_count, card.tags)
+					if enemies[i]["hp"] <= 0:
+						killed_with_card = true
 		else:
 			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 				for h in card.hit_count:
 					if enemies[target_idx]["alive"]:
 						_damage_enemy(target_idx, hit_dmg, card.tags)
+				if enemies[target_idx]["hp"] <= 0:
+					killed_with_card = true
 
+	# 敵デバフ（汎用 status_effect。heat 等のキャラ資源は _map_status で弾かれる）
 	if card.status_effect != &"" and card.status_stacks != 0:
 		if _is_player_effect(card.status_effect):
 			_apply_player_effect(card.status_effect, card.status_stacks)
@@ -246,6 +282,20 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 
 	if _is_cultist():
 		_fill_acceleration_from_card(card)
+
+	# --- ヒート（激情）資源ゲイン：status_effect=&"heat" をプレイヤー資源に振り替える ---
+	if card.status_effect == &"heat":
+		_add_heat(card.status_stacks)
+
+	# 怒りの咆哮: 全敵の次攻撃力-2
+	if card.id == &"er10":
+		for i in enemies.size():
+			if enemies[i]["alive"]:
+				_add_enemy_status(i, &"atk_down", 2)
+
+	# 血の記憶: このカードで敵を撃破したらヒート-10
+	if card.id == &"er07" and killed_with_card:
+		_add_heat(-10)
 
 func is_weak_against(idx: int, tags: Array[CardData.Tag]) -> bool:
 	if idx < 0 or idx >= enemies.size():
@@ -325,22 +375,25 @@ func _execute_enemy_turns() -> void:
 		var intent: Dictionary = enemies[i]["intent"]
 		enemies[i]["block"] = 0
 		enemy_block_changed.emit(i, 0)
+		var atk_down: int = int(status.get("atk_down", 0))
 		match intent.get("type", ""):
 			"attack":
-				var dmg: int = _apply_weak(intent.get("value", 0), weak_active)
+				var dmg: int = maxi(0, _apply_weak(intent.get("value", 0), weak_active) - atk_down)
 				var hits: int = intent.get("hits", 1)
 				for h in hits:
 					_damage_player(dmg, true)
+				status["atk_down"] = 0  # 次攻撃に対する減算を消費
 			"defend":
 				var blk: int = intent.get("value", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 			"attack_defend":
-				var dmg: int = _apply_weak(intent.get("attack", 0), weak_active)
+				var dmg: int = maxi(0, _apply_weak(intent.get("attack", 0), weak_active) - atk_down)
 				var blk: int = intent.get("block", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 				_damage_player(dmg, true)
+				status["atk_down"] = 0  # 次攻撃に対する減算を消費
 		# ターン終了時：弱体・脆弱を1減衰
 		_decay_debuffs(status)
 		enemy_status_changed.emit(i, status)
@@ -442,10 +495,12 @@ func _generate_rewards() -> Array:
 # weak（弱体）= 与ダメ -25% / vulnerable（脆弱）= 被ダメ +50%
 # burn（炎上）/ bleed（出血）= ターン開始時に固定ダメージ、毎ターン1減衰
 # strength（筋力）= 攻撃に +固定値（将来用）
-# heat / aura / beast はキャラ固有ゲージのため、ここでは扱わない（無視）。
+# atk_down（攻撃減算）= 敵の次回攻撃ダメージを固定値だけ減らし、攻撃時に消費（怒りの咆哮）
+# heat（激情）はプレイヤー固有資源として _add_heat / player_heat で別管理する。
+# aura / beast は未実装のキャラ固有ゲージのため、ここでは扱わない（無視）。
 
 func _new_status_dict() -> Dictionary:
-	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0}
+	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0, "atk_down": 0}
 
 func _map_status(se: StringName) -> StringName:
 	match se:
@@ -520,6 +575,10 @@ func _tick_player_statuses() -> void:
 	_decay_debuffs(player_status)
 	player_status_changed.emit(player_status)
 
+# ヒート（激情）の増減。0〜HEAT_MAX にクランプして通知する。
+func _add_heat(amount: int) -> void:
+	player_heat = clampi(player_heat + amount, 0, HEAT_MAX)
+	heat_changed.emit(player_heat, HEAT_MAX)
 func _tick_player_buffs() -> void:
 	var changed := false
 	for key: String in ["melee_power", "overcharge", "ultimate"]:

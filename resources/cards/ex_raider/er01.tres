@@ -11,3 +11,4 @@ ap_cost = 2
 tags = [5]
 restriction = 2
 is_starter = true
+requires_target = true

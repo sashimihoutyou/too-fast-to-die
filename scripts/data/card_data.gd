@@ -21,6 +21,7 @@ enum CharacterRestriction { NONE, CULTIST, EX_RAIDER, WANDERER, BEAST_MASTER, CO
 @export var base_block: int = 0
 @export var hit_count: int = 1
 @export var is_aoe: bool = false
+@export var requires_target: bool = false  # ダメージが動的(base_damage=0)でも対象選択を要求する
 @export var self_damage: int = 0
 @export var draw_count: int = 0
 @export var bonus_ap: int = 0
