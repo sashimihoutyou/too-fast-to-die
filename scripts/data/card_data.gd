@@ -27,7 +27,7 @@ enum CharacterRestriction { NONE, CULTIST, EX_RAIDER, WANDERER, BEAST_MASTER, CO
 @export var bonus_ap: int = 0
 @export var status_effect: StringName = &""
 @export var status_stacks: int = 0
-@export var halves_ap_this_turn: bool = false
+@export var ap_cost_reduction: int = 0
 @export var upgrade_description: String
 @export var upgraded_damage: int = 0
 @export var upgraded_block: int = 0

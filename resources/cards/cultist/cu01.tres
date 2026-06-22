@@ -5,11 +5,12 @@
 [resource]
 script = ExtResource("1")
 id = &"cu01"
-display_name = "フルスロットル"
-description = "このターンの全カードAPコスト半減（端数切上）。自分に5ダメ+毒1"
-fuel_cost = 3
-tags = [5]
+display_name = "オーバーチャージ"
+description = "3T: AP0以下でもカード使用可。AP0以下で与ダメ+3。AP負債1毎にHP-3"
+ap_cost = 1
+tags = [4, 5]
 restriction = 1
 is_starter = true
-self_damage = 5
-halves_ap_this_turn = true
+is_exhaustible = true
+status_effect = &"overcharge"
+status_stacks = 3

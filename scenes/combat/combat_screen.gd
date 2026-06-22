@@ -58,6 +58,9 @@ func _setup_signals() -> void:
 	CombatManager.player_hp_changed.connect(_on_player_hp_changed)
 	CombatManager.player_block_changed.connect(_on_player_block_changed)
 	CombatManager.ap_changed.connect(_on_ap_changed)
+	CombatManager.acceleration_changed.connect(_on_acceleration_changed)
+	CombatManager.player_buffs_changed.connect(_on_player_buffs_changed)
+	CombatManager.ultimate_activated.connect(_on_ultimate_activated)
 	CombatManager.combat_won.connect(_on_combat_won)
 	CombatManager.combat_lost.connect(_on_combat_lost)
 	CombatManager.player_fled.connect(_on_player_fled)
@@ -173,6 +176,8 @@ func _build_enemy_display() -> void:
 		vbox.add_child(target_btn)
 
 		panel.add_child(vbox)
+		panel.gui_input.connect(_on_enemy_panel_clicked.bind(i))
+		panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		$EnemyArea.add_child(panel)
 		enemy_panels.append(panel)
 		target_buttons.append(target_btn)
@@ -222,7 +227,7 @@ func _create_card_button(card: CardData) -> Button:
 	var effective_cost := CombatManager.get_effective_ap_cost(card)
 	var cost_text := "%dAP" % effective_cost
 	if effective_cost != card.ap_cost:
-		cost_text = "%dAP(半額)" % effective_cost
+		cost_text = "%dAP(-%d)" % [effective_cost, card.ap_cost - effective_cost]
 	if card.fuel_cost > 0:
 		cost_text += "+%d燃" % card.fuel_cost
 
@@ -283,6 +288,17 @@ func _on_card_selected(card: CardData) -> void:
 		CombatManager.play_card(card, 0)
 		_after_card_play()
 
+func _on_enemy_panel_clicked(event: InputEvent, idx: int) -> void:
+	if not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if selected_card == null:
+		return
+	if idx < CombatManager.enemies.size() and CombatManager.enemies[idx]["alive"]:
+		_on_enemy_target(idx)
+
 func _on_enemy_target(idx: int) -> void:
 	if selected_card == null:
 		return
@@ -298,6 +314,11 @@ func _show_target_buttons(visible_flag: bool) -> void:
 		var alive: bool = CombatManager.enemies[i]["alive"]
 		var show_it: bool = visible_flag and alive
 		target_buttons[i].visible = show_it
+		if i < enemy_panels.size():
+			if show_it:
+				enemy_panels[i].mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			else:
+				enemy_panels[i].mouse_default_cursor_shape = Control.CURSOR_ARROW
 		if show_it and selected_card != null:
 			var preview: int = CombatManager.preview_damage(selected_card, i)
 			if preview > 0:
@@ -364,16 +385,25 @@ func _after_card_play() -> void:
 	_update_hand()
 	_update_player_hud()
 	_update_controls()
+	if CombatManager.state == CombatManager.CombatState.PLAYER_TURN and not CombatManager.has_playable_card():
+		_auto_end_turn()
 
 func _update_player_hud() -> void:
 	$PlayerHUD/HPLabel.text = "HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp]
 	$PlayerHUD/HPBar.max_value = CombatManager.player_max_hp
 	$PlayerHUD/HPBar.value = CombatManager.player_hp
-	$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
+	if CombatManager.ap < 0:
+		$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
+		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	else:
+		$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
+		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % CombatManager.player_block
 	$PlayerHUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
 	$PlayerHUD/DeckLabel.text = "山札: %d | 捨札: %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
 	$PlayerHUD/StatusLabel.text = _format_status(CombatManager.player_status)
+	_update_gauge_display()
+	_update_buff_display()
 
 func _update_controls() -> void:
 	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
@@ -382,6 +412,26 @@ func _update_controls() -> void:
 	$Controls/FleeButton.disabled = not in_turn or is_boss
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
 	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1燃料)"
+
+func _auto_end_turn() -> void:
+	var msg := Label.new()
+	msg.text = "使用できるカードがありません！"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	msg.add_theme_font_size_override("font_size", 24)
+	msg.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	msg.offset_left = -200
+	msg.offset_right = 200
+	msg.offset_top = -20
+	msg.offset_bottom = 20
+	msg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(msg)
+	var tw := create_tween()
+	tw.tween_interval(0.7)
+	tw.tween_property(msg, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(msg.queue_free)
+	tw.tween_callback(_on_end_turn)
 
 func _on_end_turn() -> void:
 	selected_card = null
@@ -401,6 +451,8 @@ func _on_turn_started(_turn: int) -> void:
 	_update_hand()
 	_update_player_hud()
 	_update_controls()
+	if not CombatManager.has_playable_card():
+		_auto_end_turn()
 
 func _on_card_played(_card: CardData) -> void:
 	pass
@@ -459,8 +511,64 @@ func _on_enemy_status_changed(idx: int, status: Dictionary) -> void:
 func _on_player_status_changed(status: Dictionary) -> void:
 	$PlayerHUD/StatusLabel.text = _format_status(status)
 
+func _on_acceleration_changed(_gauge: int, _max_gauge: int) -> void:
+	_update_gauge_display()
+
+func _on_player_buffs_changed(_buffs: Dictionary) -> void:
+	_update_buff_display()
+	_update_hand()
+
+func _on_ultimate_activated() -> void:
+	_flash_screen(Color(0.2, 0.8, 0.9, 0.4))
+	var msg := Label.new()
+	msg.text = "アルティメット発動！"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	msg.add_theme_font_size_override("font_size", 32)
+	msg.add_theme_color_override("font_color", Color(0.3, 1.0, 1.0))
+	msg.offset_left = -200
+	msg.offset_right = 200
+	msg.offset_top = -30
+	msg.offset_bottom = 30
+	msg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(msg)
+	var tw := create_tween()
+	tw.tween_interval(1.0)
+	tw.tween_property(msg, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(msg.queue_free)
+
+func _update_gauge_display() -> void:
+	if not CombatManager._is_cultist():
+		$PlayerHUD/GaugeLabel.text = ""
+		return
+	var gauge := CombatManager.acceleration_gauge
+	var mx := CombatManager.ACCELERATION_MAX
+	var filled := roundi(float(gauge) / float(mx) * 10.0)
+	var bar := "█".repeat(filled) + "░".repeat(10 - filled)
+	$PlayerHUD/GaugeLabel.text = "加速 %s %d/%d" % [bar, gauge, mx]
+
+func _update_buff_display() -> void:
+	var parts: Array[String] = []
+	var buffs: Dictionary = CombatManager.player_buffs
+	var ult: int = int(buffs.get("ultimate", 0))
+	var oc: int = int(buffs.get("overcharge", 0))
+	var mp: int = int(buffs.get("melee_power", 0))
+	var rd: int = int(buffs.get("ranged_double", 0))
+	if ult > 0:
+		parts.append("ULT(%dt)" % ult)
+	if oc > 0:
+		parts.append("過充電(%dt)" % oc)
+	if mp > 0:
+		parts.append("近+3(%dt)" % mp)
+	if rd > 0:
+		parts.append("射×2(%d)" % rd)
+	$PlayerHUD/BuffLabel.text = " ".join(parts)
+
 func _targets_enemy_status(card: CardData) -> bool:
 	if card.status_stacks == 0:
+		return false
+	if CombatManager._is_player_effect(card.status_effect):
 		return false
 	return CombatManager._map_status(card.status_effect) != &""
 
@@ -518,7 +626,12 @@ func _on_player_block_changed(block: int) -> void:
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % block
 
 func _on_ap_changed(new_ap: int) -> void:
-	$PlayerHUD/APLabel.text = "AP: %d/%d" % [new_ap, CombatManager.max_ap]
+	if new_ap < 0:
+		$PlayerHUD/APLabel.text = "AP: %d/%d" % [new_ap, CombatManager.max_ap]
+		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	else:
+		$PlayerHUD/APLabel.text = "AP: %d/%d" % [new_ap, CombatManager.max_ap]
+		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
 	_update_hand()
 	_update_controls()
 

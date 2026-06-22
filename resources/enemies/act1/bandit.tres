@@ -7,5 +7,5 @@ script = ExtResource("1")
 id = &"bandit"
 display_name = "荒野の盗賊"
 category = 0
-base_hp = 35
+base_hp = 28
 act = 1

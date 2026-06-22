@@ -4,12 +4,14 @@
 
 [resource]
 script = ExtResource("1")
-id = &"st_at02"
-display_name = "ボルトアクションライフル"
-description = "7ダメージ"
-ap_cost = 1
-tags = [1]
+id = &"cu11"
+display_name = "部族の呪詛"
+description = "8ダメージ、脆弱2"
+ap_cost = 2
+tags = [0, 5]
 restriction = 1
 is_starter = true
-base_damage = 7
-upgraded_damage = 10
+base_damage = 8
+upgraded_damage = 12
+status_effect = &"vulnerable"
+status_stacks = 2

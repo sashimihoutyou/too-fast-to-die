@@ -4,15 +4,15 @@
 
 [resource]
 script = ExtResource("1")
-id = &"st_ve02"
-display_name = "即席グレネード"
-description = "全体6ダメージ、ヒート+10"
+id = &"er11"
+display_name = "焼夷弾"
+description = "全体4ダメージ、炎上2"
 ap_cost = 2
-tags = [1]
+tags = [1, 5]
 restriction = 2
 is_starter = true
-base_damage = 6
+base_damage = 4
 is_aoe = true
-upgraded_damage = 9
-status_effect = &"heat"
-status_stacks = 10
+upgraded_damage = 6
+status_effect = &"burn"
+status_stacks = 2

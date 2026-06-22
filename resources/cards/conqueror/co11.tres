@@ -4,12 +4,13 @@
 
 [resource]
 script = ExtResource("1")
-id = &"st_we01"
-display_name = "古いリボルバー"
-description = "6ダメージ"
-ap_cost = 1
-tags = [1]
-restriction = 3
+id = &"co11"
+display_name = "気合の構え"
+description = "10ブロック、1ドロー"
+ap_cost = 2
+tags = [3, 5]
+restriction = 5
 is_starter = true
-base_damage = 6
-upgraded_damage = 9
+base_block = 10
+draw_count = 1
+upgraded_block = 14

@@ -4,12 +4,13 @@
 
 [resource]
 script = ExtResource("1")
-id = &"st_we01"
-display_name = "古いリボルバー"
-description = "6ダメージ"
+id = &"st_intimidate"
+display_name = "威嚇"
+description = "3ダメージ、弱体1"
 ap_cost = 1
-tags = [1]
-restriction = 3
+tags = [4]
 is_starter = true
-base_damage = 6
-upgraded_damage = 9
+base_damage = 3
+upgraded_damage = 5
+status_effect = &"weaken"
+status_stacks = 1

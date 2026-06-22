@@ -4,12 +4,10 @@
 
 [resource]
 script = ExtResource("1")
-id = &"st_we01"
-display_name = "古いリボルバー"
-description = "6ダメージ"
+id = &"s_weak_point"
+display_name = "弱点狙い"
+description = "次の遠距離攻撃のダメージ2倍"
 ap_cost = 1
-tags = [1]
-restriction = 3
-is_starter = true
-base_damage = 6
-upgraded_damage = 9
+tags = [4]
+status_effect = &"ranged_double"
+status_stacks = 1
