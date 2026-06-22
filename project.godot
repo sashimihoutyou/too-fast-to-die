@@ -27,6 +27,7 @@ KarmaManager="*res://autoload/karma_manager.gd"
 DeckManager="*res://autoload/deck_manager.gd"
 CombatManager="*res://autoload/combat_manager.gd"
 GameManager="*res://autoload/game_manager.gd"
+QuestManager="*res://autoload/quest_manager.gd"
 DebugEditorManager="*res://scripts/debug/debug_editor_manager.gd"
 
 [display]

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_hunt"]
+script = ExtResource("2")
+label = "自力でデビルフを狩る"
+result_text = "群れを間引くと決めた。アルファに挑むまでに、できるだけ数を削る。"
+karma_change = 1
+starts_quest = &"devilf_pack"
+quest_outcome = &"hunt"
+
+[sub_resource type="Resource" id="choice_poison"]
+script = ExtResource("2")
+label = "毒餌を仕掛けて一網打尽にする"
+requirement = "scrap>=4"
+result_text = "拾い集めた薬品で粗末な毒を煮出し、家畜の死骸に仕込む。夜明けには群れは静かになっていた。"
+karma_change = -2
+scrap_change = -4
+starts_quest = &"devilf_pack"
+quest_outcome = &"poison"
+
+[sub_resource type="Resource" id="choice_ignore"]
+script = ExtResource("2")
+label = "関わらない"
+result_text = "おれの問題じゃない。群れは荒野をうろついたままだ。"
+starts_quest = &"devilf_pack"
+quest_outcome = &"ignore"
+
+[resource]
+script = ExtResource("1")
+id = &"devilf_pack_intro"
+title = "デビルフの群れ"
+body_text = "デビルフの群れが活性化し、旅人や家畜が襲われる被害が相次いでいるらしい。「今年はどこでも奴らを見る…きっと、とんでもない数の狼がいるんだろう」村人は口を揃えて言う。襲われた家畜の死骸を検めると、骨に残った歯型は十を超えていた。相当な大群だ。──だが、よく見ると刃物でこそげ取ったような跡も混じっている。村では誰も、こんな死肉に手は出さないはずだが。"
+required_act = 1
+choices = [SubResource("choice_hunt"), SubResource("choice_poison"), SubResource("choice_ignore")]

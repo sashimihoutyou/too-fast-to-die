@@ -7,4 +7,6 @@ class_name EventData extends Resource
 @export var required_karma_min: int = -100
 @export var required_karma_max: int = 100
 @export var required_act: int = -1
+## true のイベントはランダム抽選から除外され、QuestManager の強制発火でのみ出現する遅延ペイロード。
+@export var payload_only: bool = false
 @export var choices: Array[EventChoiceData]

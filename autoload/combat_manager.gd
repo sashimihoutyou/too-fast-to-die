@@ -50,7 +50,7 @@ func reset_player_for_new_run() -> void:
 	player_buffs = _new_buffs_dict()
 	acceleration_gauge = 0
 
-func start_combat(enemy_list: Array[EnemyData]) -> void:
+func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
 	state = CombatState.INIT
 	turn_number = 0
 	player_max_hp = GameManager.current_character.max_hp
@@ -64,10 +64,13 @@ func start_combat(enemy_list: Array[EnemyData]) -> void:
 	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
 	enemies.clear()
 	for ed: EnemyData in enemy_list:
+		var ehp := ed.base_hp
+		if ed.is_boss and boss_hp_scale != 1.0:
+			ehp = maxi(1, int(round(float(ed.base_hp) * boss_hp_scale)))
 		enemies.append({
 			"data": ed,
-			"hp": ed.base_hp,
-			"max_hp": ed.base_hp,
+			"hp": ehp,
+			"max_hp": ehp,
 			"block": 0,
 			"alive": true,
 			"intent": {},
@@ -306,6 +309,8 @@ func _check_enemies_alive() -> void:
 	for i in enemies.size():
 		if enemies[i]["hp"] <= 0 and enemies[i]["alive"]:
 			enemies[i]["alive"] = false
+			var defeated_data: EnemyData = enemies[i]["data"]
+			QuestManager.on_enemy_defeated(defeated_data)
 			enemy_defeated.emit(i)
 		if enemies[i]["alive"]:
 			all_dead = false
@@ -508,6 +513,8 @@ func _apply_dot_to_enemy(idx: int) -> bool:
 			enemy["alive"] = false
 			_decay_debuffs(s)
 			enemy_status_changed.emit(idx, s)
+			var defeated_data: EnemyData = enemy["data"]
+			QuestManager.on_enemy_defeated(defeated_data)
 			enemy_defeated.emit(idx)
 			return true
 	return false

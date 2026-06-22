@@ -12,6 +12,7 @@ var current_state: GameState = GameState.TITLE
 var current_character: CharacterData
 var current_act: int = 1
 var current_node_index: int = -1
+var total_nodes_visited: int = 0
 var distance_km: int = 0
 var event_flags: Dictionary = {}
 var map_nodes: Array[Dictionary] = []
@@ -24,8 +25,10 @@ func start_run(character: CharacterData) -> void:
 	current_character = character
 	current_act = 1
 	current_node_index = -1
+	total_nodes_visited = 0
 	distance_km = 0
 	event_flags.clear()
+	QuestManager.reset()
 	map_nodes.clear()
 	map_current_row = -1
 	map_current_node_id = ""
@@ -44,8 +47,10 @@ func change_state(new_state: GameState) -> void:
 
 func advance_node() -> void:
 	current_node_index += 1
+	total_nodes_visited += 1
 	distance_km += randi_range(3, 6)
 	ResourceManager.consume_fuel(2)
+	QuestManager.on_node_advanced()
 
 func advance_act() -> void:
 	current_act += 1

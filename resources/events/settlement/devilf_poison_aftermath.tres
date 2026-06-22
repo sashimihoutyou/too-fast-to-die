@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_bury"]
+script = ExtResource("2")
+label = "亡骸を葬る"
+result_text = "毒は獲物を選ばなかった。骨まで肉を削いで生き延びていた子供らが、冷たくなって倒れている。土を掘り、埋める。噂は荒野を伝っていく。"
+karma_change = -12
+fuel_change = -2
+sets_flag = &"devilf_orphans_dead"
+
+[sub_resource type="Resource" id="choice_lookaway"]
+script = ExtResource("2")
+label = "見なかったことにして走り去る"
+result_text = "アクセルを捻る。ミラーの中の小さな影は、見ないことにした。"
+karma_change = -15
+sets_flag = &"devilf_orphans_dead"
+
+[resource]
+script = ExtResource("1")
+id = &"devilf_poison_aftermath"
+title = "毒の行方"
+body_text = "群れを仕留めた死骸の野に戻ると、狼以外のものまで倒れていた。隠れて生きていた戦災孤児の一団が、毒の回った肉を口にしたのだ。骨を刃物でこそげていたのは──こいつらだった。"
+required_act = 1
+payload_only = true
+choices = [SubResource("choice_bury"), SubResource("choice_lookaway")]
