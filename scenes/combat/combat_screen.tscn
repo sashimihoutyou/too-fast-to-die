@@ -25,7 +25,7 @@ layout_mode = 1
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 350.0
-offset_bottom = 160.0
+offset_bottom = 210.0
 
 [node name="HPLabel" type="Label" parent="PlayerHUD"]
 layout_mode = 1
@@ -93,6 +93,26 @@ offset_top = 118.0
 offset_right = 330.0
 offset_bottom = 150.0
 theme_override_colors/font_color = Color(0.85, 0.55, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="GaugeLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 150.0
+offset_right = 330.0
+offset_bottom = 168.0
+theme_override_colors/font_color = Color(0.3, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+
+[node name="BuffLabel" type="Label" parent="PlayerHUD"]
+layout_mode = 1
+offset_left = 10.0
+offset_top = 170.0
+offset_right = 330.0
+offset_bottom = 200.0
+theme_override_colors/font_color = Color(0.4, 0.9, 0.4, 1)
 theme_override_font_sizes/font_size = 14
 text = ""
 
