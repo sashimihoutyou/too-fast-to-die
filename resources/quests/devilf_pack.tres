@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"devilf_pack"
+title = "デビルフの群れ"
+summary = "群れを率いるアルファに挑む前に、群れをどう処理するか"
+required_act = 1
+node_limit = 5
+objective_match = &"deviluf"
+objective_count = 3
+payload_event = &"devilf_poison_aftermath"
+payload_min_gap = 1
+payload_knew_extra_karma = -6
+boss_target = &"alpha_deviluf"
+boss_add_enemy = &"deviluf"
+boss_mods = {
+"hunt": { "hp_scale": 0.75, "adds": 0 },
+"poison": { "hp_scale": 0.6, "adds": 0 },
+"ignore": { "hp_scale": 1.0, "adds": 2 },
+"lapse": { "hp_scale": 0.9, "adds": 1 }
+}

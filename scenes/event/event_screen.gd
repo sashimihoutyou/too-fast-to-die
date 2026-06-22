@@ -14,6 +14,12 @@ func _ready() -> void:
 
 # カルマ・区間・キャラ条件で利用可能なイベントをDBから抽選する。未遭遇を優先。
 func _pick_event() -> EventData:
+	# サブストーリーの遅延ペイロードがあれば最優先で強制発火する。
+	var forced_id := QuestManager.get_pending_payload(GameManager.current_act)
+	if forced_id != &"":
+		var forced := EventManager.get_event(forced_id)
+		if forced != null:
+			return forced
 	var available := EventManager.get_available_events(
 		GameManager.current_character.id, KarmaManager.karma, GameManager.current_act)
 	if available.is_empty():
@@ -61,6 +67,7 @@ func _check_requirement(req: String) -> bool:
 func _on_choice(idx: int) -> void:
 	var choice: EventChoiceData = current_event.choices[idx]
 	_apply_choice(choice)
+	QuestManager.notify_event_resolved(current_event.id)
 	if choice.triggers_combat:
 		_start_event_combat()
 		return
@@ -92,6 +99,10 @@ func _apply_choice(choice: EventChoiceData) -> void:
 	if choice.hp_change != 0:
 		CombatManager.player_hp = clampi(
 			CombatManager.player_hp + choice.hp_change, 0, CombatManager.player_max_hp)
+	if choice.sets_flag != &"":
+		GameManager.event_flags[choice.sets_flag] = true
+	if choice.starts_quest != &"":
+		QuestManager.record_outcome(choice.starts_quest, choice.quest_outcome)
 
 func _start_event_combat() -> void:
 	var enemies: Array[EnemyData] = []

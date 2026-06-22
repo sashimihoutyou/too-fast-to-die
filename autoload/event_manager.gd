@@ -14,6 +14,8 @@ func get_event(id: StringName) -> EventData:
 func get_available_events(character_id: StringName, karma: int, act: int) -> Array[EventData]:
 	var available: Array[EventData] = []
 	for event: EventData in _events.values():
+		if event.payload_only:
+			continue
 		if event.required_character != &"" and event.required_character != character_id:
 			continue
 		if karma < event.required_karma_min or karma > event.required_karma_max:

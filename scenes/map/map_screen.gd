@@ -152,7 +152,11 @@ func _on_node_pressed(nid: String) -> void:
 
 func _enter_combat(node_type: MapGenerator.NodeType) -> void:
 	var enemies := _get_enemies_for_node(node_type)
-	CombatManager.start_combat(enemies)
+	var boss_hp_scale := 1.0
+	if node_type == MapGenerator.NodeType.BOSS:
+		var mod := QuestManager.get_boss_modifier(GameManager.current_act)
+		boss_hp_scale = float(mod.get("hp_scale", 1.0))
+	CombatManager.start_combat(enemies, boss_hp_scale)
 	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
 
 func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]:
@@ -189,6 +193,15 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]
 			if boss == null:
 				boss = _fallback_enemy(act, false, true)
 			enemies.append(boss)
+			# サブストーリーのアウトカムに応じてボスに取り巻きを追加する。
+			var mod := QuestManager.get_boss_modifier(act)
+			var adds: int = int(mod.get("adds", 0))
+			var add_id: StringName = mod.get("add_enemy", &"")
+			if adds > 0 and add_id != &"":
+				var add_enemy := EnemyDatabase.get_enemy(add_id)
+				if add_enemy != null:
+					for i in adds:
+						enemies.append(add_enemy)
 	return enemies
 
 # 最終区間（区間5）のボスはGDD通りプレイキャラ固有の因縁ボスにする。
@@ -254,6 +267,7 @@ func _update_hud() -> void:
 	$HUD/KarmaLabel.text = "カルマ: %d %s" % [KarmaManager.karma, KarmaManager.get_band_display()]
 	$HUD/DistanceLabel.text = "走行: %dkm" % GameManager.distance_km
 	$HUD/ActLabel.text = "区間%d" % GameManager.current_act
+	$HUD/QuestLabel.text = QuestManager.get_hud_summary()
 
 func _on_fuel_changed(_val: int, _max_val: int) -> void:
 	_update_hud()
