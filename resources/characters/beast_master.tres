@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"beast_master"
 display_name = "調教師（ミーシャ）"
-max_hp = 55
+max_hp = 50
 starter_deck_ids = [&"bm01", &"bm01", &"st_bm01", &"defend", &"defend", &"st_heavy_strike", &"st_sweep", &"st_intimidate", &"bm02", &"bm11"]
 unique_system = &"beast"
-unlock_condition = "累積走行距離200km"
+unlock_condition = "累積走行距離500km"
 can_use_heavy_weapons = false
