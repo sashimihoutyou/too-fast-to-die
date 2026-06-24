@@ -144,7 +144,7 @@ Portrait bust shot of a weathered but still young-looking man in his late 30s to
 
 | 項目 | 内容 |
 |---|---|
-| 体格 | 小柄で華奢。16歳だが栄養不足で発育が遅く、幼く見える。手足が細く長い。胸はほぼ平坦、腰も子供のように直線的。ただし荒野で生き延びてきた分、身のこなしに野生動物のような俊敏さがある |
+| 体格 | 小柄で華奢。18歳だが栄養不足で発育が遅く、幼く見える。手足が細く長い。胸はほぼ平坦、腰も子供のように直線的。ただし荒野で生き延びてきた分、身のこなしに野生動物のような俊敏さがある |
 | 顔 | 大きな丸みのある目 — 本来は可愛らしい顔立ちだが、生気が薄く警戒に満ちている。虹彩が黄色がかったアンバー（野生動物的）。小さな鼻、薄い唇。頬がこけているが骨格自体は整っており、十分に食べれば可愛い少女だとわかる造形。表情は乏しいが、虎に触れる時だけ微かに和らぐ |
 | 髪 | 手入れされていない腰までの黒髪。枝・羽根・小さな骨が絡まっている。前髪が目にかかり顔の半分を隠しがち |
 | 服装上半身 | 獣皮を継ぎ接ぎしたビスチェのような短い胴衣。肩が片方ずれ落ちて鎖骨と肩が露出。丈が短く肋骨が浮く薄い腹部が露出している |
@@ -162,13 +162,13 @@ Portrait bust shot of a weathered but still young-looking man in his late 30s to
 #### 全身立ち絵
 
 ```
-A small feral girl of 16 standing barefoot beside a large tiger in a post-apocalyptic wasteland. Petite and thin with long slender limbs, flat chest, straight childlike frame, but moving with the coiled alertness of a wild animal. She has a pretty face beneath the grime — large round eyes with yellowish-amber irises like a wild cat, a small nose, delicate features that would be cute if she were healthy. But her cheeks are hollow, her expression is blank and wary, only softening faintly when touching the tiger. Long unkempt black hair reaching her waist, tangled with twigs, small feathers, and tiny animal bones, bangs falling over half her face. She wears a very short animal-hide bustier-like top, roughly stitched from patchwork pelts, one shoulder slipped off exposing a bony collarbone. The top is cropped high, revealing her thin stomach where faint rib outlines show. An extremely short wrap skirt made of torn animal hide, split high on one side nearly to the hip joint — her legs fully exposed from upper thigh down. But the exposed legs are painfully thin, knees appearing large on stick-like limbs, shin bones clearly visible, no muscle definition. Completely barefoot, soles thickened and calloused, slender ankles. Dark abrasion scars around her neck and wrists from slave restraints. Whip scars visible on her back through gaps in the bustier. A crude whip of braided animal sinew at her hip. The tiger beside her has matching restraint scars on its neck — a bonded pair. The tiger is visibly healthier and more imposing than the girl. Color palette: earth tones, dried grass, tanned leather, bare skin conveying fragility not allure. Semi-realistic thick-paint art style, harsh noon light casting stark shadows emphasizing how thin and small she is. Full body character design sheet.
+A small feral girl of 18 standing barefoot beside a large tiger in a post-apocalyptic wasteland. Petite and thin with long slender limbs, flat chest, straight childlike frame, but moving with the coiled alertness of a wild animal. She has a pretty face beneath the grime — large round eyes with yellowish-amber irises like a wild cat, a small nose, delicate features that would be cute if she were healthy. But her cheeks are hollow, her expression is blank and wary, only softening faintly when touching the tiger. Long unkempt black hair reaching her waist, tangled with twigs, small feathers, and tiny animal bones, bangs falling over half her face. She wears a very short animal-hide bustier-like top, roughly stitched from patchwork pelts, one shoulder slipped off exposing a bony collarbone. The top is cropped high, revealing her thin stomach where faint rib outlines show. An extremely short wrap skirt made of torn animal hide, split high on one side nearly to the hip joint — her legs fully exposed from upper thigh down. But the exposed legs are painfully thin, knees appearing large on stick-like limbs, shin bones clearly visible, no muscle definition. Completely barefoot, soles thickened and calloused, slender ankles. Dark abrasion scars around her neck and wrists from slave restraints. Whip scars visible on her back through gaps in the bustier. A crude whip of braided animal sinew at her hip. The tiger beside her has matching restraint scars on its neck — a bonded pair. The tiger is visibly healthier and more imposing than the girl. Color palette: earth tones, dried grass, tanned leather, bare skin conveying fragility not allure. Semi-realistic thick-paint art style, harsh noon light casting stark shadows emphasizing how thin and small she is. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a feral 16-year-old girl next to a tiger's face. She has a naturally pretty face — large round eyes with yellowish-amber irises, small nose, delicate bone structure that would be cute if well-nourished. But her cheeks are sunken, her expression blank and guarded, and grime covers her skin. Long tangled black hair with twigs, feathers, and tiny bones caught in it, bangs covering half her face. A rough patchwork animal-hide bustier, one shoulder slipped off showing a thin bony collarbone. Dark restraint scars ring her neck. The tiger presses close to her, its own neck bearing matching scars. Her blank expression softens almost imperceptibly near the tiger. Harsh daylight, barren wasteland background. Semi-realistic thick-paint art style, emphasizing the contrast between her underlying cuteness and her damaged, feral state.
+Portrait bust shot of a feral 18-year-old girl next to a tiger's face. She has a naturally pretty face — large round eyes with yellowish-amber irises, small nose, delicate bone structure that would be cute if well-nourished. But her cheeks are sunken, her expression blank and guarded, and grime covers her skin. Long tangled black hair with twigs, feathers, and tiny bones caught in it, bangs covering half her face. A rough patchwork animal-hide bustier, one shoulder slipped off showing a thin bony collarbone. Dark restraint scars ring her neck. The tiger presses close to her, its own neck bearing matching scars. Her blank expression softens almost imperceptibly near the tiger. Harsh daylight, barren wasteland background. Semi-realistic thick-paint art style, emphasizing the contrast between her underlying cuteness and her damaged, feral state.
 ```
 
 ---
@@ -224,10 +224,10 @@ Portrait bust shot of a towering muscular warrior in his late 20s to early 30s i
 
 | | カルティスト | ヴェスパ | ウェス | ミーシャ | 覇者 |
 |---|---|---|---|---|---|
-| **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（16歳、見た目12-13） | 若い（20後半〜30前半） |
-| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | カウボーイハット+ポンチョの西部劇的台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
+| **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（18歳、見た目14-15） | 若い（20後半〜30前半） |
+| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | ポンチョの台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
 | **肌の露出** | 中程度（ポンチョの隙間から紋様） | 多い（意図的、胸と脚を強調） | 少ない（すべて覆う） | 多い（服がない。脚の露出が顕著） | 多い（コートの隙間から筋肉） |
 | **露出が語るもの** | 控えめな部族的信仰の痕跡 | 色気・威嚇・豊満な自信 | 何も見せない寡黙さ | 貧困・野生・華奢な脆さ | 全盛期の肉体・歴戦の傷 |
-| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色+フェルト灰+レザー茶 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
-| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 西部劇から抜け出た流れ者（演じている痛々しさ） | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
-| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 帽子のつばに指を当てる/ポンチョの下で腕を組む | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
+| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
+| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 若いのに疲弊した旅人 | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
+| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 遠くを見る、手はポケット | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
