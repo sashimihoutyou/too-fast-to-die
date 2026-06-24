@@ -220,14 +220,77 @@ Portrait bust shot of a towering muscular warrior in his late 20s to early 30s i
 
 ---
 
-## 5キャラの視覚的対比
+## 6. 享楽者 — ホタル (Hotaru)
 
-| | カルティスト | ヴェスパ | ウェス | ミーシャ | 覇者 |
-|---|---|---|---|---|---|
-| **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（18歳、見た目14-15） | 若い（20後半〜30前半） |
-| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | ポンチョの台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
-| **肌の露出** | 中程度（ポンチョの隙間から紋様） | 多い（意図的、胸と脚を強調） | 少ない（すべて覆う） | 多い（服がない。脚の露出が顕著） | 多い（コートの隙間から筋肉） |
-| **露出が語るもの** | 控えめな部族的信仰の痕跡 | 色気・威嚇・豊満な自信 | 何も見せない寡黙さ | 貧困・野生・華奢な脆さ | 全盛期の肉体・歴戦の傷 |
-| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
-| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 若いのに疲弊した旅人 | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
-| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 遠くを見る、手はポケット | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
+### ビジュアル仕様
+
+| 項目 | 内容 |
+|---|---|
+| 体格 | 155cm / 44kg。細い四肢と薄い胴体に、変異による巨大なバストが乗った不均衡な体型。肋骨が浮くほど痩せているのに胸だけが異常に重く、前傾姿勢が癖になっている。Nカップ相当（B100/W53/H83）。ヴェスパの豊満さが「鍛えた身体の上の均整」であるのに対し、ホタルの巨乳は「壊れた身体の上の奇形」。色気ではなく異様さが先に立つ |
+| 顔 | 実年齢25歳、外見15-16歳。丸みのある幼い顔立ちに、瞳孔が常にわずかに散大した目。虹彩の色が光の加減で琥珀→蛍光緑→灰紫に変わる（ネオン代謝物の蓄積）。口角が自然に上がっており、無表情でも笑っているように見える。頬はネオンの食欲抑制でこけ気味だが、骨格自体は整っていて、清潔にすれば年相応の美人だとわかる造形。ただし瞳の色が変わる目を長く見つめると、その「年相応」がどの年齢を指すのかわからなくなる |
+| 髪 | 地毛は黒のセミロング（肩甲骨あたり）。そこに蛍光ピンクと蛍光イエローのエクステが大量に編み込まれ、三色が入り混じった派手な見た目。手入れは歓楽街仕込みで意外と丁寧——櫛を通す習慣だけが「元の生活」の残滓。ただし旅が長くなると根元の黒が伸びてエクステとの境界がはっきりし、「染め直せない放浪者」の現実が滲む |
+| 服装上半身 | 世紀末改造バニースーツ。元は黒い合皮のレオタードだったものを防刃繊維のパッチワークで補修・補強してある。胸元は破れと補修を繰り返した痕跡で継ぎ接ぎだらけ。ネオンピンクの糸で縫った補修跡がアクセントになっている。巨大なバストがレオタードの布地を限界まで押し広げており、谷間というより布が負けている形状。ウサギ耳のカチューシャはボロボロの合皮で片耳が折れかけている。首元に小さなネオンバイアル（蛍光液体入りのガラス管）をペンダントにしている |
+| 服装下半身 | レオタードの下に黒い網タイツ。片脚だけ膝上から大きく破れたまま放置されている（直す気がない）。破れた側の太ももが露出するが、その脚は細く、膝の骨が目立つほど華奢。ウェストにユーティリティベルトを巻き、ネオンバイアルのホルダーが4本分並ぶ（中身が入っているのは0〜2本。残りは空） |
+| 足元 | 厚底のショートブーツ（歓楽街のクラブ仕様、ヒール8cm）。荒野には完全に不向きだが、これ以外の靴を持っていない。ヒールの底が磨り減って斜めになっている |
+| アクセサリ | 首のネオンバイアル・ペンダント（常に身につけている。最後の一本を首にかけておく習慣）。両手首に蛍光色のミサンガ（歓楽街の同僚から貰った。名前は覚えていない）。左耳に小さなスタッドピアス（安物。光の角度でネオングリーンに見える素材） |
+| 特徴的な傷 | 左の二の腕の内側に注射痕の集中（ネオンの静脈投与の痕。普段はレオタードで隠れるが、ズレると見える）。背中の右肩甲骨の下に小さな火傷痕（歓楽街での「事故」。詳細は語らない） |
+| 肌の特異性 | 暗所でごく微かに発光する（ネオン代謝物が皮下に蓄積。星明かり程度で肌が淡く蛍光緑に光る）。体温が常人より0.5-1度高い（ネオン代謝亢進）。汗にかすかにネオンの化学的な甘い匂いが混じる |
+| 武装 | ベルトの裏に小型拳銃1丁（護身用。歓楽街では必需品だった）。戦闘での主力はカード（ネオン系・魅了系）であり、銃は最終手段 |
+| バイク | 死んだ情報屋から持ち出したストリートレーサー。元は派手なネオンアンダーグロウ（車体下の発光装置）が付いていたが、壊れて消灯したまま。タンクにニューエデンのクラブのステッカーが褪色して残る。サドルバッグにネオンの保管ケースと化粧ポーチ。整備状態は悪い——ホタルにバイク修理の知識がないため、走るたびにどこかがガタつく |
+| 配色 | 黒（レオタード基調）+ 蛍光ピンク（髪・補修糸・ネオン液）+ 蛍光イエロー（髪・ベルトのアクセント）+ 素肌。暗所では肌の微発光と、ネオンバイアルの蛍光が加わり、文字通り「蛍」になる |
+| 印象 | 歓楽街から逃げ出してきた壊れたおもちゃ。バニースーツは戦場に持ち込まれた場違いの衣装だが、ホタルにとってはこれが「普通の服」。巨大なバストと棒のような脚の対比、破れた網タイツ、折れかけのウサギ耳、色の変わる目——すべてが「普通じゃない」方向に揃っている。明るく笑う顔がいちばん不気味 |
+
+### カラーリング方針メモ
+
+蛍光ピンク＋蛍光イエローは物語的根拠に基づく:
+- **ホタル（蛍）**: 暗闘で光る。蛍光色は彼女のネオン汚染を視覚化したもの
+- ニューエデン歓楽街のネオンサインの色（青白＋ピンク＋黄）が身体に染みついている
+- 蛍光色を「髪とアクセント」に限定し、ベースは黒で統一。ヴェスパの黒+金が「スズメバチの警告色」ならば、ホタルの黒+蛍光は「毒物の警告色」
+- 暗所での皮膚の微発光が「蛍」のモチーフを完成させる。これは演出ではなくネオン汚染の症状
+
+### ヴェスパとの視覚的差別化
+
+| 要素 | ヴェスパ | ホタル |
+|---|---|---|
+| 体格 | 167cm。均整の取れたグラマラス | 155cm。上半身だけ異常に重い不均衡 |
+| 胸 | Lカップ。革バンドゥで「鎧」として機能 | Nカップ。パッチワークのレオタードが「負けている」 |
+| 露出の意味 | 意図的な威嚇と誘惑。見せることで主導権を握る | 無頓着。これが普通の服。見せている自覚がない |
+| 配色 | 黒+金。高級感のある危険 | 黒+蛍光。安っぽい毒々しさ |
+| 傷跡 | 戦闘の勲章。強さの証明 | 注射痕。依存の証明 |
+| 印象 | 殺し屋としての色気 | 壊れた玩具としての異様さ |
+
+### 服装レイヤー設計メモ
+
+バニースーツの上に羽織物を設けることで、演出バリエーションを確保:
+- **移動時（ポンチョ着用）**: 荒野の砂避けに情報屋のポンチョを羽織る。ウサギ耳だけ突き出て異様だが、体型は隠れる。「何か変な旅人」程度の印象
+- **戦闘時（ポンチョ脱ぎ）**: バニースーツ全開。蛍光色の髪、巨大なバスト、網タイツの破れ、ベルトのネオンバイアル——「異様」の全要素が出揃う
+- **休息/イベント時**: レオタードのジッパーを下ろした半脱ぎ、または下着状態。変異による胸の不自然な形状と、肋骨の浮く胴体の対比が最も露わになる
+- いずれの状態でも首のネオンバイアル・ペンダントは外さない
+
+### 画像生成プロンプト
+
+#### 全身立ち絵（バイク座り）
+
+```
+(Sketch art, line art, drawn), 1girl, solo, looking at viewer with unnervingly bright smile, huge breasts on a very thin small frame creating extreme top-heavy disproportion, sitting on motorcycle with legs crossed, short 155cm petite build but with disproportionately massive chest straining against outfit, neon pink and neon yellow hair extensions woven into natural black semi-long hair creating a chaotic tri-color mix, slightly dilated pupils with color-shifting irises that appear amber-green-purple, round youthful face that looks 15-16 but with something off in the eyes, sunken cheeks from malnutrition despite cute bone structure, modified black bunny girl leotard with patchwork ballistic fiber patches sewn with neon pink thread, one broken rabbit ear headband in worn synthetic leather, black fishnet stockings with one leg torn from mid-thigh showing thin bony leg, thick-soled club boots with worn-down heels, utility belt with neon vial holders at waist with some empty some glowing with fluorescent liquid, small neon vial pendant on neck as necklace containing faintly glowing green liquid, fluorescent colored friendship bracelets on both wrists, small pistol tucked in belt, visible ribs and thin waist contrasting with enormous chest, sitting on a flashy street racer motorcycle with broken underglow tubes still attached and faded club stickers on tank, needle track marks barely visible on inner left arm, post apocalyptic desert, covered in dust, the overall impression is bizarre not sexy, masterwork, masterpiece, best quality, detailed, depth of field, high detail, very aesthetic, 8k, dynamic pose, dynamic angle, dynamic lighting
+```
+
+#### バストアップ（カード用ポートレート）
+
+```
+(Sketch art, line art, drawn), portrait bust shot of a bizarre-looking girl who appears 15-16 but is clearly not a normal teenager, huge breasts straining against a patchwork black bunny girl leotard with neon pink stitch repairs, round youthful face with sunken cheeks and an unsettlingly bright natural smile, slightly dilated pupils with color-shifting irises appearing amber to fluorescent green, neon pink and neon yellow hair extensions tangled into black hair framing her face, one drooping rabbit ear headband in worn synthetic leather, small glowing neon vial pendant at her neck containing fluorescent liquid, faintly luminescent skin with a subtle greenish glow at the edges, needle marks barely visible on inner arm, the contrast between her cute face and the wrongness of everything else creates deep uncanny valley, warm neon-tinted side lighting against dark post-apocalyptic background, masterwork, best quality, detailed, very aesthetic, 8k
+```
+
+---
+
+## 6キャラの視覚的対比
+
+| | カルティスト | ヴェスパ | ウェス | ミーシャ | 覇者 | ホタル |
+|---|---|---|---|---|---|---|
+| **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（18歳、見た目14-15） | 若い（20後半〜30前半） | 不詳（25歳、見た目15-16） |
+| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | ポンチョの台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 | 上半身だけ膨らんだ不均衡（バニースーツ+細い脚） |
+| **肌の露出** | 中程度（ポンチョの隙間から紋様） | 多い（意図的、胸と脚を強調） | 少ない（すべて覆う） | 多い（服がない。脚の露出が顕著） | 多い（コートの隙間から筋肉） | 多い（無頓着。網タイツの破れ、レオタードの隙間） |
+| **露出が語るもの** | 控えめな部族的信仰の痕跡 | 色気・威嚇・豊満な自信 | 何も見せない寡黙さ | 貧困・野生・華奢な脆さ | 全盛期の肉体・歴戦の傷 | 無頓着・変異・壊れた日常の延長 |
+| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 | 黒+蛍光ピンク+蛍光イエロー+肌の微発光 |
+| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 若いのに疲弊した旅人 | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 | 歓楽街から逃げてきた壊れた玩具 |
+| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 遠くを見る、手はポケット | 身を縮める+虎が寄り添う | 腕組み、コートが翻る | 前傾気味に笑う。胸の重さで姿勢が崩れている |
