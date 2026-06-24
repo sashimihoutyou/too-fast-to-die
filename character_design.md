@@ -113,26 +113,27 @@
 | 髪 | ダークブラウンの中長髪。後ろで適当に束ねているが、前髪と横髪が額や頬に垂れている。わずかに白髪が数本混じる程度 |
 | 服装上半身 | ポンチョ（砂埃で色褪せた元は紺色）。下にヘンリーネックシャツ + 実用的なカーゴベスト。ポケットが多く、すべて使い込まれている |
 | 服装下半身 | 丈夫なワークパンツ。膝にパッチ当てあり |
-| 足元 | 履き潰したデザートブーツ |
-| アクセサリ | 戦前のデジタル腕時計（壊れているが外さない） |
-| 武装 | 腰にリボルバー1丁（使い込まれて銃身が磨り減っている） |
-| 特徴 | バイクのサドルバッグに古い写真（ジョエルと写っている）。表情には疲労と悲しみがあるが、顔つき自体はまだ鋭さを残している |
-| バイク | 実用的なツーリングバイク。派手さゼロだが整備が行き届いている |
-| 配色 | 褪せた紺 + サンドベージュ + レザーブラウン |
-| 印象 | まだ若さを残しながらも、背負ったものの重さで実年齢以上に老けて見える男。余計なことは言わないが、すべてを見ている目。戦前の記憶を持つことが彼を周囲から孤立させている |
+| 足元 | 使い込まれたウエスタンブーツ（つま先が尖り、ヒールが高めの実戦仕様。デザートブーツから変更——カウボーイのペルソナを視覚化する最もわかりやすい記号） |
+| 帽子 | 日焼けしたフェルトのカウボーイハット。つばが片側だけ反り上がっている。紐で顎に固定可能。バイク走行時は首の後ろに垂らす |
+| アクセサリ | 戦前のデジタル腕時計（壊れているが外さない）。ポンチョの下、ベストの内ポケットに古い写真（ジョエルと写っている） |
+| 武装 | 腰にリボルバー1丁（使い込まれて銃身が磨り減っている）。腰の後ろにもう1丁予備。西部劇の早撃ちを意識した低めのホルスター位置 |
+| 特徴 | カウボーイハットとポンチョの組み合わせが「荒野の用心棒」的なシルエットを作る。表情には疲労と自嘲が同居するが、顔つき自体はまだ鋭さを残している。戦前の映画で見たカウボーイ像を30年かけて内面化した男の姿 |
+| バイク | 実用的なツーリングバイク。派手さゼロだが整備が行き届いている。サドルバッグは革製で、西部のカウボーイの鞍袋を思わせる |
+| 配色 | 褪せた紺 + サンドベージュ + レザーブラウン + フェルトの灰 |
+| 印象 | 西部劇から抜け出してきたような流れ者。カウボーイハット＋ポンチョ＋リボルバーという「演じている」感が、よく見ると痛々しい。すべてを見ている目と、何も見たくない心の乖離。戦前の記憶が作り上げた仮面を30年間被り続けている男 |
 
 ### 画像生成プロンプト
 
 #### 全身立ち絵
 
 ```
-A lean, weathered man in his late 30s to early 40s standing in a vast post-apocalyptic desert. Still physically capable — not yet old, but worn down by years of solitary wandering, all excess stripped from his frame. He wears a faded navy poncho bleached by sun and dust over a henley shirt and a practical cargo vest with many well-used pockets. Sturdy work pants with patched knees. Scuffed desert boots. Dark brown medium-length hair tied loosely back, bangs and side strands falling over his forehead and cheeks, only a few stray gray hairs visible. A thin stubble with almost no gray. His face is still relatively young in structure but carries premature lines at the eyes and brow — marks of experience rather than age. Kind but distant eyes that look past the horizon, carrying grief and quiet determination. A broken pre-war digital wristwatch on his left wrist. A well-worn revolver holstered at his hip, the barrel visibly smooth from years of use. Behind him, a plain but well-maintained touring motorcycle with leather saddlebags. Color palette: faded navy, sand beige, leather brown, muted earth tones. Semi-realistic thick-paint art style, melancholic golden-hour lighting. Full body character design sheet.
+A lean, weathered man in his late 30s to early 40s standing in a vast post-apocalyptic desert, looking like a cowboy who wandered out of an old western film into the apocalypse. Still physically capable — not yet old, but worn down by years of solitary wandering, all excess stripped from his frame. Sun-bleached felt cowboy hat with one side of the brim curled up, a chin strap hanging loose. He wears a faded navy poncho bleached by sun and dust over a henley shirt and a practical cargo vest with many well-used pockets. Sturdy work pants with patched knees. Worn western boots with pointed toes and slightly raised heels. Dark brown medium-length hair tied loosely back, bangs and side strands falling over his forehead and cheeks under the hat brim, only a few stray gray hairs visible. A thin stubble with almost no gray. His face is still relatively young in structure but carries premature lines at the eyes and brow — marks of experience rather than age. Self-mocking but distant eyes that look past the horizon, carrying weariness and quiet self-deception. A broken pre-war digital wristwatch on his left wrist. A well-worn revolver in a low-slung hip holster in western quick-draw position, the barrel visibly smooth from years of use. A second revolver tucked at the small of his back. Behind him, a plain but well-maintained touring motorcycle with western-style leather saddlebags. Color palette: faded navy, sand beige, leather brown, felt gray, muted earth tones. Semi-realistic thick-paint art style, melancholic golden-hour lighting. Full body character design sheet.
 ```
 
 #### バストアップ（カード用ポートレート）
 
 ```
-Portrait bust shot of a weathered but still young-looking man in his late 30s to early 40s, one of the last to remember the pre-war world. His face has premature lines at the eyes and brow from hardship rather than age, but his bone structure is still youthful and sharp. Kind distant eyes carrying years of grief, thin stubble with barely any gray. Dark brown hair loosely tied back with bangs falling forward, only a few stray white hairs. Faded navy poncho over a henley shirt and cargo vest. A broken digital wristwatch on his wrist. Warm melancholic golden-hour lighting, vast empty desert in soft focus behind him. Semi-realistic thick-paint art style, quiet sorrow aesthetic.
+Portrait bust shot of a weathered but still young-looking man in his late 30s to early 40s, one of the last to remember the pre-war world, wearing a sun-bleached felt cowboy hat with one side of the brim curled up. His face has premature lines at the eyes and brow from hardship rather than age, but his bone structure is still youthful and sharp. Self-mocking distant eyes carrying years of self-deception and weariness, thin stubble with barely any gray. Dark brown hair loosely tied back with bangs falling forward under the hat brim, only a few stray white hairs. Faded navy poncho over a henley shirt and cargo vest. A broken digital wristwatch on his wrist. The hat brim casts a shadow over one eye. Warm melancholic golden-hour lighting, vast empty desert in soft focus behind him. Semi-realistic thick-paint art style, quiet sorrow aesthetic, the look of a man playing cowboy in the end of the world.
 ```
 
 ---
@@ -224,9 +225,9 @@ Portrait bust shot of a towering muscular warrior in his late 20s to early 30s i
 | | カルティスト | ヴェスパ | ウェス | ミーシャ | 覇者 |
 |---|---|---|---|---|---|
 | **年齢感** | 若い（20前後） | 若い（22歳） | やや若い（30後半〜40前半） | 幼い（16歳、見た目12-13） | 若い（20後半〜30前半） |
-| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | ポンチョの台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
+| **シルエット** | 引き締まった縦長（ポンチョ+サドルバッグ） | 曲線的なS字（豊満+革ジャン） | カウボーイハット+ポンチョの西部劇的台形 | 小さく不定形（+虎） | 巨大な逆三角+コート裾 |
 | **肌の露出** | 中程度（ポンチョの隙間から紋様） | 多い（意図的、胸と脚を強調） | 少ない（すべて覆う） | 多い（服がない。脚の露出が顕著） | 多い（コートの隙間から筋肉） |
 | **露出が語るもの** | 控えめな部族的信仰の痕跡 | 色気・威嚇・豊満な自信 | 何も見せない寡黙さ | 貧困・野生・華奢な脆さ | 全盛期の肉体・歴戦の傷 |
-| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
-| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 若いのに疲弊した旅人 | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
-| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 遠くを見る、手はポケット | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
+| **主な配色** | 黒+オレンジ+赤土+オイルの光沢 | 黒（革）+金（髪）+黄アクセント+銀+肌色 | 紺+砂色+フェルト灰+レザー茶 | 土色+枯草+肌色 | 褪色茶（コート）+肌色+砂 |
+| **見る者の印象** | 一見普通だが何か違う青年旅人 | 危険で豊満な金髪の元殺し屋 | 西部劇から抜け出た流れ者（演じている痛々しさ） | 可愛い顔の壊れた野生児 | 最強なのに目的がない青年 |
+| **立ち姿** | バイクに跨り前を見据える（巡礼） | 片腰に手、胸を張る/銃を構える | 帽子のつばに指を当てる/ポンチョの下で腕を組む | 身を縮める+虎が寄り添う | 腕組み、コートが翻る |
