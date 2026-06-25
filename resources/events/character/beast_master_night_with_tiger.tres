@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "虎の腹に身を寄せる"
+requirement = ""
+result_text = "焚火が小さくなっていく。ミーシャは虎の腹に身を寄せた。毛皮越しの心拍が掌に伝わる。規則的で、穏やかで、安全の証。虎が低く喉を鳴らす。ミーシャは目を閉じた。4年間、檻の中でこうしていた。互いに壊れていた動物同士が、体温を分け合っていた。虎の呼吸が深くなる。眠りかけている。ミーシャの手が毛皮を掻き分け、地肌に触れた。温かい。虎がぴくりと耳を動かしたが、目は閉じたまま。鼻先をミーシャの首筋に押しつけてくる。ざらりとした舌が、一度だけ頬を舐めた。——言葉はいらない。檻の外でも、この温度は変わらない。ミーシャは毛布を引き寄せ、虎の腹に頬を預けた。心拍の音を聞きながら、眠りに落ちた。"
+hp_change = 8
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "見張りをする"
+requirement = ""
+result_text = "ミーシャは焚火に薪をくべ、虎の隣に座った。眠らない。夜風に混じる匂いを読む——砂と、枯草と、遠くの獣。虎が耳を立てた。ミーシャも同じ方向を見る。何もいない。まだ。虎が低く唸り、ミーシャの膝に頭を乗せてきた。重い。「……うん、大丈夫。あたしが見てる」。小さな声で言った。虎に。虎だけに。"
+hp_change = 3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "（……虎がいない夜は、眠れない）"
+requirement = "no_companion"
+result_text = "焚火の傍に座る。虎がいない。毛布を引き寄せても温かくならない。耳を澄ます。風の音。焚火の爆ぜる音。獣の足音はしない。地面に手を置いた。振動を探す癖が、もう身体に染みついている。何も感じない。ミーシャは膝を抱え、小さく丸まった。檻の中に戻ったような気がした。あの時は虎がいた。今は——いない。"
+hp_change = -3
+
+[resource]
+script = ExtResource("1")
+id = &"beast_master_night_with_tiger"
+title = "獣の体温"
+body_text = "夜が深まる。焚火の炎が低くなり、星が近づいてくる。砂漠の冷気が肌を刺す。ミーシャは毛布を肩にかけ、隣を見た。虎が横たわっている——あるいは、いないはずの場所に目を向けた。"
+required_character = &"beast_master"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

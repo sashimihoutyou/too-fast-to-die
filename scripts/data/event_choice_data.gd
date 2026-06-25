@@ -20,5 +20,9 @@ class_name EventChoiceData extends Resource
 @export var companion_id: StringName = &""
 ## 信仰度変化（カルティスト専用）。正で教義的、負で世俗的。
 @export var faith_change: int = 0
+## ヒート変動（元レイダー専用）。負で鎮静、正で昂揚。
+@export var heat_change: int = 0
+## エクスタシー変動（享楽者専用）。負で消費、正で蓄積。
+@export var euphoria_change: int = 0
 ## イベント戦闘で出現する敵のID指定（空ならActランダム）。
 @export var combat_enemy_ids: Array[StringName] = []

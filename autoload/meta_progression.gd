@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://meta.json"
 
 var total_distance_km: int = 0
-var unlocked_characters: Array[StringName] = [&"cultist"]
+var unlocked_characters: Array[StringName] = [&"cultist", &"ex_raider", &"wanderer", &"beast_master", &"hedonist"]
 var cleared_characters: Array[StringName] = []
 var total_runs: int = 0
 
@@ -61,7 +61,7 @@ func load_data() -> void:
 	total_distance_km = data.get("total_distance_km", 0)
 	total_runs = data.get("total_runs", 0)
 	unlocked_characters.clear()
-	for c in data.get("unlocked_characters", ["cultist"]):
+	for c in data.get("unlocked_characters", ["cultist", "ex_raider", "wanderer", "beast_master", "hedonist"]):
 		unlocked_characters.append(StringName(c))
 	cleared_characters.clear()
 	for c in data.get("cleared_characters", []):

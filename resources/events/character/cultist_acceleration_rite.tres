@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "儀式として身を委ねる"
+requirement = "faith>=50"
+result_text = "ペンダントを握り、膝をつく。「スピード・デーモンよ、この器を加速させよ」。焚火の前で女がアタルパの手を取った。火傷の痕に指が触れる。導かれるままに横たわる。何をすればいいかわからない。手が震える。火傷の痕が痛む——オーバーチャージの名残。女の手がアタルパの身体を辿り、息が止まった。「え……っ、出……っ」。止められない。女が驚いた顔をしている。身体が勝手に跳ねる。制御が効かない。教義にこの感覚の名前はない。ペンダントを握る手に力が入る。——祈った。何に？　スピード・デーモンに。何を？　わからない。ただ祈った。"
+hp_change = 5
+faith_change = -5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "教えに反する。立ち去る"
+requirement = "faith>=20"
+result_text = "「教えに……反する」。女の手を押し返し、立ち上がった。ペンダントを握りしめる。唇が震えている。身体は求めていた。精神が止めた。どちらが正しい？　アタルパには答えが出せない。焚火から離れ、暗がりの中で祈った。長い祈りだった。"
+faith_change = 10
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "信仰など関係ない。ただ人として触れたい"
+requirement = "faith<=19"
+result_text = "ペンダントには触れなかった。祈りもしなかった。ただ手を伸ばし、女の指に自分の指を重ねた。火傷の痕がある手で。「……名前、教えてくれないか」。初めて、相手の名前を聞いた。名前を聞いたのは、教えのためではない。知りたかっただけだ。女が笑った。焚火の光が頬を染めている。その夜、アタルパは教義のことを一度も考えなかった。身体は不器用で、手順も知らなかった。それでも——温かかった。"
+hp_change = 8
+
+[resource]
+script = ExtResource("1")
+id = &"cultist_acceleration_rite"
+title = "加速の夜"
+body_text = "集落の外れの焚火。V8カルトの巡礼者たちが車座になっている。ガソリンの残り香と聖歌の断片。一人の女がアタルパに近づいてきた。「巡礼者さん、今夜は冷えるね。一人で寝るの？」。教義では身体の交わりは「加速の儀式」にも「エンストの兆候」にもなり得る。ペンダントの金属が胸の上で冷たい。"
+required_character = &"cultist"
+required_karma_min = -100
+required_karma_max = 100
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

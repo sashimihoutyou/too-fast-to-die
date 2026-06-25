@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "ネオンを一服してから身体を預ける"
+requirement = "euphoria>=33"
+result_text = "バイアルを傾け、蒸気を吸い込む。世界が鮮やかになった。相手の指先が腕に触れた瞬間、背筋を電流が駆け抜ける。「あは……♡ やば、めっちゃキてる……♡」。壁越しの音楽が肌に染みる。体温が上がる。天井の染みすら綺麗に見える。プロの手順が勝手に動き出すが、今夜はそれだけじゃない。感覚が全部繋がっている。指先、足の裏、耳の後ろ——全部。声を抑える気もない。抑えられない。ネオンが神経を灼いている。相手の息遣いが近い。熱い。壁が薄い。隣の部屋にも聞こえているだろう。構わない。構えない。感覚の奴隷になっている自分を、どこか遠くから眺めている自分がいる。でもその視線も、次の波に呑まれて消えた。——朝。相手の寝顔。名前を聞いていない。バイアルの残量を確認する。減った。でも身体は軽い。今日は走れる。"
+hp_change = 5
+fuel_change = -1
+euphoria_change = -20
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "素面のまま相手をする"
+requirement = ""
+result_text = "ネオンを使わずに部屋へ上がった。相手の手が肌に触れる。温かい。それだけ。プロの手順が自動で起動する。3分で相手の弱点を見抜き、呼吸を合わせ、声を出す。出してやる。腰を動かす。動かしてやる。壁越しの音楽が遠い。感覚が壁の向こう側にある。身体は正確に動いている。相手は満足しているらしい。ホタルの目だけが、天井のランプの揺れを追っていた。——終わった後、相手が眠りにつくのを待って、バイアルを取り出す。振ってみる。残りわずか。「……大丈夫だよ」。声が平坦だった。誰に言ったのかもわからない。"
+hp_change = 3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "犬とバーのカウンターに残る"
+requirement = "companion==dog"
+result_text = "ロミオ（右）をカウンターに置き、蒸留酒をちびちびやる。足元で犬が丸くなっている。尻尾がたまに床を叩く。ネオンも男もいらない夜がある。あるらしい。自分でも驚いている。「ねー、あんたってさ、なんでいるの？」。犬は答えない。答えないまま、温かい。それだけで今夜は足りた。"
+hp_change = 5
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_4"]
+script = ExtResource("2")
+label = "ここでは何もしない"
+requirement = ""
+result_text = "カウンターで一杯だけ引っかけて、バーを出た。夜風が肌を撫でる。「つまんな」。呟いてみたけど、別につまらなくはなかった。"
+
+[resource]
+script = ExtResource("1")
+id = &"hedonist_euphoria_night"
+title = "灯りの落ちない部屋"
+body_text = "集落の外れに、壁の薄いバーがある。ネオンサインの青白い光が入口を染めている。安い蒸留酒の匂い。音楽。笑い声。ホタルにとっては実家みたいなものだ。カウンターに座ると、隣の男が目を合わせてきた。悪くない顔。使えそうな身体。ロミオ（右）のグリップに触れてから——ああ、これは銃だった——指を離す。「ねー、上空いてんの？」。10年分の笑顔が、自動的に唇に浮かんだ。"
+required_character = &"hedonist"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3"), SubResource("choice_4")]

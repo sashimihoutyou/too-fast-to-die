@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "……応じる"
+requirement = ""
+result_text = "覇者は動かなかった。女が近づいてくる。小さな手が覇者の胸に触れた。火傷と刃傷の地図を、指先が辿っていく。「……痛い？」「痛くない」。痛みは遠い昔に慣れた。女の手が首飾りの石に触れた時だけ、覇者の指が動いた——その手を止めようとして、止めなかった。女がベッドに覇者を引き込む。嘘のように素直に倒れた。巨躯がマットレスを軋ませる。女が覆いかぶさってくる。小さい。壊れそうなほど小さい。だから覇者は動けない。力を入れたら——壊す。いつもそうだ。女の唇が胸の傷跡を辿る。腹を下り、さらに下へ。覇者の呼吸が深くなる。歯を食いしばる。身体が震える。微かに。この巨体が。女が見上げた。「……壊れないよ。壊して」。覇者は目を閉じた。首飾りを握った。応じた。朝。女はまだ眠っている。覇者は身を起こし、女の身体を確認した。壊れていない。——壊れていなかった。首飾りの石が、体温で温かくなっていた。"
+hp_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "首飾りを握り、背を向ける"
+requirement = ""
+result_text = "首飾りの石を握り、立ち上がった。女の手が宙に残る。「……ごめん」。女は傷ついた顔をしなかった。ただ頷いた。「わかった」。覇者は部屋を出て、夜風の中に立った。星が近い。手を伸ばしても届かない。——壊さずに済んだ。それでいい。"
+hp_change = -3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "食い物を分ける"
+requirement = "fuel>=2"
+result_text = "覇者は鞄から干し肉を取り出した。無言で女の前に置く。女が目を丸くする。「……食えるのか」「食え」。二人で干し肉を齧った。覇者は大きく、女は小さく。ぼりぼりと音だけが部屋に響く。悪くない夜だった。"
+fuel_change = -2
+karma_change = 2
+
+[resource]
+script = ExtResource("1")
+id = &"conqueror_see_me"
+title = "私を見て"
+body_text = "集落の宿。壁際のベッドに腰を下ろすと、マットレスが悲鳴を上げた。覇者の体重は軽い家具より重い。隣の部屋から足音が聞こえ、扉が開く。若い女だった。旅人の身なりで、目に怯えはない。覇者を見上げている。見上げなければ目が合わない。「……でかいね」。覇者は頷いた。事実だ。女が手を伸ばしてきた。「壊して。……私を見て」。首飾りの石が、胸の上で冷たい。"
+required_character = &"conqueror"
+required_act = 3
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

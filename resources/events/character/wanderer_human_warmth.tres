@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "手を握り返す"
+requirement = ""
+result_text = "手を握り返した。小さな手だった。冷えている。ウェズリーの手の方が温かいことに驚く。——他人の体温。何年ぶりだろう。宿の二階、毛布一枚の狭いベッド。女が肩に頭を預けてきた。髪から砂の匂いがする。身体が先に動いた。手が覚えている。30年前に覚えた手順が、錆びた機械のように回り始める。女の反応を指先で読み、呼吸を合わせ、力加減を変えていく。考えなくても手が動く。手慣れた手つき。——その手慣れた自分が、少しだけ怖い。女が声を上げた時、ウェズリーの呼吸が一瞬止まった。それだけ。声は出さない。出す習慣がない。止まった腕時計が、枕元で炎の光を反射している。何時だ？　知る術はない。女が寝入った後、ウェズリーは天井を見つめた。隣に誰かがいる。呼吸の音がする。30年間、大抵は聞こえなかった音だ。……嘘みたいだろ。嘘じゃない。"
+hp_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "帽子を深く被り直す"
+requirement = ""
+result_text = "帽子を被り直して、視線を逸らした。「……すまない。一人に慣れすぎた」。女は少し寂しそうに笑って、席を立った。ウェズリーは蒸留酒を飲み干し、宿の一番安い部屋で一人で眠った。止まった腕時計が、暗闇の中で何も映さなかった。"
+fuel_change = -1
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "犬の頭を撫でながら断る"
+requirement = "companion==dog"
+result_text = "足元の犬の頭を撫でた。「悪いが、パートナーがいるんでな」。犬が尻尾を振る。女は目を丸くして、それから笑った。「犬？」「犬」。それ以上は言わなかった。犬の体温が足に伝わっている。今夜は、それで十分だった。"
+hp_change = 3
+karma_change = 1
+
+[resource]
+script = ExtResource("1")
+id = &"wanderer_human_warmth"
+title = "30年目の体温"
+body_text = "集落の酒場。安い蒸留酒を傾けていると、隣に女が座った。荒野を渡ってきた顔だ。目の下に影があり、指先が荒れている。「一人？」。ウェズリーは止まった腕時計に目を落としてから、小さく頷いた。女が手を伸ばしてきた。——他人の手の温度。30年間、ほとんど忘れていた感覚だ。"
+required_character = &"wanderer"
+required_act = 2
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

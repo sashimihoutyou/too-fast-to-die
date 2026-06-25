@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "ネオンを売ってくれるなら何でもする"
+requirement = ""
+result_text = "「何でも？」。男が笑った。ホタルは笑い返した。10年分の笑顔で。プロの手順が起動する。服を脱ぎ、相手を脱がせ、弱点を3秒で読み、呼吸を合わせ——身体は完璧に動いている。歓楽街の10年が刻んだ自動操縦。指先が震えているのは寒さじゃない。離脱症状。唇が乾く。感覚が壁の向こう側にある。相手の体温は温かいはずだ。温かいはず。温かい、はず。「あんっ……♡」声を出す。出してやる。それが対価。プロの仕事。だが声が震えている。寒さで。……寒さで？ 終わった後、男がネオンのバイアルを一本渡してきた。小さい。親指ほどの量。「もう一本」「足りねえよ、一本は一本だ」。ホタルは唇を噛んだ。バイアルを光に透かす。蛍光の青。これだけで、世界が戻る。壁が消える。感覚が帰ってくる。蓋を開けた。蒸気を吸い込んだ。——ああ。身体中が、開いた。"
+hp_change = -5
+euphoria_change = 15
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "ネオンなしで今夜を越える"
+requirement = ""
+result_text = "「……いらない」。自分の声が嘘みたいに平坦だった。男が肩をすくめて去っていく。ホタルは壁にもたれた。指が震えている。膝が笑っている。ジュリエットの鞘を抱きしめる。冷たい。リボンのピンクが、暗がりで黒く見える。「大丈夫。大丈夫。大丈夫」。三回言った。三回とも嘘だった。壁際に座り込んで、朝を待った。長い夜だった。でも——ネオンなしで朝が来た。それだけが、たぶん、本当のこと。"
+hp_change = -8
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "犬を抱きしめて震えを堪える"
+requirement = "companion==dog"
+result_text = "犬が膝の上に頭を乗せてきた。震える手で毛並みを撫でる。温かい。ネオンじゃない温かさ。バイアルの残量は知っている。ゼロ。「……ねえ」。犬に話しかける。「あんたさ、名前あるんだっけ」。尻尾が床を叩く。「じゃあ……うーん、ラッキーとか？　マジでラッキーだよ、あたしの隣にいてさ。こんなボロボロの女の横でさ」。犬が顔を舐めてきた。塩味がする。——泣いてた。知らなかった。犬を抱きしめたまま、朝が来た。震えは止まらなかった。でも、一人じゃなかった。"
+hp_change = -3
+karma_change = 3
+
+[resource]
+script = ExtResource("1")
+id = &"hedonist_withdrawal_night"
+title = "壁越しの夜"
+body_text = "ネオンが切れかけている。指先が震える。視界がぼやける。集落の路地裏で、男が声をかけてきた。「姉ちゃん、顔色悪いぜ」。ホタルは作り笑いを浮かべた。浮かべようとした。唇が動かない。「ネオン、持ってたりしない？」「持ってるよ。ただじゃねえけどな」。男の笑い方に見覚えがある。歓楽街で何百回も見た種類の笑い方。「……いくら？」「金じゃなくていい。わかるだろ？」"
+required_character = &"hedonist"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]
