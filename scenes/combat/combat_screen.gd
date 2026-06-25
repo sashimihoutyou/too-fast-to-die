@@ -374,14 +374,15 @@ func _create_card_button(card: CardData) -> Button:
 	btn.mouse_exited.connect(_on_card_hover.bind(btn, false))
 	return btn
 
-# ホバーでカードを少し拡大し手前に表示（手触り向上）
 func _on_card_hover(btn: Button, hovering: bool) -> void:
 	btn.pivot_offset = Vector2(btn.size.x / 2.0, btn.size.y)
+	var tw := btn.create_tween()
+	tw.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	if hovering:
-		btn.scale = Vector2(1.18, 1.18)
+		tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.08)
 		btn.z_index = 1
 	else:
-		btn.scale = Vector2.ONE
+		tw.tween_property(btn, "scale", Vector2.ONE, 0.06)
 		btn.z_index = 0
 
 func _on_card_selected(card: CardData) -> void:
@@ -389,12 +390,28 @@ func _on_card_selected(card: CardData) -> void:
 		return
 	var needs_target := (card.base_damage > 0 or card.requires_target or _targets_enemy_status(card)) and not card.is_aoe
 	if needs_target:
-		selected_card = card
-		_highlight_selected_card(card)
-		_show_target_buttons(true)
+		var alive_idx := _get_sole_alive_enemy()
+		if alive_idx >= 0:
+			CombatManager.play_card(card, alive_idx)
+			_after_card_play()
+		else:
+			selected_card = card
+			_highlight_selected_card(card)
+			_show_target_buttons(true)
 	else:
 		CombatManager.play_card(card, 0)
 		_after_card_play()
+
+func _get_sole_alive_enemy() -> int:
+	var alive_count: int = 0
+	var alive_idx: int = -1
+	for i in CombatManager.enemies.size():
+		if CombatManager.enemies[i]["alive"]:
+			alive_count += 1
+			alive_idx = i
+			if alive_count > 1:
+				return -1
+	return alive_idx
 
 func _on_enemy_panel_clicked(event: InputEvent, idx: int) -> void:
 	if not event is InputEventMouseButton:
