@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dl63m63dd6rr"
-path="res://.godot/imported/Charactor_Choose_Vespa.png-5b80e5ad989f16ba325db8f903a2a119.ctex"
+path="res://.godot/imported/Charactor_Choose_Vespa.png-5c3c16562db363bb2cf708ea217f5bb2.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/characters/Charactor_Choose_Vespa.png"
-dest_files=["res://.godot/imported/Charactor_Choose_Vespa.png-5b80e5ad989f16ba325db8f903a2a119.ctex"]
+dest_files=["res://.godot/imported/Charactor_Choose_Vespa.png-5c3c16562db363bb2cf708ea217f5bb2.ctex"]
 
 [params]
 
