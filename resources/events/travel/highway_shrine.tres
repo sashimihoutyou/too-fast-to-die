@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "祈りを捧げる"
+requirement = ""
+result_text = "心が少し穏やかになった気がする。"
+karma_change = 3
+hp_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "供物を漁る"
+requirement = ""
+result_text = "供えられた物資を手に入れた。罰が当たらなければいいが。"
+fuel_change = 3
+medicine_change = 1
+karma_change = -5
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "通り過ぎる"
+requirement = ""
+result_text = "旧世界の名残か。立ち止まる余裕はない。"
+
+[resource]
+script = ExtResource("1")
+id = &"highway_shrine"
+title = "道端の祠"
+body_text = "かつてのハイウェイ沿いに小さな祠がある。旧世界の信仰の跡だろうか。花と供物が置かれている。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

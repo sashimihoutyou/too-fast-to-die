@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu05"
+display_name = "ロミオ乱射"
+description = "3ダメージ×4回。ゲージ+10"
+ap_cost = 2
+tags = [1, 5]
+rarity = 1
+restriction = 6
+base_damage = 3
+upgraded_damage = 4
+hit_count = 4
+requires_target = true
+status_effect = &"euphoria"
+status_stacks = 10

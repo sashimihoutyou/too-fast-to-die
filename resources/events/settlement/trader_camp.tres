@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "公正に取引する"
+requirement = "scrap>=2"
+result_text = "彼らは笑顔で応じた。良い取引だ。"
+scrap_change = -2
+fuel_change = 6
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "商人の同行者に交渉を任せる"
+requirement = "companion==merchant"
+result_text = "ヤスの交渉術は見事だった。こちらが得をする形で取引が成立した。"
+fuel_change = 8
+medicine_change = 1
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "夜に物資を盗む"
+requirement = ""
+result_text = "うまくいった。だが良心が痛む。"
+fuel_change = 5
+scrap_change = 3
+karma_change = -6
+
+[resource]
+script = ExtResource("1")
+id = &"trader_camp"
+title = "行商人の野営地"
+body_text = "小さなキャラバンが野営している。物資を豊富に持っているようだ。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

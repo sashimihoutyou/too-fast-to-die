@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "医薬品で手当てする"
+requirement = "medicine>=1"
+result_text = "彼女は回復すると、お礼にと自分の持っていた物資を分けてくれた。同行を申し出てきた。"
+medicine_change = -1
+fuel_change = 3
+karma_change = 5
+companion_id = &"refugee"
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "物資だけ与えて立ち去る"
+requirement = ""
+result_text = "少しの食料を置いていった。彼女の目に感謝の色が浮かんだ。"
+fuel_change = -2
+karma_change = 3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "無視する"
+requirement = ""
+result_text = "冷たい選択だが、自分が生き延びなければ誰も救えない。"
+karma_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"wounded_stranger"
+title = "負傷した旅人"
+body_text = "道端で倒れている女性を見つけた。まだ息はあるが、傷が深い。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

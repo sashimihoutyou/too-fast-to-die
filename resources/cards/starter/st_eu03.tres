@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"st_eu03"
+display_name = "ロミオの接吻"
+description = "3ダメージ×2。ゲージ+5"
+ap_cost = 1
+tags = [1, 5]
+rarity = 0
+restriction = 6
+is_starter = true
+base_damage = 3
+upgraded_damage = 4
+hit_count = 2
+requires_target = true
+status_effect = &"euphoria"
+status_stacks = 5

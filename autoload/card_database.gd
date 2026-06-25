@@ -10,6 +10,7 @@ func _ready() -> void:
 	_load_cards_from_directory("res://resources/cards/wanderer")
 	_load_cards_from_directory("res://resources/cards/beast_master")
 	_load_cards_from_directory("res://resources/cards/conqueror")
+	_load_cards_from_directory("res://resources/cards/hedonist")
 	_load_cards_from_directory("res://resources/cards/contamination")
 
 func get_card(id: StringName) -> CardData:
@@ -36,6 +37,7 @@ func _character_id_to_restriction(id: StringName) -> CardData.CharacterRestricti
 		&"wanderer": return CardData.CharacterRestriction.WANDERER
 		&"beast_master": return CardData.CharacterRestriction.BEAST_MASTER
 		&"conqueror": return CardData.CharacterRestriction.CONQUEROR
+		&"hedonist": return CardData.CharacterRestriction.HEDONIST
 	return CardData.CharacterRestriction.NONE
 
 func reload() -> void:
@@ -47,6 +49,7 @@ func reload() -> void:
 	_load_cards_from_directory("res://resources/cards/wanderer")
 	_load_cards_from_directory("res://resources/cards/beast_master")
 	_load_cards_from_directory("res://resources/cards/conqueror")
+	_load_cards_from_directory("res://resources/cards/hedonist")
 	_load_cards_from_directory("res://resources/cards/contamination")
 
 

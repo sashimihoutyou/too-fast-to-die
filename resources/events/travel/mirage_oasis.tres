@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "近づいてみる"
+requirement = ""
+result_text = "蜃気楼だった。だが足元に古い地図の断片が落ちていた。"
+fuel_change = -1
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "蜃気楼だと無視する"
+requirement = ""
+result_text = "賢明な判断だ。燃料を無駄にせずに済んだ。"
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "医薬品で意識をはっきりさせる"
+requirement = "medicine>=1"
+result_text = "薬のおかげで視界が鮮明になった。遠くに本物の水源が見えた気がする。"
+medicine_change = -1
+hp_change = 10
+
+[resource]
+script = ExtResource("1")
+id = &"mirage_oasis"
+title = "蜃気楼のオアシス"
+body_text = "地平線の向こうに水面が揺らめいている。本物のオアシスか、それとも蜃気楼か。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

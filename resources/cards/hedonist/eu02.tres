@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu02"
+display_name = "ネオンキス"
+description = "5ダメージ。ゲージ+10"
+ap_cost = 1
+tags = [5]
+rarity = 0
+restriction = 6
+base_damage = 5
+upgraded_damage = 7
+requires_target = true
+status_effect = &"euphoria"
+status_stacks = 10

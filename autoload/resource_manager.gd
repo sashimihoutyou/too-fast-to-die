@@ -13,6 +13,37 @@ var medicine: int = 0
 var medicine_max: int = 3
 var bike_durability: int = 15
 var bike_max_durability: int = 15
+var equipped_parts: Dictionary = {}
+
+func equip_part(part: BikePartData) -> BikePartData:
+	var old: BikePartData = equipped_parts.get(part.slot, null)
+	equipped_parts[part.slot] = part
+	_apply_part_stats()
+	return old
+
+func unequip_part(slot: BikePartData.Slot) -> BikePartData:
+	var old: BikePartData = equipped_parts.get(slot, null)
+	if old != null:
+		equipped_parts.erase(slot)
+		_apply_part_stats()
+	return old
+
+func get_equipped_part(slot: BikePartData.Slot) -> BikePartData:
+	return equipped_parts.get(slot, null)
+
+func get_stat_bonus(stat_name: String) -> int:
+	var total: int = 0
+	for part: BikePartData in equipped_parts.values():
+		total += int(part.stats.get(stat_name, 0))
+	return total
+
+func _apply_part_stats() -> void:
+	tank_capacity = 30 + get_stat_bonus("tank_bonus")
+	bike_max_durability = 15 + get_stat_bonus("durability_bonus")
+	bike_durability = mini(bike_durability, bike_max_durability)
+	fuel = mini(fuel, tank_capacity)
+	fuel_changed.emit(fuel, tank_capacity)
+	bike_durability_changed.emit(bike_durability, bike_max_durability)
 
 func reset() -> void:
 	fuel = 20
@@ -21,6 +52,7 @@ func reset() -> void:
 	medicine = 1
 	bike_durability = 15
 	bike_max_durability = 15
+	equipped_parts.clear()
 	_emit_all()
 
 func add_fuel(amount: int) -> void:

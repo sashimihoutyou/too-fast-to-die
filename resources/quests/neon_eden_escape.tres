@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"neon_eden_escape"
+title = "ネオン・エデンからの逃亡"
+summary = "ネオン・エデンの追っ手を退けろ"
+required_act = 4
+node_limit = 7
+objective_match = &"neon_eden"
+objective_count = 3
+boss_target = &"neon_eden_queen"
+boss_add_enemy = &"neon_eden_guard"
+boss_mods = {
+"hunt": { "hp_scale": 0.75, "adds": 0 },
+"ignore": { "hp_scale": 1.0, "adds": 3 },
+"lapse": { "hp_scale": 0.85, "adds": 2 }
+}

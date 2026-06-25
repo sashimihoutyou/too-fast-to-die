@@ -29,7 +29,7 @@ func _on_upgrade() -> void:
 		if card.upgraded:
 			continue
 		var btn := Button.new()
-		btn.text = "%s — %s" % [card.display_name, card.description]
+		btn.text = "%s — %s" % [card.get_display_name(), card.description]
 		btn.custom_minimum_size = Vector2(400, 40)
 		btn.add_theme_font_size_override("font_size", 15)
 		btn.pressed.connect(_on_card_upgrade.bind(card))

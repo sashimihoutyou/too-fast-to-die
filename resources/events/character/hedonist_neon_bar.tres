@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "一杯だけ付き合う"
+requirement = ""
+result_text = "ネオンの光の中で情報が得られた。オアシスへの道筋が少し見えた。"
+fuel_change = -2
+hp_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "ネオンドラッグを試す"
+requirement = ""
+result_text = "強烈な高揚感。体が軽い。だが明日が怖い。"
+hp_change = -8
+fuel_change = 2
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "バーテンダーに情報を聞く"
+requirement = "scrap>=2"
+result_text = "スクラップと引き換えに有益な情報を得た。"
+scrap_change = -2
+fuel_change = 4
+
+[resource]
+script = ExtResource("1")
+id = &"hedonist_neon_bar"
+title = "ネオンバー「楽園の入口」"
+body_text = "廃墟の地下にネオンが灯るバーがある。ホタルには見覚えのある場所だ。"
+required_character = &"hedonist"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

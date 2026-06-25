@@ -48,6 +48,8 @@ func draw_cards(count: int = HAND_SIZE) -> Array[CardData]:
 			var card: CardData = draw_pile.pop_back()
 			hand.append(card)
 			drawn.append(card)
+			if card.is_unplayable:
+				CombatManager.apply_contamination_on_draw(card)
 	cards_drawn.emit(drawn)
 	return drawn
 

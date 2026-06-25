@@ -17,8 +17,12 @@ signal enemy_status_changed(idx: int, status: Dictionary)
 signal player_status_changed(status: Dictionary)
 signal heat_changed(value: int, max_value: int)
 signal acceleration_changed(gauge: int, max_gauge: int)
+signal aura_changed(value: int, max_value: int)
+signal euphoria_changed(value: int, max_value: int)
 signal player_buffs_changed(buffs: Dictionary)
 signal ultimate_activated()
+signal climax_activated()
+signal beast_changed()
 
 enum CombatState { INACTIVE, INIT, DRAW, PLAYER_TURN, DISCARD, ENEMY_TURN, CHECK_END, VICTORY, DEFEAT, FLED }
 
@@ -32,9 +36,23 @@ var player_max_hp: int = 0
 var player_block: int = 0
 var player_status: Dictionary = {}
 
-# 元レイダー固有資源「ヒート（激情）」。0〜HEAT_MAX のメーター。
+# 元レイダー固有資源「ヒート（激情）」
 const HEAT_MAX: int = 100
 var player_heat: int = 0
+
+# 覇者固有資源「闘気（オーラ）」
+const AURA_MAX: int = 100
+var player_aura: int = 0
+
+# 享楽者固有資源「エクスタシー」
+const EUPHORIA_MAX: int = 100
+var player_euphoria: int = 0
+var _climax_active: bool = false
+var _overdose_pending: bool = false
+
+# 調教師固有「獣スロット」
+var player_beasts: Array[Dictionary] = []
+const BEAST_MAX := 5
 
 var enemies: Array[Dictionary] = []
 
@@ -53,8 +71,13 @@ func reset_player_for_new_run() -> void:
 	player_hp = player_max_hp
 	player_status = _new_status_dict()
 	player_heat = 0
+	player_aura = 0
+	player_euphoria = 50 if _is_hedonist() else 0
+	player_beasts.clear()
 	player_buffs = _new_buffs_dict()
 	acceleration_gauge = 0
+	_climax_active = false
+	_overdose_pending = false
 
 func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
 	state = CombatState.INIT
@@ -65,9 +88,15 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 	player_status = _new_status_dict()
 	player_buffs = _new_buffs_dict()
 	acceleration_gauge = 0
+	_climax_active = false
+	_overdose_pending = false
 	player_status_changed.emit(player_status)
 	player_heat = 0
 	heat_changed.emit(player_heat, HEAT_MAX)
+	player_aura = 0
+	aura_changed.emit(player_aura, AURA_MAX)
+	if _is_hedonist():
+		euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
 	player_buffs_changed.emit(player_buffs)
 	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
 	enemies.clear()
@@ -95,38 +124,88 @@ func begin_turn() -> void:
 	ap_cost_reduction = 0
 	player_block = 0
 	player_block_changed.emit(player_block)
+
+	# オーバードーズ（享楽者：クライマックス翌ターン）
+	if _overdose_pending:
+		_overdose_pending = false
+		ap = 0
+		player_hp = maxi(1, ceili(float(player_hp) / 2.0))
+		player_max_hp = maxi(1, player_max_hp - 3)
+		player_hp = mini(player_hp, player_max_hp)
+		player_hp_changed.emit(player_hp, player_max_hp)
+
+	# ユーフォリアゾーンによるAP補正
+	if _is_hedonist():
+		if player_euphoria <= 9:
+			ap = maxi(0, ap - 2)
+			_damage_player(2)
+		elif player_euphoria <= 32:
+			ap = maxi(0, ap - 1)
+		elif player_euphoria >= 75 and player_euphoria < 100:
+			ap += 1
+
 	_tick_player_statuses()
 	if player_hp <= 0:
 		state = CombatState.DEFEAT
 		combat_lost.emit()
 		return
+
+	# 獣の自動攻撃（調教師）
+	if _is_beast_master():
+		_beast_auto_attack()
+
 	ap_changed.emit(ap)
 	_update_all_intents()
-	DeckManager.draw_cards()
+
+	var draw_count := DeckManager.HAND_SIZE
+	if _is_hedonist() and player_euphoria >= 75 and player_euphoria < 100:
+		draw_count += 1
+	if _is_hedonist() and player_euphoria <= 9:
+		draw_count = maxi(1, draw_count - 1)
+	if _has_companion(CompanionData.CompanionType.TRAITOR):
+		draw_count += 1
+	DeckManager.draw_cards(draw_count)
 	turn_started.emit(turn_number)
 
 func get_effective_ap_cost(card: CardData) -> int:
 	var reduction := ap_cost_reduction
 	if int(player_buffs.get("ultimate", 0)) > 0:
 		reduction += 1
+	if _climax_active:
+		return 0
 	if reduction > 0:
 		return maxi(0, card.ap_cost - reduction)
 	return card.ap_cost
 
-# 指定した敵にこのカードを使った場合の与ダメージ（ブロック前・全ヒット合計）を予測する。
-# 筋力・弱体・弱点・脆弱を反映。UIのダメージプレビュー用。
 func preview_damage(card: CardData, idx: int) -> int:
 	if idx < 0 or idx >= enemies.size():
 		return 0
 	var base := card.get_effective_damage()
-	# ヒート連動の動的ダメージをプレビューに反映（実適用と一致させる）
-	if card.id == &"er01":  # ランページ: ヒート÷3
-		base = int(player_heat / 3.0)
-	elif card.id == &"er06" and player_heat >= HEAT_MAX / 2:  # バーサーカー: 50%以上で+5
+	if card.id == &"er01":
+		if card.upgraded:
+			base = int(player_heat / 2.0)
+		else:
+			base = int(player_heat / 3.0)
+	elif card.id == &"er06" and player_heat >= HEAT_MAX / 2:
 		base += 5
+	elif card.id == &"co08":
+		base = int(player_aura / 2.0)
+		if card.upgraded:
+			base = int(float(player_aura) * 0.75)
+	elif card.id == &"co10" and player_aura >= 80:
+		base *= 3
+	elif card.id == &"bm07" and not player_beasts.is_empty():
+		var bonus: int = 7 if card.upgraded else 5
+		base += bonus
+	elif card.id == &"st_we02":
+		if DeckManager.master_deck.size() <= 15:
+			var bonus: int = 3 if card.upgraded else 2
+			base += bonus
 	if base <= 0:
 		return 0
 	var per_hit := _apply_player_attack_mods(base, card.tags, false)
+	if _climax_active:
+		per_hit *= 2
 	if is_weak_against(idx, card.tags):
 		per_hit = int(per_hit * 1.5)
 	if int(enemies[idx]["status"].get("vulnerable", 0)) > 0:
@@ -138,11 +217,22 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	if card.is_unplayable:
 		return false
+	if _climax_active:
+		return true
 	var cost := get_effective_ap_cost(card)
 	if cost > ap and int(player_buffs.get("overcharge", 0)) <= 0:
 		return false
 	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
 		return false
+	# 愛の奴隷：魅了5+の敵がいないと使えない
+	if card.id == &"eu11":
+		var has_charmed := false
+		for enemy: Dictionary in enemies:
+			if enemy["alive"] and int(enemy["status"].get("charm", 0)) >= 5:
+				has_charmed = true
+				break
+		if not has_charmed:
+			return false
 	return true
 
 func has_playable_card() -> bool:
@@ -176,6 +266,20 @@ func end_player_turn() -> void:
 	if state != CombatState.PLAYER_TURN:
 		return
 	state = CombatState.DISCARD
+
+	# クライマックス終了処理
+	if _climax_active:
+		_climax_active = false
+		player_euphoria = 0
+		euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
+		var all_dead := true
+		for enemy: Dictionary in enemies:
+			if enemy["alive"]:
+				all_dead = false
+				break
+		if not all_dead:
+			_overdose_pending = true
+
 	DeckManager.discard_hand()
 	_tick_player_buffs()
 	state = CombatState.ENEMY_TURN
@@ -218,17 +322,83 @@ func emergency_reroll() -> bool:
 	return true
 
 func _apply_card_effects(card: CardData, target_idx: int) -> void:
-	# --- ヒート消費系の特殊カード（ダメージ/ブロックが現在ヒートで決まる）---
-	if card.id == &"er01":  # ランページ: ヒート÷3のダメージ
+	# --- ヒート消費系の特殊カード ---
+	if card.id == &"er01":
 		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
-			var rampage := _apply_player_attack_mods(int(player_heat / 3.0))
+			var divisor: float = 2.0 if card.upgraded else 3.0
+			var rampage := _apply_player_attack_mods(int(player_heat / divisor))
+			if _climax_active:
+				rampage *= 2
 			_damage_enemy(target_idx, rampage, card.tags)
 		return
-	if card.id == &"er08":  # 嵐の前の静けさ: ヒートを0にし、除去量と同値のブロック
+	if card.id == &"er08":
 		if player_heat > 0:
 			player_block += player_heat
 			player_block_changed.emit(player_block)
 			_add_heat(-player_heat)
+		if card.upgraded:
+			DeckManager.draw_cards(3)
+		return
+
+	# --- 覇者 闘気開放 ---
+	if card.id == &"co08":
+		if player_aura >= 50:
+			var aura_dmg: int = 0
+			if card.upgraded:
+				aura_dmg = int(float(player_aura) * 0.75)
+			else:
+				aura_dmg = int(player_aura / 2.0)
+			var hit := _apply_player_attack_mods(aura_dmg, card.tags)
+			if _climax_active:
+				hit *= 2
+			for i in enemies.size():
+				if enemies[i]["alive"]:
+					_damage_enemy(i, hit, card.tags)
+			_add_aura(-player_aura)
+		return
+
+	# --- 覇者 百裂拳 ---
+	if card.id == &"co07":
+		if player_aura >= AURA_MAX:
+			var per_hit := card.get_effective_damage()
+			var hit := _apply_player_attack_mods(per_hit, card.tags)
+			if _climax_active:
+				hit *= 2
+			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+				for h in card.hit_count:
+					if enemies[target_idx]["alive"]:
+						_damage_enemy(target_idx, hit, card.tags)
+			_add_aura(-player_aura)
+		return
+
+	# --- 愛の奴隷（享楽者）---
+	if card.id == &"eu11":
+		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+			var charm_stacks: int = int(enemies[target_idx]["status"].get("charm", 0))
+			if charm_stacks >= 5:
+				enemies[target_idx]["alive"] = false
+				enemies[target_idx]["hp"] = 0
+				enemy_hp_changed.emit(target_idx, 0, enemies[target_idx]["max_hp"])
+				enemy_defeated.emit(target_idx)
+		return
+
+	# --- ロミオとジュリエット（享楽者最強技）---
+	if card.id == &"eu_new1":
+		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+			var hit := _apply_player_attack_mods(card.get_effective_damage(), card.tags)
+			if _climax_active:
+				hit *= 2
+			for h in card.hit_count:
+				if enemies[target_idx]["alive"]:
+					_damage_enemy(target_idx, hit, card.tags)
+			# 追加の近接15ダメージ
+			if enemies[target_idx]["alive"]:
+				var melee_hit := _apply_player_attack_mods(15, [CardData.Tag.MELEE])
+				if _climax_active:
+					melee_hit *= 2
+				_damage_enemy(target_idx, melee_hit, [CardData.Tag.MELEE])
+		if card.status_effect == &"euphoria":
+			_add_euphoria(card.status_stacks)
 		return
 
 	var dmg := card.get_effective_damage()
@@ -237,6 +407,34 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	# バーサーカースラッシュ: ヒート50%以上で+5
 	if card.id == &"er06" and player_heat >= HEAT_MAX / 2:
 		dmg += 5
+
+	# 覇者 昇龍拳: ダメージ分のブロック付与
+	if card.id == &"co05":
+		var bonus_blk := dmg
+		blk += bonus_blk
+
+	# 覇者 不動の構え: 闘気50%以上で+4ブロック
+	if card.id == &"co09" and player_aura >= AURA_MAX / 2:
+		blk += 4
+
+	# 覇者 一撃必殺: 闘気80%以上で3倍ダメージ
+	if card.id == &"co10" and player_aura >= 80:
+		dmg *= 3
+
+	# 放浪者 サバイバルナイフ: デッキ15枚以下で+2(+3)
+	if card.id == &"st_we02" and DeckManager.master_deck.size() <= 15:
+		dmg += 3 if card.upgraded else 2
+
+	# 放浪者 共鳴の鞭: 場に獣がいれば+5(+7)
+	if card.id == &"bm07" and not player_beasts.is_empty():
+		dmg += 7 if card.upgraded else 5
+
+	# 放浪者 ワンマンアーミー: 同行者なしで全攻撃+4(+6)
+	if card.id == &"wa09" and _is_lone_wolf():
+		var bonus: int = 6 if card.upgraded else 4
+		player_buffs["strength_turn"] = bonus
+		player_status["strength"] = int(player_status.get("strength", 0)) + bonus
+		player_status_changed.emit(player_status)
 
 	if blk > 0:
 		player_block += blk
@@ -248,6 +446,16 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	if card.draw_count > 0:
 		DeckManager.draw_cards(card.draw_count)
 
+	# 放浪者 孤狼の勘: 同行者なしで追加ドロー
+	if card.id == &"wa02" and _is_lone_wolf():
+		DeckManager.draw_cards(1)
+
+	# 放浪者 バレットタイム: デッキ15枚以下で追加ドロー
+	if card.id == &"wa04" and DeckManager.master_deck.size() <= 15:
+		DeckManager.draw_cards(1)
+		if card.upgraded:
+			DeckManager.draw_cards(1)
+
 	if card.bonus_ap > 0:
 		ap += card.bonus_ap
 		ap_changed.emit(ap)
@@ -255,6 +463,8 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	var killed_with_card := false
 	if dmg > 0:
 		var hit_dmg := _apply_player_attack_mods(dmg, card.tags)
+		if _climax_active:
+			hit_dmg *= 2
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
@@ -269,10 +479,26 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 				if enemies[target_idx]["hp"] <= 0:
 					killed_with_card = true
 
-	# 敵デバフ（汎用 status_effect。heat 等のキャラ資源は _map_status で弾かれる）
+	# 敵デバフ
 	if card.status_effect != &"" and card.status_stacks != 0:
 		if _is_player_effect(card.status_effect):
 			_apply_player_effect(card.status_effect, card.status_stacks)
+		elif card.status_effect == &"charm":
+			# 魅了は享楽者固有デバフ（status dictに直接入れる）
+			if card.is_aoe:
+				for i in enemies.size():
+					if enemies[i]["alive"]:
+						_add_enemy_status(i, &"charm", card.status_stacks)
+			elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+				_add_enemy_status(target_idx, &"charm", card.status_stacks)
+			# 魅了カードもユーフォリアゲージを増やす（eu01, eu03, eu07, eu08のゲージ+分）
+			if _is_hedonist():
+				var eu_gain: int = 5
+				if card.id == &"eu07":
+					eu_gain = 10
+				elif card.id == &"eu08":
+					eu_gain = 15
+				_add_euphoria(eu_gain)
 		else:
 			var mapped := _map_status(card.status_effect)
 			if mapped != &"":
@@ -286,15 +512,24 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	if _is_cultist():
 		_fill_acceleration_from_card(card)
 
-	# --- ヒート（激情）資源ゲイン：status_effect=&"heat" をプレイヤー資源に振り替える ---
+	# ヒート（激情）資源ゲイン
 	if card.status_effect == &"heat":
 		_add_heat(card.status_stacks)
 
-	# 怒りの咆哮: 全敵の次攻撃力-2
+	# オーラ（闘気）資源ゲイン
+	if card.status_effect == &"aura":
+		_add_aura(card.status_stacks)
+
+	# ユーフォリア資源ゲイン
+	if card.status_effect == &"euphoria" and _is_hedonist():
+		_add_euphoria(card.status_stacks)
+
+	# 怒りの咆哮: 全敵の次攻撃力-2(-3)
 	if card.id == &"er10":
+		var atk_down_val: int = 3 if card.upgraded else 2
 		for i in enemies.size():
 			if enemies[i]["alive"]:
-				_add_enemy_status(i, &"atk_down", 2)
+				_add_enemy_status(i, &"atk_down", atk_down_val)
 
 	# 血の記憶: このカードで敵を撃破したらヒート-10
 	if card.id == &"er07" and killed_with_card:
@@ -372,34 +607,43 @@ func _execute_enemy_turns() -> void:
 	for i in enemies.size():
 		if not enemies[i]["alive"]:
 			continue
-		# ターン開始時：継続ダメージ（炎上・出血）を適用
 		if _apply_dot_to_enemy(i):
-			continue  # 継続ダメージで撃破された
+			continue
 		var status: Dictionary = enemies[i]["status"]
+
+		# 魅了3+: 行動スキップ
+		var charm_val: int = int(status.get("charm", 0))
+		if charm_val >= 3:
+			status["charm"] = charm_val - 1
+			enemy_status_changed.emit(i, status)
+			_decay_debuffs(status)
+			enemies[i]["turn_counter"] += 1
+			continue
+
 		var weak_active := int(status.get("weak", 0)) > 0
 		var intent: Dictionary = enemies[i]["intent"]
 		enemies[i]["block"] = 0
 		enemy_block_changed.emit(i, 0)
 		var atk_down: int = int(status.get("atk_down", 0))
+		var fighter_reduce: int = 1 if _has_companion(CompanionData.CompanionType.FIGHTER) else 0
 		match intent.get("type", ""):
 			"attack":
-				var dmg: int = maxi(0, _apply_weak(intent.get("value", 0), weak_active) - atk_down)
+				var dmg: int = maxi(0, _apply_weak(intent.get("value", 0), weak_active) - atk_down - fighter_reduce)
 				var hits: int = intent.get("hits", 1)
 				for h in hits:
 					_damage_player(dmg, true)
-				status["atk_down"] = 0  # 次攻撃に対する減算を消費
+				status["atk_down"] = 0
 			"defend":
 				var blk: int = intent.get("value", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 			"attack_defend":
-				var dmg: int = maxi(0, _apply_weak(intent.get("attack", 0), weak_active) - atk_down)
+				var dmg: int = maxi(0, _apply_weak(intent.get("attack", 0), weak_active) - atk_down - fighter_reduce)
 				var blk: int = intent.get("block", 0)
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 				_damage_player(dmg, true)
-				status["atk_down"] = 0  # 次攻撃に対する減算を消費
-		# ターン終了時：弱体・脆弱を1減衰
+				status["atk_down"] = 0
 		_decay_debuffs(status)
 		enemy_status_changed.emit(i, status)
 		enemies[i]["turn_counter"] += 1
@@ -420,8 +664,6 @@ func _get_enemy_intent(enemy: Dictionary) -> Dictionary:
 		return _get_boss_intent(data, tc, hp_pct)
 	return _get_scaled_intent(data, tc, hp_pct)
 
-# 区間（act）・カテゴリ・残HPに応じてザコ/エリートの行動を生成する。
-# 敵データに固有ムーブセットが無くても、区間が進むほど脅威が増すよう数値をスケールさせる。
 func _get_scaled_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 	var act := clampi(data.act, 1, GameManager.MAX_ACT)
 	var atk := 5 + act * 3
@@ -455,7 +697,6 @@ func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 	var act := clampi(data.act, 1, GameManager.MAX_ACT)
 	var atk := 8 + act * 4
 	if hp_pct <= 0.5:
-		# 後半フェイズ（激昂）
 		if tc % 3 == 2:
 			return {"type": "attack", "value": maxi(1, int(atk * 0.9)), "hits": 2, "label": "猛襲（二連）"}
 		else:
@@ -480,32 +721,23 @@ func _generate_rewards() -> Array:
 			has_machine = true
 
 	var rewards := []
-	# 燃料：区間とエリートでスケール
 	var fuel_min := 6 + act * 2
 	var fuel_max := 11 + act * 3
 	if is_elite:
 		fuel_min += 6
 		fuel_max += 8
 	rewards.append({"type": "fuel", "amount": randi_range(fuel_min, fuel_max)})
-	# 機械系の敵を含む場合はスクラップを選択肢に追加
 	if has_machine:
 		rewards.append({"type": "scrap", "amount": randi_range(3, 6)})
-	# カード報酬（エリート/ボスは選択肢が増える）
 	var card_slots := 2 if is_elite else 1
 	for i in card_slots:
 		rewards.append({"type": "card"})
 	return rewards
 
 # ===== ステータス効果システム =====
-# weak（弱体）= 与ダメ -25% / vulnerable（脆弱）= 被ダメ +50%
-# burn（炎上）/ bleed（出血）= ターン開始時に固定ダメージ、毎ターン1減衰
-# strength（筋力）= 攻撃に +固定値（将来用）
-# atk_down（攻撃減算）= 敵の次回攻撃ダメージを固定値だけ減らし、攻撃時に消費（怒りの咆哮）
-# heat（激情）はプレイヤー固有資源として _add_heat / player_heat で別管理する。
-# aura / beast は未実装のキャラ固有ゲージのため、ここでは扱わない（無視）。
 
 func _new_status_dict() -> Dictionary:
-	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0, "atk_down": 0}
+	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0, "atk_down": 0, "charm": 0}
 
 func _map_status(se: StringName) -> StringName:
 	match se:
@@ -519,10 +751,14 @@ func _map_status(se: StringName) -> StringName:
 			return &"bleed"
 		&"strength":
 			return &"strength"
+		&"atk_down":
+			return &"atk_down"
 	return &""
 
 func _apply_player_attack_mods(base: int, tags: Array[CardData.Tag] = [], consume: bool = true) -> int:
 	var dmg := base + int(player_status.get("strength", 0))
+	if CardData.Tag.BIKE in tags:
+		dmg += ResourceManager.get_stat_bonus("bike_attack_bonus")
 	if CardData.Tag.MELEE in tags and int(player_buffs.get("melee_power", 0)) > 0:
 		dmg += 3
 	if int(player_buffs.get("overcharge", 0)) > 0 and ap <= 0:
@@ -556,7 +792,6 @@ func _decay_debuffs(status: Dictionary) -> void:
 	status["burn"] = maxi(0, int(status.get("burn", 0)) - 1)
 	status["bleed"] = maxi(0, int(status.get("bleed", 0)) - 1)
 
-# 敵への継続ダメージを適用。撃破されたら true。
 func _apply_dot_to_enemy(idx: int) -> bool:
 	var enemy := enemies[idx]
 	var s: Dictionary = enemy["status"]
@@ -579,13 +814,66 @@ func _tick_player_statuses() -> void:
 	if dot > 0:
 		player_hp = maxi(0, player_hp - dot)
 		player_hp_changed.emit(player_hp, player_max_hp)
+	# ワンマンアーミーの一時筋力をリセット
+	var str_turn: int = int(player_buffs.get("strength_turn", 0))
+	if str_turn > 0:
+		player_status["strength"] = maxi(0, int(player_status.get("strength", 0)) - str_turn)
+		player_buffs["strength_turn"] = 0
 	_decay_debuffs(player_status)
 	player_status_changed.emit(player_status)
 
-# ヒート（激情）の増減。0〜HEAT_MAX にクランプして通知する。
+# ===== ヒート（激情）=====
 func _add_heat(amount: int) -> void:
 	player_heat = clampi(player_heat + amount, 0, HEAT_MAX)
 	heat_changed.emit(player_heat, HEAT_MAX)
+
+# ===== オーラ（闘気）=====
+func _add_aura(amount: int) -> void:
+	player_aura = clampi(player_aura + amount, 0, AURA_MAX)
+	aura_changed.emit(player_aura, AURA_MAX)
+
+# ===== エクスタシー =====
+func _add_euphoria(amount: int) -> void:
+	player_euphoria = clampi(player_euphoria + amount, 0, EUPHORIA_MAX)
+	euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
+	if player_euphoria >= EUPHORIA_MAX and not _climax_active:
+		_activate_climax()
+
+func _activate_climax() -> void:
+	_climax_active = true
+	DeckManager.discard_hand()
+	DeckManager.draw_cards(7)
+	climax_activated.emit()
+
+# ===== 獣システム =====
+func _beast_auto_attack() -> void:
+	for beast: Dictionary in player_beasts:
+		if not beast.get("alive", false):
+			continue
+		var atk: int = beast.get("attack", 3)
+		for i in enemies.size():
+			if enemies[i]["alive"]:
+				_damage_enemy(i, atk)
+				break
+	beast_changed.emit()
+
+func add_beast(beast_name: String, hp: int, atk: int) -> void:
+	if player_beasts.size() >= BEAST_MAX:
+		return
+	player_beasts.append({"name": beast_name, "hp": hp, "max_hp": hp, "attack": atk, "alive": true})
+	beast_changed.emit()
+
+func damage_beast(idx: int, amount: int) -> void:
+	if idx < 0 or idx >= player_beasts.size():
+		return
+	var beast := player_beasts[idx]
+	if not beast.get("alive", false):
+		return
+	beast["hp"] = maxi(0, beast["hp"] - amount)
+	if beast["hp"] <= 0:
+		beast["alive"] = false
+	beast_changed.emit()
+
 func _tick_player_buffs() -> void:
 	var changed := false
 	for key: String in ["melee_power", "overcharge", "ultimate"]:
@@ -596,10 +884,41 @@ func _tick_player_buffs() -> void:
 	if changed:
 		player_buffs_changed.emit(player_buffs)
 
+# ===== キャラ判定ヘルパー =====
 func _is_cultist() -> bool:
 	if GameManager.current_character == null:
 		return false
 	return GameManager.current_character.unique_system == &"acceleration"
+
+func _is_wanderer() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"lone_wolf"
+
+func _is_conqueror() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"aura"
+
+func _is_beast_master() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"beast"
+
+func _is_hedonist() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"euphoria"
+
+func _is_lone_wolf() -> bool:
+	if not _is_wanderer():
+		return false
+	return GameManager.current_companion == null
+
+func _has_companion(comp_type: CompanionData.CompanionType) -> bool:
+	if GameManager.current_companion == null:
+		return false
+	return GameManager.current_companion.companion_type == comp_type
 
 func _is_player_effect(effect: StringName) -> bool:
 	match effect:
@@ -639,3 +958,27 @@ func _fill_acceleration_from_card(card: CardData) -> void:
 	else:
 		_add_acceleration(ACCEL_BUFF)
 
+# ===== 汚染カードのドロー時効果 =====
+func apply_contamination_on_draw(card: CardData) -> void:
+	match card.id:
+		&"con01":
+			ap = maxi(0, ap - 1)
+			ap_changed.emit(ap)
+		&"con02":
+			ap = maxi(0, ap - 1)
+			ap_changed.emit(ap)
+			_damage_player(2)
+		&"con03":
+			ap = maxi(0, ap - 1)
+			ap_changed.emit(ap)
+			var debuffs: Array[StringName] = [&"weak", &"vulnerable"]
+			var chosen := debuffs[randi() % debuffs.size()]
+			player_status[chosen] = int(player_status.get(chosen, 0)) + 1
+			player_status_changed.emit(player_status)
+		&"con04":
+			ap = maxi(0, ap - 1)
+			ap_changed.emit(ap)
+			for i in enemies.size():
+				if enemies[i]["alive"]:
+					enemies[i]["block"] += 2
+					enemy_block_changed.emit(i, enemies[i]["block"])

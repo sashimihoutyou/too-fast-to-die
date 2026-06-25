@@ -2,7 +2,7 @@ class_name CardData extends Resource
 
 enum Tag { MELEE, RANGED, BIKE, DEFENSE, SKILL, CHARACTER }
 enum Rarity { COMMON, UNCOMMON, RARE }
-enum CharacterRestriction { NONE, CULTIST, EX_RAIDER, WANDERER, BEAST_MASTER, CONQUEROR }
+enum CharacterRestriction { NONE, CULTIST, EX_RAIDER, WANDERER, BEAST_MASTER, CONQUEROR, HEDONIST }
 
 @export var id: StringName
 @export var display_name: String
@@ -40,6 +40,11 @@ func get_effective_damage() -> int:
 
 func get_effective_block() -> int:
 	return upgraded_block if upgraded and upgraded_block > 0 else base_block
+
+func get_display_name() -> String:
+	if upgraded:
+		return display_name + "+"
+	return display_name
 
 func duplicate_card() -> CardData:
 	var copy := duplicate(true) as CardData

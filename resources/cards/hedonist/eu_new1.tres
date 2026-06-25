@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu_new1"
+display_name = "ロミオとジュリエット"
+description = "8ダメージ×3回（射撃）+15ダメージ（近接）。ゲージ+25"
+ap_cost = 3
+tags = [0, 1, 5]
+rarity = 2
+restriction = 6
+base_damage = 8
+hit_count = 3
+requires_target = true
+is_exhaustible = true
+status_effect = &"euphoria"
+status_stacks = 25

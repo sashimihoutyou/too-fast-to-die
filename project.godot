@@ -28,6 +28,8 @@ DeckManager="*res://autoload/deck_manager.gd"
 CombatManager="*res://autoload/combat_manager.gd"
 GameManager="*res://autoload/game_manager.gd"
 QuestManager="*res://autoload/quest_manager.gd"
+CompanionDatabase="*res://autoload/companion_database.gd"
+SaveManager="*res://autoload/save_manager.gd"
 DebugEditorManager="*res://scripts/debug/debug_editor_manager.gd"
 
 [display]

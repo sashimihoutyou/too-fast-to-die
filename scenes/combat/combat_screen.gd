@@ -12,6 +12,9 @@ var selected_card: CardData = null
 var awaiting_reward: bool = false
 var _last_player_hp: int = 0
 var _heat_label: Label = null
+var _aura_label: Label = null
+var _euphoria_label: Label = null
+var _beast_label: Label = null
 
 func _ready() -> void:
 	_last_player_hp = CombatManager.player_hp
@@ -19,6 +22,9 @@ func _ready() -> void:
 	_build_enemy_display()
 	_show_target_buttons(false)
 	_setup_heat_meter()
+	_setup_aura_meter()
+	_setup_euphoria_meter()
+	_setup_beast_display()
 	_update_player_hud()
 	_update_hand()
 	_update_controls()
@@ -37,6 +43,45 @@ func _setup_heat_meter() -> void:
 	$PlayerHUD.add_child(_heat_label)
 	_on_heat_changed(CombatManager.player_heat, CombatManager.HEAT_MAX)
 
+func _setup_aura_meter() -> void:
+	if GameManager.current_character.unique_system != &"aura":
+		return
+	_aura_label = Label.new()
+	_aura_label.offset_left = 200.0
+	_aura_label.offset_top = 96.0
+	_aura_label.offset_right = 380.0
+	_aura_label.offset_bottom = 116.0
+	_aura_label.add_theme_font_size_override("font_size", 14)
+	_aura_label.add_theme_color_override("font_color", Color(0.2, 0.6, 1.0))
+	$PlayerHUD.add_child(_aura_label)
+	_on_aura_changed(CombatManager.player_aura, CombatManager.AURA_MAX)
+
+func _setup_euphoria_meter() -> void:
+	if GameManager.current_character.unique_system != &"euphoria":
+		return
+	_euphoria_label = Label.new()
+	_euphoria_label.offset_left = 200.0
+	_euphoria_label.offset_top = 96.0
+	_euphoria_label.offset_right = 420.0
+	_euphoria_label.offset_bottom = 116.0
+	_euphoria_label.add_theme_font_size_override("font_size", 14)
+	_euphoria_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.8))
+	$PlayerHUD.add_child(_euphoria_label)
+	_on_euphoria_changed(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
+
+func _setup_beast_display() -> void:
+	if GameManager.current_character.unique_system != &"beast":
+		return
+	_beast_label = Label.new()
+	_beast_label.offset_left = 200.0
+	_beast_label.offset_top = 96.0
+	_beast_label.offset_right = 500.0
+	_beast_label.offset_bottom = 116.0
+	_beast_label.add_theme_font_size_override("font_size", 14)
+	_beast_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.3))
+	$PlayerHUD.add_child(_beast_label)
+	_on_beast_changed()
+
 func _on_heat_changed(value: int, max_value: int) -> void:
 	if _heat_label != null:
 		_heat_label.text = "🔥ヒート %d/%d" % [value, max_value]
@@ -44,6 +89,65 @@ func _on_heat_changed(value: int, max_value: int) -> void:
 		btn.focus_mode = Control.FOCUS_NONE
 	$Controls/EndTurnButton.text = "ターン終了 (Space)"
 	$Controls/EndTurnButton.tooltip_text = "数字キー=カード, Space/Enter=ターン終了, Esc/右クリック=選択解除"
+
+func _on_aura_changed(value: int, max_value: int) -> void:
+	if _aura_label != null:
+		var filled := roundi(float(value) / float(max_value) * 10.0)
+		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
+		_aura_label.text = "闘気 %s %d/%d" % [bar, value, max_value]
+
+func _on_euphoria_changed(value: int, max_value: int) -> void:
+	if _euphoria_label != null:
+		var zone := ""
+		if value <= 9:
+			zone = "枯渇"
+		elif value <= 32:
+			zone = "倦怠"
+		elif value <= 74:
+			zone = "平常"
+		elif value < 100:
+			zone = "高揚"
+		else:
+			zone = "絶頂"
+		var filled := roundi(float(value) / float(max_value) * 10.0)
+		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
+		_euphoria_label.text = "💜 %s %s %d/%d" % [zone, bar, value, max_value]
+
+func _on_climax_activated() -> void:
+	_flash_screen(Color(0.8, 0.2, 0.8, 0.4))
+	var msg := Label.new()
+	msg.text = "クライマックス！"
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	msg.set_anchors_preset(Control.PRESET_CENTER)
+	msg.add_theme_font_size_override("font_size", 32)
+	msg.add_theme_color_override("font_color", Color(1.0, 0.3, 0.9))
+	msg.offset_left = -200
+	msg.offset_right = 200
+	msg.offset_top = -30
+	msg.offset_bottom = 30
+	msg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(msg)
+	var tw := create_tween()
+	tw.tween_interval(1.0)
+	tw.tween_property(msg, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(msg.queue_free)
+
+func _on_beast_changed() -> void:
+	if _beast_label == null:
+		return
+	if CombatManager.player_beasts.is_empty():
+		_beast_label.text = "🐾 獣: なし"
+		return
+	var parts: Array[String] = []
+	for beast: Dictionary in CombatManager.player_beasts:
+		var alive: bool = beast.get("alive", false)
+		if alive:
+			var name_str: String = beast.get("name", "獣")
+			var bhp: int = beast.get("hp", 0)
+			var bmax: int = beast.get("max_hp", 0)
+			parts.append("%s(%d/%d)" % [name_str, bhp, bmax])
+	_beast_label.text = "🐾 獣: %s" % ", ".join(parts) if not parts.is_empty() else "🐾 獣: なし"
 
 func _setup_signals() -> void:
 	CombatManager.turn_started.connect(_on_turn_started)
@@ -61,6 +165,10 @@ func _setup_signals() -> void:
 	CombatManager.acceleration_changed.connect(_on_acceleration_changed)
 	CombatManager.player_buffs_changed.connect(_on_player_buffs_changed)
 	CombatManager.ultimate_activated.connect(_on_ultimate_activated)
+	CombatManager.aura_changed.connect(_on_aura_changed)
+	CombatManager.euphoria_changed.connect(_on_euphoria_changed)
+	CombatManager.climax_activated.connect(_on_climax_activated)
+	CombatManager.beast_changed.connect(_on_beast_changed)
 	CombatManager.combat_won.connect(_on_combat_won)
 	CombatManager.combat_lost.connect(_on_combat_lost)
 	CombatManager.player_fled.connect(_on_player_fled)
@@ -233,7 +341,7 @@ func _create_card_button(card: CardData) -> Button:
 
 	var tag_text := _tags_to_bracket_text(card.tags)
 
-	btn.text = "%s\n%s\n%s\n%s" % [cost_text, card.display_name, tag_text, card.description]
+	btn.text = "%s\n%s\n%s\n%s" % [cost_text, card.get_display_name(), tag_text, card.description]
 	btn.disabled = not can_play or card.is_unplayable
 	btn.pressed.connect(_on_card_selected.bind(card))
 
@@ -539,14 +647,14 @@ func _on_ultimate_activated() -> void:
 	tw.tween_callback(msg.queue_free)
 
 func _update_gauge_display() -> void:
-	if not CombatManager._is_cultist():
+	if CombatManager._is_cultist():
+		var gauge := CombatManager.acceleration_gauge
+		var mx := CombatManager.ACCELERATION_MAX
+		var filled := roundi(float(gauge) / float(mx) * 10.0)
+		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
+		$PlayerHUD/GaugeLabel.text = "加速 %s %d/%d" % [bar, gauge, mx]
+	else:
 		$PlayerHUD/GaugeLabel.text = ""
-		return
-	var gauge := CombatManager.acceleration_gauge
-	var mx := CombatManager.ACCELERATION_MAX
-	var filled := roundi(float(gauge) / float(mx) * 10.0)
-	var bar := "█".repeat(filled) + "░".repeat(10 - filled)
-	$PlayerHUD/GaugeLabel.text = "加速 %s %d/%d" % [bar, gauge, mx]
 
 func _update_buff_display() -> void:
 	var parts: Array[String] = []
@@ -582,6 +690,7 @@ func _format_status(status: Dictionary) -> String:
 	var vuln: int = int(status.get("vulnerable", 0))
 	var strg: int = int(status.get("strength", 0))
 	var atk_down: int = int(status.get("atk_down", 0))
+	var charm: int = int(status.get("charm", 0))
 	if burn > 0:
 		parts.append("🔥%d" % burn)
 	if bleed > 0:
@@ -594,6 +703,8 @@ func _format_status(status: Dictionary) -> String:
 		parts.append("力%d" % strg)
 	if atk_down > 0:
 		parts.append("攻-%d" % atk_down)
+	if charm > 0:
+		parts.append("💘%d" % charm)
 	return " ".join(parts)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:

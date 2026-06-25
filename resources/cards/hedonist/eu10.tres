@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu10"
+display_name = "色仕掛け"
+description = "敵1体の次の攻撃力-4"
+ap_cost = 1
+tags = [5]
+rarity = 0
+restriction = 6
+requires_target = true
+status_effect = &"atk_down"
+status_stacks = 4

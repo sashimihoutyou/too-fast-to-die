@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu06"
+display_name = "ネオンスラッシュ"
+description = "10ダメージ。ゲージ+15"
+ap_cost = 2
+tags = [0, 5]
+rarity = 1
+restriction = 6
+base_damage = 10
+upgraded_damage = 15
+requires_target = true
+status_effect = &"euphoria"
+status_stacks = 15
