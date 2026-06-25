@@ -3,6 +3,7 @@ extends Control
 const SHOP_ITEMS := [
 	{"name": "医薬品", "cost": 4, "type": "medicine"},
 	{"name": "スクラップ×5", "cost": 3, "type": "scrap"},
+	{"name": "バイク修理+6", "cost": 3, "type": "repair_bike"},
 	{"name": "カード削除", "cost": 5, "type": "remove_card"},
 ]
 
@@ -106,6 +107,8 @@ func _on_buy(item: Dictionary) -> void:
 			ResourceManager.add_medicine(1)
 		"scrap":
 			ResourceManager.add_scrap(5)
+		"repair_bike":
+			ResourceManager.repair_bike(6)
 	_build_shop()
 	_update_fuel_display()
 
@@ -150,7 +153,11 @@ func _on_buy_card(card: CardData, cost: int) -> void:
 	_update_fuel_display()
 
 func _update_fuel_display() -> void:
-	$FuelLabel.text = "所持燃料: %d" % ResourceManager.fuel
+	$FuelLabel.text = "所持燃料: %d / 耐久: %d/%d" % [
+		ResourceManager.fuel,
+		ResourceManager.bike_durability,
+		ResourceManager.bike_max_durability,
+	]
 
 func _on_leave() -> void:
 	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")

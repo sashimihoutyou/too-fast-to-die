@@ -86,6 +86,9 @@ func advance_node() -> void:
 	total_nodes_visited += 1
 	distance_km += randi_range(3, 6)
 	ResourceManager.consume_fuel(2)
+	ResourceManager.damage_bike(1)
+	if ResourceManager.bike_durability <= 0:
+		ResourceManager.consume_fuel(1)
 	_tick_companion()
 	_tick_pursuit()
 	QuestManager.on_node_advanced()

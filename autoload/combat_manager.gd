@@ -401,6 +401,27 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 			_add_euphoria(card.status_stacks)
 		return
 
+	# --- 調教師 獣カード ---
+	if card.id == &"bm02":
+		_beast_auto_attack()
+		if card.upgraded:
+			player_block += card.get_effective_block()
+			player_block_changed.emit(player_block)
+		return
+	if card.id == &"bm03":
+		_heal_beasts(8 if card.upgraded else 5)
+		return
+	if card.id == &"bm04":
+		_buff_beasts_attack(4 if card.upgraded else 3)
+		return
+	if card.id == &"bm06":
+		_beast_auto_attack()
+		_beast_auto_attack()
+		return
+	if card.id == &"bm09":
+		_summon_random_beast()
+		return
+
 	var dmg := card.get_effective_damage()
 	var blk := card.get_effective_block()
 
@@ -862,6 +883,30 @@ func add_beast(beast_name: String, hp: int, atk: int) -> void:
 		return
 	player_beasts.append({"name": beast_name, "hp": hp, "max_hp": hp, "attack": atk, "alive": true})
 	beast_changed.emit()
+
+func _heal_beasts(amount: int) -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		var max_hp: int = int(beast.get("max_hp", 0))
+		beast["hp"] = mini(max_hp, int(beast.get("hp", 0)) + amount)
+	beast_changed.emit()
+
+func _buff_beasts_attack(amount: int) -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		beast["attack"] = int(beast.get("attack", 0)) + amount
+	beast_changed.emit()
+
+func _summon_random_beast() -> void:
+	var candidates: Array[Dictionary] = [
+		{"name": "野犬", "hp": 8, "attack": 3},
+		{"name": "砂狐", "hp": 6, "attack": 4},
+		{"name": "荒野の鷹", "hp": 5, "attack": 5},
+	]
+	var pick: Dictionary = candidates[randi() % candidates.size()]
+	add_beast(String(pick.get("name", "獣")), int(pick.get("hp", 6)), int(pick.get("attack", 3)))
 
 func damage_beast(idx: int, amount: int) -> void:
 	if idx < 0 or idx >= player_beasts.size():

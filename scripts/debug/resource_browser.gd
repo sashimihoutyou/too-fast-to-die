@@ -11,6 +11,7 @@ func setup(tree: Tree, search_bar: LineEdit) -> void:
 	_tree = tree
 	_search_bar = search_bar
 	_tree.item_selected.connect(_on_item_selected)
+	_tree.item_activated.connect(_on_item_activated)
 	_search_bar.text_changed.connect(_on_search_changed)
 	build_tree()
 
@@ -91,6 +92,17 @@ func _on_item_selected() -> void:
 	if item == null:
 		return
 	if item.get_meta("is_directory", true):
+		return
+	var path: String = item.get_meta("file_path", "")
+	if not path.is_empty():
+		resource_selected.emit(path)
+
+func _on_item_activated() -> void:
+	var item: TreeItem = _tree.get_selected()
+	if item == null:
+		return
+	if item.get_meta("is_directory", true):
+		item.collapsed = not item.collapsed
 		return
 	var path: String = item.get_meta("file_path", "")
 	if not path.is_empty():
