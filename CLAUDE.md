@@ -248,6 +248,19 @@ func _init(combat_mgr, deck_mgr) -> void:
     DeckManager = deck_mgr
 ```
 
+**Variant伝播に注意**: シャドウ変数は型注釈なし（Variant）なので、そのメソッド呼び出しやプロパティアクセスの戻り値も全てVariantになる。`:=` で受けると「Variant推論の禁止」ルールに抵触する。Autoloadシャドウ変数経由の値は必ず明示的型注釈で受けること。
+
+```gdscript
+# NG: EnemyDatabase がVariant → get_enemies_for_act() の戻り値もVariant → 推論エラー
+var pool := EnemyDatabase.get_enemies_for_act(act)
+
+# OK: 明示的型注釈
+var pool: Array[EnemyData] = EnemyDatabase.get_enemies_for_act(act)
+
+# OK: float() 等の組み込みキャストで包めばキャスト先の型に確定するため := でも可
+var hp_pct := float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
