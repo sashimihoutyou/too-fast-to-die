@@ -1,5 +1,8 @@
 extends SceneTree
 
+const DataAuditScript := preload("res://tools/sim/data_audit.gd")
+const BattleAgentScript := preload("res://tools/sim/battle_agent.gd")
+
 const DEFAULT_RUNS := 10
 
 var _args: Dictionary = {}
@@ -24,13 +27,13 @@ func _run() -> void:
 	print("キャラクター: %s / ラン数: %d / シード: %d" % [character_id, run_count, seed_val])
 
 	# データ監査
-	var audit := DataAudit.new()
+	var audit: RefCounted = DataAuditScript.new()
 	audit.run_all()
 	print("")
 	print(audit.get_report_text())
 
 	# キャラクター読み込み
-	var character := _load_character(character_id)
+	var character: CharacterData = _load_character(character_id)
 	if character == null:
 		print("[FATAL] キャラクター '%s' が見つからない" % character_id)
 		return
@@ -133,9 +136,9 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					if node_type == MapGenerator.NodeType.BOSS:
 						var mod := QuestManager.get_boss_modifier(act)
 						boss_hp_scale = float(mod.get("hp_scale", 1.0))
-					var agent := BattleAgent.new(rng)
+					var agent: RefCounted = BattleAgentScript.new(rng)
 					var hp_before := CombatManager.player_hp
-					var result := agent.fight(enemies, boss_hp_scale)
+					var result: Dictionary = agent.fight(enemies, boss_hp_scale)
 					battles_fought += 1
 					total_turns += result["turns"]
 					total_damage_taken += maxi(0, hp_before - result["player_hp"])
@@ -375,7 +378,7 @@ func _handle_shop(rng: RandomNumberGenerator) -> void:
 		ResourceManager.consume_scrap(5)
 		ResourceManager.add_fuel(8)
 
-func _generate_report(character: CharacterData, results: Array[Dictionary], audit: DataAudit) -> String:
+func _generate_report(character: CharacterData, results: Array[Dictionary], audit: RefCounted) -> String:
 	var lines: Array[String] = []
 	lines.append("# 擬似テストプレイ レポート")
 	lines.append("")
@@ -444,7 +447,7 @@ func _generate_report(character: CharacterData, results: Array[Dictionary], audi
 
 	return "\n".join(lines)
 
-func _build_json(character: CharacterData, results: Array[Dictionary], audit: DataAudit) -> Dictionary:
+func _build_json(character: CharacterData, results: Array[Dictionary], audit: RefCounted) -> Dictionary:
 	var clears: int = 0
 	for r: Dictionary in results:
 		if r["cleared"]:
