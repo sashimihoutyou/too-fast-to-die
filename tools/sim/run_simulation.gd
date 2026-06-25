@@ -150,7 +150,7 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					var enemies := _get_enemies_for_node(node_type, act, rng)
 					var boss_hp_scale := 1.0
 					if node_type == MapGenerator.NodeType.BOSS:
-						var mod := QuestManager.get_boss_modifier(act)
+						var mod: Dictionary = QuestManager.get_boss_modifier(act)
 						boss_hp_scale = float(mod.get("hp_scale", 1.0))
 					var agent: RefCounted = BattleAgentScript.new(CombatManager, DeckManager, rng)
 					var hp_before: int = CombatManager.player_hp
@@ -259,7 +259,7 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: Rand
 	var enemies: Array[EnemyData] = []
 	match node_type:
 		MapGenerator.NodeType.COMBAT:
-			var pool := EnemyDatabase.get_enemies_for_act(act)
+			var pool: Array[EnemyData] = EnemyDatabase.get_enemies_for_act(act)
 			if pool.is_empty():
 				pool = EnemyDatabase.get_enemies_for_act(1)
 			if not pool.is_empty():
@@ -273,7 +273,7 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: Rand
 				for i in count:
 					enemies.append(pool[i % pool.size()])
 		MapGenerator.NodeType.ELITE:
-			var elites := EnemyDatabase.get_elites_for_act(act)
+			var elites: Array[EnemyData] = EnemyDatabase.get_elites_for_act(act)
 			if elites.is_empty():
 				elites = EnemyDatabase.get_elites_for_act(1)
 			if not elites.is_empty():
@@ -283,11 +283,11 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: Rand
 			var boss := _get_boss_for_act(act)
 			if boss != null:
 				enemies.append(boss)
-			var mod := QuestManager.get_boss_modifier(act)
+			var mod: Dictionary = QuestManager.get_boss_modifier(act)
 			var adds: int = int(mod.get("adds", 0))
 			var add_id: StringName = mod.get("add_enemy", &"")
 			if adds > 0 and add_id != &"":
-				var add_enemy := EnemyDatabase.get_enemy(add_id)
+				var add_enemy: EnemyData = EnemyDatabase.get_enemy(add_id)
 				if add_enemy != null:
 					for i in adds:
 						enemies.append(add_enemy)
@@ -317,13 +317,13 @@ func _get_boss_for_act(act: int) -> EnemyData:
 		var char_id: StringName = GameManager.current_character.id
 		var boss_id: StringName = boss_map.get(char_id, &"")
 		if boss_id != &"":
-			var boss := EnemyDatabase.get_enemy(boss_id)
+			var boss: EnemyData = EnemyDatabase.get_enemy(boss_id)
 			if boss != null:
 				return boss
 	return EnemyDatabase.get_boss_for_act(act)
 
 func _assign_random_relics(rng: RandomNumberGenerator) -> void:
-	var all_relics := ItemDatabase.get_items_by_type(ItemData.ItemType.RELIC)
+	var all_relics: Array[ItemData] = ItemDatabase.get_items_by_type(ItemData.ItemType.RELIC)
 	if all_relics.is_empty():
 		return
 	all_relics.shuffle()
@@ -332,7 +332,7 @@ func _assign_random_relics(rng: RandomNumberGenerator) -> void:
 		ItemDatabase.add_to_inventory(all_relics[i].id)
 
 func _pick_reward_card(character: CharacterData, act: int, rng: RandomNumberGenerator) -> void:
-	var pool := CardDatabase.get_reward_pool(act, character.id)
+	var pool: Array[CardData] = CardDatabase.get_reward_pool(act, character.id)
 	if pool.is_empty():
 		return
 	pool.shuffle()
