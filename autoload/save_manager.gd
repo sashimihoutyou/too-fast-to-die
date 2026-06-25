@@ -136,6 +136,7 @@ func load_run() -> bool:
 			"position": Vector2(float(nd.get("pos_x", 0)), float(nd.get("pos_y", 0))),
 			"connections": nd.get("connections", []),
 			"visited": nd.get("visited", false),
+			"fuel_reward": int(nd.get("fuel_reward", 0)),
 		}
 		GameManager.map_nodes.append(node)
 
@@ -173,5 +174,6 @@ func _serialize_map_nodes() -> Array:
 			"pos_y": pos.y,
 			"connections": node.get("connections", []),
 			"visited": node.get("visited", false),
+			"fuel_reward": int(node.get("fuel_reward", 0)),
 		})
 	return result

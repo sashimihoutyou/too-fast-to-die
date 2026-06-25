@@ -81,11 +81,20 @@ func change_state(new_state: GameState) -> void:
 	current_state = new_state
 	state_changed.emit(GameState.keys()[new_state])
 
-func advance_node() -> void:
+func get_travel_resource_name() -> String:
+	if current_character != null and current_character.id == &"conqueror":
+		return "水"
+	return "燃料"
+
+func get_travel_resource_icon() -> String:
+	if current_character != null and current_character.id == &"conqueror":
+		return "💧"
+	return "⛽"
+
+func advance_node(travel_cost: int = 2) -> void:
 	current_node_index += 1
 	total_nodes_visited += 1
-	distance_km += randi_range(3, 6)
-	ResourceManager.consume_fuel(2)
+	distance_km += randi_range(3, 6) + travel_cost
 	ResourceManager.damage_bike(1)
 	if ResourceManager.bike_durability <= 0:
 		ResourceManager.consume_fuel(1)

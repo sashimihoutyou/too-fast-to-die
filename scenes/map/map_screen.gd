@@ -51,8 +51,9 @@ func _draw_map() -> void:
 	for node: Dictionary in map_nodes:
 		var btn := Button.new()
 		var node_type: MapGenerator.NodeType = node["type"]
-		btn.text = MapGenerator.get_node_type_icon(node_type)
-		btn.tooltip_text = MapGenerator.get_node_type_name(node_type)
+		var fuel_reward: int = int(node.get("fuel_reward", 0))
+		btn.text = _get_node_button_text(node_type, fuel_reward)
+		btn.tooltip_text = _get_node_tooltip(node, fuel_reward)
 		btn.custom_minimum_size = Vector2(50, 50)
 		btn.position = node["position"] - Vector2(25, 25)
 		var style := StyleBoxFlat.new()
@@ -130,12 +131,22 @@ func _on_node_pressed(nid: String) -> void:
 	var node := _find_node_by_id(nid)
 	if node.is_empty():
 		return
+	var previous_node := _get_current_map_node()
+	var travel_cost := _get_travel_cost(previous_node, node)
+	if not ResourceManager.consume_fuel(travel_cost):
+		_show_notification("%sが足りない。\n必要: %d / 現在: %d" % [_get_travel_resource_name(), travel_cost, ResourceManager.fuel])
+		return
 
 	node["visited"] = true
 	current_row = node["row"]
 	GameManager.map_current_row = current_row
 	GameManager.map_current_node_id = nid
-	GameManager.advance_node()
+	GameManager.advance_node(travel_cost)
+	var fuel_reward: int = int(node.get("fuel_reward", 0))
+	if fuel_reward > 0:
+		ResourceManager.add_fuel(fuel_reward)
+		node["fuel_reward"] = 0
+		_show_notification("%sを発見した。\n+%d" % [_get_travel_resource_name(), fuel_reward])
 	SaveManager.save_run()
 	_update_hud()
 
@@ -282,7 +293,7 @@ func _enter_info() -> void:
 	_draw_map()
 
 func _update_hud() -> void:
-	$HUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
+	$HUD/FuelLabel.text = "%s: %d/%d" % [_get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
 	$HUD/ScrapLabel.text = "スクラップ: %d" % ResourceManager.scrap
 	$HUD/MedicineLabel.text = "医薬品: %d/%d" % [ResourceManager.medicine, ResourceManager.medicine_max]
 	$HUD/BikeDurabilityLabel.text = "耐久: %d/%d" % [ResourceManager.bike_durability, ResourceManager.bike_max_durability]
@@ -332,6 +343,34 @@ func _show_notification(text: String) -> void:
 	close_btn.pressed.connect(panel.queue_free)
 	panel.add_child(close_btn)
 	add_child(panel)
+
+func _get_current_map_node() -> Dictionary:
+	if GameManager.map_current_node_id.is_empty():
+		return {}
+	return _find_node_by_id(GameManager.map_current_node_id)
+
+func _get_travel_cost(from_node: Dictionary, to_node: Dictionary) -> int:
+	return MapGenerator.calculate_travel_cost(from_node, to_node, GameManager.current_companion != null)
+
+func _get_node_button_text(node_type: MapGenerator.NodeType, fuel_reward: int) -> String:
+	var icon := MapGenerator.get_node_type_icon(node_type)
+	if fuel_reward > 0:
+		return "%s+%d\n%s" % [_get_travel_resource_icon(), fuel_reward, icon]
+	return icon
+
+func _get_node_tooltip(node: Dictionary, fuel_reward: int) -> String:
+	var parts: Array[String] = [MapGenerator.get_node_type_name(node["type"])]
+	var travel_cost := _get_travel_cost(_get_current_map_node(), node)
+	parts.append("%s消費: %d" % [_get_travel_resource_name(), travel_cost])
+	if fuel_reward > 0:
+		parts.append("%s獲得: +%d" % [_get_travel_resource_name(), fuel_reward])
+	return "\n".join(parts)
+
+func _get_travel_resource_name() -> String:
+	return GameManager.get_travel_resource_name()
+
+func _get_travel_resource_icon() -> String:
+	return GameManager.get_travel_resource_icon()
 
 func _draw_start_node() -> void:
 	var start_pos := Vector2(25, 480)

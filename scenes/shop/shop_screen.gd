@@ -35,7 +35,7 @@ func _build_shop() -> void:
 	for item in SHOP_ITEMS:
 		var cost := _discounted(item["cost"])
 		var btn := Button.new()
-		btn.text = "%s — %d燃料" % [item["name"], cost]
+		btn.text = "%s — %d%s" % [item["name"], cost, GameManager.get_travel_resource_name()]
 		btn.custom_minimum_size = Vector2(400, 50)
 		btn.add_theme_font_size_override("font_size", 18)
 		btn.disabled = ResourceManager.fuel < cost
@@ -50,7 +50,7 @@ func _build_shop() -> void:
 		var card: CardData = card_pool[i]
 		var cost := _discounted(4 + card.rarity * 3)
 		var btn := Button.new()
-		btn.text = "%s [%s] — %d燃料" % [card.get_display_name(), card.description, cost]
+		btn.text = "%s [%s] — %d%s" % [card.get_display_name(), card.description, cost, GameManager.get_travel_resource_name()]
 		btn.custom_minimum_size = Vector2(400, 50)
 		btn.add_theme_font_size_override("font_size", 16)
 		btn.disabled = ResourceManager.fuel < cost
@@ -70,7 +70,7 @@ func _build_bike_part_shop() -> void:
 		var cost := _discounted(base_cost)
 		var slot_name := _slot_display_name(part.slot)
 		var btn := Button.new()
-		btn.text = "[%s] %s — %d燃料" % [slot_name, part.display_name, cost]
+		btn.text = "[%s] %s — %d%s" % [slot_name, part.display_name, cost, GameManager.get_travel_resource_name()]
 		btn.custom_minimum_size = Vector2(400, 50)
 		btn.add_theme_font_size_override("font_size", 16)
 		btn.disabled = ResourceManager.fuel < cost
@@ -116,7 +116,7 @@ func _show_remove_card_ui(cost: int) -> void:
 	for child in $ItemContainer.get_children():
 		child.queue_free()
 	var info := Label.new()
-	info.text = "削除するカードを選択 (%d燃料):" % cost
+	info.text = "削除するカードを選択 (%d%s):" % [cost, GameManager.get_travel_resource_name()]
 	info.add_theme_font_size_override("font_size", 18)
 	$ItemContainer.add_child(info)
 	for card: CardData in DeckManager.master_deck:
@@ -153,7 +153,8 @@ func _on_buy_card(card: CardData, cost: int) -> void:
 	_update_fuel_display()
 
 func _update_fuel_display() -> void:
-	$FuelLabel.text = "所持燃料: %d / 耐久: %d/%d" % [
+	$FuelLabel.text = "所持%s: %d / 耐久: %d/%d" % [
+		GameManager.get_travel_resource_name(),
 		ResourceManager.fuel,
 		ResourceManager.bike_durability,
 		ResourceManager.bike_max_durability,

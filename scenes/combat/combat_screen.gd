@@ -507,7 +507,7 @@ func _update_player_hud() -> void:
 		$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
 		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
 	$PlayerHUD/BlockLabel.text = "ブロック: %d" % CombatManager.player_block
-	$PlayerHUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
+	$PlayerHUD/FuelLabel.text = "%s: %d/%d" % [GameManager.get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
 	$PlayerHUD/DeckLabel.text = "山札: %d | 捨札: %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
 	$PlayerHUD/StatusLabel.text = _format_status(CombatManager.player_status)
 	_update_gauge_display()
@@ -519,7 +519,8 @@ func _update_controls() -> void:
 	$Controls/EndTurnButton.disabled = not in_turn
 	$Controls/FleeButton.disabled = not in_turn or is_boss
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
-	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1燃料)"
+	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1%s)" % GameManager.get_travel_resource_name()
+	$Controls/RerollButton.text = "リロール (1%s)" % GameManager.get_travel_resource_name()
 
 func _auto_end_turn() -> void:
 	var msg := Label.new()
@@ -840,7 +841,7 @@ func _show_reward_screen(rewards: Array) -> void:
 func _create_fuel_reward_button(amount: int) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(140, 190)
-	btn.text = "燃料\n+%d" % amount
+	btn.text = "%s\n+%d" % [GameManager.get_travel_resource_name(), amount]
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.12, 0.25, 0.15, 0.9)
 	style.corner_radius_top_left = 8
