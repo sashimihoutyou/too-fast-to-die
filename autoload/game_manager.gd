@@ -71,6 +71,7 @@ func start_run(character: CharacterData) -> void:
 	oasis_info.clear()
 	faith = 80
 	ResourceManager.reset()
+	ItemDatabase.reset()
 	DeckManager.build_starter_deck(character)
 	KarmaManager.reset()
 	CombatManager.reset_player_for_new_run()
@@ -95,9 +96,10 @@ func advance_node(travel_cost: int = 2) -> void:
 	current_node_index += 1
 	total_nodes_visited += 1
 	distance_km += randi_range(3, 6) + travel_cost
-	ResourceManager.damage_bike(1)
-	if ResourceManager.bike_durability <= 0:
-		ResourceManager.consume_fuel(1)
+	if current_character != null and current_character.id != &"conqueror":
+		ResourceManager.damage_bike(1)
+		if ResourceManager.bike_durability <= 0:
+			ResourceManager.consume_fuel(2)
 	_tick_companion()
 	_tick_pursuit()
 	QuestManager.on_node_advanced()

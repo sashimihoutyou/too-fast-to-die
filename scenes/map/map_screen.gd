@@ -17,6 +17,8 @@ func _ready() -> void:
 	_update_hud()
 	ResourceManager.fuel_changed.connect(_on_fuel_changed)
 	ResourceManager.bike_durability_changed.connect(_on_bike_durability_changed)
+	$HUD/DeckButton.pressed.connect(_show_deck_popup)
+	$HUD/MedicineButton.pressed.connect(_use_medicine)
 	if _pending_act_intro:
 		_pending_act_intro = false
 		_show_notification("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act)
@@ -296,6 +298,7 @@ func _update_hud() -> void:
 	$HUD/FuelLabel.text = "%s: %d/%d" % [_get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
 	$HUD/ScrapLabel.text = "スクラップ: %d" % ResourceManager.scrap
 	$HUD/MedicineLabel.text = "医薬品: %d/%d" % [ResourceManager.medicine, ResourceManager.medicine_max]
+	$HUD/MedicineButton.disabled = ResourceManager.medicine <= 0 or CombatManager.player_hp >= CombatManager.player_max_hp
 	$HUD/BikeDurabilityLabel.text = "耐久: %d/%d" % [ResourceManager.bike_durability, ResourceManager.bike_max_durability]
 	$HUD/KarmaLabel.text = "カルマ: %d %s" % [KarmaManager.karma, KarmaManager.get_band_display()]
 	$HUD/DistanceLabel.text = "走行: %dkm" % GameManager.distance_km
@@ -407,6 +410,85 @@ func _draw_start_node() -> void:
 		line.default_color = Color(0.4, 0.35, 0.25, 0.6)
 		$MapScroll/MapContainer.add_child(line)
 		$MapScroll/MapContainer.move_child(line, 0)
+
+func _show_deck_popup() -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.7)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(700, 500)
+	panel.offset_left = -350
+	panel.offset_top = -250
+	panel.offset_right = 350
+	panel.offset_bottom = 250
+	overlay.add_child(panel)
+
+	var title := Label.new()
+	title.text = "デッキ (%d枚)" % DeckManager.master_deck.size()
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 10
+	title.offset_bottom = 35
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
+	panel.add_child(title)
+
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.offset_top = 45
+	scroll.offset_bottom = -50
+	scroll.offset_left = 10
+	scroll.offset_right = -10
+	panel.add_child(scroll)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(vbox)
+
+	for card: CardData in DeckManager.master_deck:
+		var label := Label.new()
+		var parts: Array[String] = []
+		parts.append(card.get_display_name())
+		parts.append("AP:%d" % card.ap_cost)
+		if card.get_effective_damage() > 0:
+			parts.append("DMG:%d" % card.get_effective_damage())
+		if card.get_effective_block() > 0:
+			parts.append("BLK:%d" % card.get_effective_block())
+		parts.append(card.description)
+		label.text = " | ".join(parts)
+		label.add_theme_font_size_override("font_size", 14)
+		if card.upgraded:
+			label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
+		vbox.add_child(label)
+
+	var close_btn := Button.new()
+	close_btn.text = "閉じる"
+	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	close_btn.custom_minimum_size = Vector2(120, 35)
+	close_btn.offset_left = -60
+	close_btn.offset_top = -45
+	close_btn.offset_right = 60
+	close_btn.offset_bottom = -10
+	close_btn.pressed.connect(overlay.queue_free)
+	panel.add_child(close_btn)
+
+func _use_medicine() -> void:
+	if ResourceManager.medicine <= 0:
+		_show_notification("医薬品がない。")
+		return
+	var heal_amount := 15
+	if CombatManager.player_hp >= CombatManager.player_max_hp:
+		_show_notification("HPは満タンだ。")
+		return
+	ResourceManager.use_medicine()
+	CombatManager.player_hp = mini(CombatManager.player_hp + heal_amount, CombatManager.player_max_hp)
+	CombatManager.player_hp_changed.emit(CombatManager.player_hp, CombatManager.player_max_hp)
+	_update_hud()
+	_show_notification("医薬品を使用した。HP +%d" % heal_amount)
 
 func _apply_border(style: StyleBoxFlat) -> void:
 	style.border_color = Color.WHITE

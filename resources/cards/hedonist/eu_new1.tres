@@ -12,6 +12,7 @@ tags = [0, 1, 5]
 rarity = 2
 restriction = 6
 base_damage = 8
+upgraded_damage = 12
 hit_count = 3
 requires_target = true
 is_exhaustible = true

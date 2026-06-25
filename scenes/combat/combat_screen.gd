@@ -374,14 +374,15 @@ func _create_card_button(card: CardData) -> Button:
 	btn.mouse_exited.connect(_on_card_hover.bind(btn, false))
 	return btn
 
-# ホバーでカードを少し拡大し手前に表示（手触り向上）
 func _on_card_hover(btn: Button, hovering: bool) -> void:
 	btn.pivot_offset = Vector2(btn.size.x / 2.0, btn.size.y)
+	var tw := btn.create_tween()
+	tw.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	if hovering:
-		btn.scale = Vector2(1.18, 1.18)
+		tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.08)
 		btn.z_index = 1
 	else:
-		btn.scale = Vector2.ONE
+		tw.tween_property(btn, "scale", Vector2.ONE, 0.06)
 		btn.z_index = 0
 
 func _on_card_selected(card: CardData) -> void:
@@ -389,12 +390,28 @@ func _on_card_selected(card: CardData) -> void:
 		return
 	var needs_target := (card.base_damage > 0 or card.requires_target or _targets_enemy_status(card)) and not card.is_aoe
 	if needs_target:
-		selected_card = card
-		_highlight_selected_card(card)
-		_show_target_buttons(true)
+		var alive_idx := _get_sole_alive_enemy()
+		if alive_idx >= 0:
+			CombatManager.play_card(card, alive_idx)
+			_after_card_play()
+		else:
+			selected_card = card
+			_highlight_selected_card(card)
+			_show_target_buttons(true)
 	else:
 		CombatManager.play_card(card, 0)
 		_after_card_play()
+
+func _get_sole_alive_enemy() -> int:
+	var alive_count: int = 0
+	var alive_idx: int = -1
+	for i in CombatManager.enemies.size():
+		if CombatManager.enemies[i]["alive"]:
+			alive_count += 1
+			alive_idx = i
+			if alive_count > 1:
+				return -1
+	return alive_idx
 
 func _on_enemy_panel_clicked(event: InputEvent, idx: int) -> void:
 	if not event is InputEventMouseButton:
@@ -816,6 +833,13 @@ func _show_reward_screen(rewards: Array) -> void:
 				var scrap_btn := _create_scrap_reward_button(amount)
 				scrap_btn.pressed.connect(_on_reward_scrap_picked.bind(amount))
 				choice_hbox.add_child(scrap_btn)
+			"relic", "consumable":
+				var item_id: StringName = reward.get("item_id", &"")
+				var item := ItemDatabase.get_item(item_id)
+				if item != null:
+					var item_btn := _create_item_reward_button(item)
+					item_btn.pressed.connect(_on_reward_item_picked.bind(item))
+					choice_hbox.add_child(item_btn)
 			_:
 				if pool_idx < pool.size():
 					var card: CardData = pool[pool_idx]
@@ -882,6 +906,34 @@ func _create_scrap_reward_button(amount: int) -> Button:
 
 func _on_reward_scrap_picked(amount: int) -> void:
 	ResourceManager.add_scrap(amount)
+	_return_to_map()
+
+func _create_item_reward_button(item: ItemData) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(140, 190)
+	var type_str := "遺物" if item.item_type == ItemData.ItemType.RELIC else "消耗品"
+	btn.text = "[%s]\n%s\n%s" % [type_str, item.display_name, item.description]
+	var style := StyleBoxFlat.new()
+	if item.item_type == ItemData.ItemType.RELIC:
+		style.bg_color = Color(0.25, 0.18, 0.08, 0.9)
+		style.border_color = Color(0.8, 0.6, 0.2)
+	else:
+		style.bg_color = Color(0.1, 0.2, 0.25, 0.9)
+		style.border_color = Color(0.3, 0.6, 0.8)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_font_size_override("font_size", 14)
+	return btn
+
+func _on_reward_item_picked(item: ItemData) -> void:
+	ItemDatabase.add_to_inventory(item.id)
 	_return_to_map()
 
 func _on_reward_card_picked(card: CardData) -> void:

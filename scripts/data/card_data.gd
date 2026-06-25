@@ -31,6 +31,7 @@ enum CharacterRestriction { NONE, CULTIST, EX_RAIDER, WANDERER, BEAST_MASTER, CO
 @export var upgrade_description: String
 @export var upgraded_damage: int = 0
 @export var upgraded_block: int = 0
+@export var flavor_text: String = ""
 @export var art: Texture2D
 
 var instance_id: int = 0
