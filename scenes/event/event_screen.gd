@@ -88,7 +88,7 @@ func _on_choice(idx: int) -> void:
 	_apply_choice(choice)
 	QuestManager.notify_event_resolved(current_event.id)
 	if choice.triggers_combat:
-		_start_event_combat()
+		_start_event_combat(choice.combat_enemy_ids)
 		return
 	for child in $ChoiceContainer.get_children():
 		child.queue_free()
@@ -129,14 +129,19 @@ func _apply_choice(choice: EventChoiceData) -> void:
 		if comp != null:
 			GameManager.recruit_companion(comp)
 
-func _start_event_combat() -> void:
+func _start_event_combat(enemy_ids: Array[StringName] = []) -> void:
 	var enemies: Array[EnemyData] = []
-	var pool := EnemyDatabase.get_enemies_for_act(GameManager.current_act)
-	if pool.is_empty():
-		pool = EnemyDatabase.get_enemies_for_act(1)
-	if not pool.is_empty():
-		pool.shuffle()
-		enemies.append(pool[0])
+	for eid: StringName in enemy_ids:
+		var ed := EnemyDatabase.get_enemy(eid)
+		if ed != null:
+			enemies.append(ed)
+	if enemies.is_empty():
+		var pool := EnemyDatabase.get_enemies_for_act(GameManager.current_act)
+		if pool.is_empty():
+			pool = EnemyDatabase.get_enemies_for_act(1)
+		if not pool.is_empty():
+			pool.shuffle()
+			enemies.append(pool[0])
 	if enemies.is_empty():
 		_return_to_map()
 		return

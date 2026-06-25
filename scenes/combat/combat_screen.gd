@@ -816,6 +816,13 @@ func _show_reward_screen(rewards: Array) -> void:
 				var scrap_btn := _create_scrap_reward_button(amount)
 				scrap_btn.pressed.connect(_on_reward_scrap_picked.bind(amount))
 				choice_hbox.add_child(scrap_btn)
+			"relic", "consumable":
+				var item_id: StringName = reward.get("item_id", &"")
+				var item := ItemDatabase.get_item(item_id)
+				if item != null:
+					var item_btn := _create_item_reward_button(item)
+					item_btn.pressed.connect(_on_reward_item_picked.bind(item))
+					choice_hbox.add_child(item_btn)
 			_:
 				if pool_idx < pool.size():
 					var card: CardData = pool[pool_idx]
@@ -882,6 +889,34 @@ func _create_scrap_reward_button(amount: int) -> Button:
 
 func _on_reward_scrap_picked(amount: int) -> void:
 	ResourceManager.add_scrap(amount)
+	_return_to_map()
+
+func _create_item_reward_button(item: ItemData) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(140, 190)
+	var type_str := "遺物" if item.item_type == ItemData.ItemType.RELIC else "消耗品"
+	btn.text = "[%s]\n%s\n%s" % [type_str, item.display_name, item.description]
+	var style := StyleBoxFlat.new()
+	if item.item_type == ItemData.ItemType.RELIC:
+		style.bg_color = Color(0.25, 0.18, 0.08, 0.9)
+		style.border_color = Color(0.8, 0.6, 0.2)
+	else:
+		style.bg_color = Color(0.1, 0.2, 0.25, 0.9)
+		style.border_color = Color(0.3, 0.6, 0.8)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
+	btn.add_theme_stylebox_override("normal", style)
+	btn.add_theme_font_size_override("font_size", 14)
+	return btn
+
+func _on_reward_item_picked(item: ItemData) -> void:
+	ItemDatabase.add_to_inventory(item.id)
 	_return_to_map()
 
 func _on_reward_card_picked(card: CardData) -> void:

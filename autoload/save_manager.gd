@@ -48,6 +48,7 @@ func save_run() -> void:
 		"karma": KarmaManager.karma,
 		"deck": deck_ids,
 		"map_nodes": _serialize_map_nodes(),
+		"inventory": ItemDatabase.get_save_data(),
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
@@ -124,6 +125,8 @@ func load_run() -> bool:
 			if is_upgraded:
 				copy.upgraded = true
 			DeckManager.master_deck.append(copy)
+
+	ItemDatabase.load_save_data(data.get("inventory", []))
 
 	GameManager.map_nodes.clear()
 	var map_data: Array = data.get("map_nodes", [])

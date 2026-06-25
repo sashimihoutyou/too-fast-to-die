@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"old_compass"
+display_name = "旧世界のコンパス"
+description = "移動コスト-1"
+item_type = 1
+rarity = 1
+trigger = 1
+special_effect = &"travel_cost_down"
+effect_value = 1

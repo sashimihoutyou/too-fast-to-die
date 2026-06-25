@@ -11,4 +11,4 @@ ap_cost = 1
 tags = [3]
 rarity = 2
 base_block = 5
-upgraded_block = 5
+upgraded_block = 8

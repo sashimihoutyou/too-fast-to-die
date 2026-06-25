@@ -31,10 +31,17 @@ func _on_upgrade() -> void:
 	for card: CardData in upgradeable_cards:
 		var btn := Button.new()
 		btn.text = _get_upgrade_preview(card)
-		btn.custom_minimum_size = Vector2(400, 40)
+		btn.custom_minimum_size = Vector2(500, 40)
 		btn.add_theme_font_size_override("font_size", 15)
 		btn.pressed.connect(_on_card_upgrade.bind(card))
 		$CardContainer.add_child(btn)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "やめる"
+	cancel_btn.custom_minimum_size = Vector2(200, 35)
+	cancel_btn.add_theme_font_size_override("font_size", 15)
+	cancel_btn.pressed.connect(_cancel_upgrade)
+	$CardContainer.add_child(cancel_btn)
 
 func _on_card_upgrade(card: CardData) -> void:
 	card.upgraded = true
@@ -60,6 +67,13 @@ func _get_upgrade_preview(card: CardData) -> String:
 		if not diffs.is_empty():
 			parts.append("強化: %s" % " / ".join(diffs))
 	return " — ".join(parts)
+
+func _cancel_upgrade() -> void:
+	for child in $CardContainer.get_children():
+		child.queue_free()
+	$RestButton.visible = true
+	$UpgradeButton.visible = true
+	$InfoLabel.text = "束の間の安らぎ。何をする？"
 
 func _return_to_map() -> void:
 	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")

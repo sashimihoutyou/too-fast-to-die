@@ -100,4 +100,5 @@ offset_top = 240.0
 offset_right = 250.0
 offset_bottom = 550.0
 grow_horizontal = 2
+mouse_filter = 2
 theme_override_constants/separation = 6

@@ -115,6 +115,8 @@ static func calculate_travel_cost(from_node: Dictionary, to_node: Dictionary, ha
 	var cost := maxi(1, distance_cost) + 1
 	if has_companion:
 		cost += 1
+	if ItemDatabase.has_relic(&"old_compass"):
+		cost = maxi(1, cost - 1)
 	return cost
 
 static func _get_nodes_at_row(nodes: Array[Dictionary], row: int) -> Array[Dictionary]:

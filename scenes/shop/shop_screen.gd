@@ -43,6 +43,7 @@ func _build_shop() -> void:
 		$ItemContainer.add_child(btn)
 
 	_build_bike_part_shop()
+	_build_item_shop()
 
 	var card_pool := CardDatabase.get_reward_pool(GameManager.current_act, GameManager.current_character.id)
 	card_pool.shuffle()
@@ -85,6 +86,32 @@ func _slot_display_name(slot: BikePartData.Slot) -> String:
 		BikePartData.Slot.TANK: return "タンク"
 		BikePartData.Slot.DECORATION: return "装飾"
 	return "パーツ"
+
+func _build_item_shop() -> void:
+	var all_items := ItemDatabase.get_all_items()
+	all_items.shuffle()
+	var count := mini(2, all_items.size())
+	for i in count:
+		var item: ItemData = all_items[i]
+		var base_cost := 3 + int(item.rarity) * 3
+		if item.item_type == ItemData.ItemType.RELIC:
+			base_cost += 4
+		var cost := _discounted(base_cost)
+		var type_str := "遺物" if item.item_type == ItemData.ItemType.RELIC else "消耗品"
+		var btn := Button.new()
+		btn.text = "[%s] %s (%s) — %d%s" % [type_str, item.display_name, item.description, cost, GameManager.get_travel_resource_name()]
+		btn.custom_minimum_size = Vector2(400, 50)
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.disabled = ResourceManager.fuel < cost
+		btn.pressed.connect(_on_buy_item.bind(item, cost))
+		$ItemContainer.add_child(btn)
+
+func _on_buy_item(item: ItemData, cost: int) -> void:
+	if not ResourceManager.consume_fuel(cost):
+		return
+	ItemDatabase.add_to_inventory(item.id)
+	_build_shop()
+	_update_fuel_display()
 
 func _on_buy_part(part: BikePartData, cost: int) -> void:
 	if not ResourceManager.consume_fuel(cost):

@@ -114,6 +114,7 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 			"turn_counter": 0,
 			"status": _new_status_dict(),
 		})
+	_apply_relic_triggers(ItemData.TriggerTiming.ON_COMBAT_START)
 	DeckManager.start_combat()
 	begin_turn()
 
@@ -144,6 +145,7 @@ func begin_turn() -> void:
 		elif player_euphoria >= 75 and player_euphoria < 100:
 			ap += 1
 
+	_apply_relic_triggers(ItemData.TriggerTiming.ON_TURN_START)
 	_tick_player_statuses()
 	if player_hp <= 0:
 		state = CombatState.DEFEAT
@@ -753,6 +755,16 @@ func _generate_rewards() -> Array:
 	var card_slots := 2 if is_elite else 1
 	for i in card_slots:
 		rewards.append({"type": "card"})
+	if is_elite and randf() < 0.5:
+		var relics := ItemDatabase.get_items_by_type(ItemData.ItemType.RELIC)
+		if not relics.is_empty():
+			relics.shuffle()
+			rewards.append({"type": "relic", "item_id": relics[0].id})
+	elif randf() < 0.25:
+		var consumables := ItemDatabase.get_items_by_type(ItemData.ItemType.CONSUMABLE)
+		if not consumables.is_empty():
+			consumables.shuffle()
+			rewards.append({"type": "consumable", "item_id": consumables[0].id})
 	return rewards
 
 # ===== ステータス効果システム =====
@@ -1002,6 +1014,19 @@ func _fill_acceleration_from_card(card: CardData) -> void:
 		_add_acceleration(ACCEL_ATTACK)
 	else:
 		_add_acceleration(ACCEL_BUFF)
+
+func _apply_relic_triggers(timing: ItemData.TriggerTiming) -> void:
+	for relic: ItemData in ItemDatabase.get_relics():
+		if relic.trigger != timing:
+			continue
+		if relic.hp_change != 0:
+			player_hp = clampi(player_hp + relic.hp_change, 0, player_max_hp)
+			player_hp_changed.emit(player_hp, player_max_hp)
+		if relic.block_change > 0:
+			player_block += relic.block_change
+			player_block_changed.emit(player_block)
+		if relic.draw_change > 0:
+			DeckManager.draw_cards(relic.draw_change)
 
 # ===== 汚染カードのドロー時効果 =====
 func apply_contamination_on_draw(card: CardData) -> void:
