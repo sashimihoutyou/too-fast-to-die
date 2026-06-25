@@ -90,6 +90,21 @@ grow_horizontal = 2
 theme_override_font_sizes/font_size = 20
 text = "カード強化"
 
+[node name="MonologueLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -350.0
+offset_top = 400.0
+offset_right = 350.0
+offset_bottom = 520.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.6, 0.55, 0.4, 0.85)
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
+horizontal_alignment = 1
+
 [node name="CardContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 5

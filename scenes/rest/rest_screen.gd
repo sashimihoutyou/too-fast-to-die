@@ -4,6 +4,7 @@ func _ready() -> void:
 	$RestButton.pressed.connect(_on_rest)
 	$UpgradeButton.pressed.connect(_on_upgrade)
 	_update_display()
+	_show_monologue()
 
 func _update_display() -> void:
 	$HPLabel.text = "現在HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp]
@@ -74,6 +75,14 @@ func _cancel_upgrade() -> void:
 	$RestButton.visible = true
 	$UpgradeButton.visible = true
 	$InfoLabel.text = "束の間の安らぎ。何をする？"
+
+func _show_monologue() -> void:
+	if GameManager.current_character == null:
+		return
+	var text: String = RestMonologue.get_monologue(GameManager.current_character.id)
+	if text.is_empty():
+		return
+	$MonologueLabel.text = text
 
 func _return_to_map() -> void:
 	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")

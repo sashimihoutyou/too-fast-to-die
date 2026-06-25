@@ -9,7 +9,9 @@ func _ready() -> void:
 		return
 	GameManager.event_flags[current_event.id] = true
 	$TitleLabel.text = current_event.title
-	$BodyLabel.text = current_event.body_text
+	var char_id: StringName = GameManager.current_character.id if GameManager.current_character != null else &""
+	var reaction: String = current_event.character_reactions.get(char_id, "")
+	$BodyLabel.text = reaction if not reaction.is_empty() else current_event.body_text
 	_build_choices()
 
 # カルマ・区間・キャラ条件で利用可能なイベントをDBから抽選する。未遭遇を優先。
@@ -81,6 +83,10 @@ func _check_requirement(req: String) -> bool:
 		return GameManager.faith >= int(req.split(">=")[1])
 	if req.begins_with("faith<="):
 		return GameManager.faith <= int(req.split("<=")[1])
+	if req.begins_with("heat>="):
+		return CombatManager.player_heat >= int(req.split(">=")[1])
+	if req.begins_with("euphoria>="):
+		return CombatManager.player_euphoria >= int(req.split(">=")[1])
 	return false
 
 func _on_choice(idx: int) -> void:
@@ -124,6 +130,14 @@ func _apply_choice(choice: EventChoiceData) -> void:
 		QuestManager.record_outcome(choice.starts_quest, choice.quest_outcome)
 	if choice.faith_change != 0:
 		GameManager.add_faith(choice.faith_change)
+	if choice.heat_change != 0:
+		CombatManager.player_heat = clampi(
+			CombatManager.player_heat + choice.heat_change, 0, CombatManager.HEAT_MAX)
+		CombatManager.heat_changed.emit(CombatManager.player_heat, CombatManager.HEAT_MAX)
+	if choice.euphoria_change != 0:
+		CombatManager.player_euphoria = clampi(
+			CombatManager.player_euphoria + choice.euphoria_change, 0, CombatManager.EUPHORIA_MAX)
+		CombatManager.euphoria_changed.emit(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
 	if choice.companion_id != &"":
 		var comp: CompanionData = CompanionDatabase.get_companion(choice.companion_id)
 		if comp != null:
