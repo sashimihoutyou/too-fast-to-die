@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "同行を許可する"
+requirement = "no_companion"
+result_text = "「助かる。途中で良い取引先を紹介するよ」商人は手際よく荷物をバイクに括りつけた。"
+companion_id = &"merchant"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "今ここで取引する"
+requirement = "scrap>=3"
+result_text = "商人から便利な物資を買い取った。"
+scrap_change = -3
+fuel_change = 5
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "関わらない"
+requirement = ""
+result_text = "商人は肩をすくめた。「商機を逃したな、あんた」"
+
+[resource]
+script = ExtResource("1")
+id = &"hitchhiker_merchant"
+title = "立ち往生の行商人"
+body_text = "荷を満載した手押し車の車輪が砂にはまり込んでいる。行商人が途方に暮れた顔でこちらを見た。「次の集落まで乗せてくれたら、お礼はする」"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "乗せてやる"
+requirement = "no_companion"
+result_text = "男はバイクの後部にまたがった。「次の集落まででいい。借りは返す」"
+companion_id = &"fighter"
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "水だけ渡して去る"
+requirement = ""
+result_text = "男は黙って水を受け取り、頭を下げた。"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "無視して通り過ぎる"
+requirement = ""
+result_text = "バックミラーに映る男の姿がすぐに砂塵に消えた。"
+
+[resource]
+script = ExtResource("1")
+id = &"hitchhiker_fighter"
+title = "道端の男"
+body_text = "路肩に武装した男が立っている。傭兵崩れのようだ。片手を挙げてバイクを止めようとしている。「次の町まで乗せてくれないか。タダとは言わん」"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

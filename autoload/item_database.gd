@@ -108,6 +108,27 @@ func _apply_item_effect(item: ItemData) -> void:
 		ResourceManager.consume_fuel(-item.fuel_change)
 	if item.scrap_change > 0:
 		ResourceManager.add_scrap(item.scrap_change)
+	if item.special_effect != &"":
+		_apply_special_effect(item.special_effect, item.effect_value)
+
+func _apply_special_effect(effect: StringName, value: int) -> void:
+	match effect:
+		&"aoe_vulnerable":
+			for i in CombatManager.enemies.size():
+				if not CombatManager.enemies[i]["alive"]:
+					continue
+				var status: Dictionary = CombatManager.enemies[i].get("status", {})
+				var cur: int = int(status.get("vulnerable", 0))
+				status["vulnerable"] = cur + value
+				CombatManager.enemy_status_changed.emit(i, status)
+		&"aoe_weak":
+			for i in CombatManager.enemies.size():
+				if not CombatManager.enemies[i]["alive"]:
+					continue
+				var status: Dictionary = CombatManager.enemies[i].get("status", {})
+				var cur: int = int(status.get("weak", 0))
+				status["weak"] = cur + value
+				CombatManager.enemy_status_changed.emit(i, status)
 
 func reset() -> void:
 	inventory.clear()
