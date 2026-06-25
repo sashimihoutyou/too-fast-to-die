@@ -67,6 +67,10 @@ func _check_requirement(req: String) -> bool:
 		return KarmaManager.karma >= int(req.split(">=")[1])
 	if req.begins_with("character=="):
 		return GameManager.current_character.id == StringName(req.split("==")[1])
+	if req.begins_with("flag=="):
+		return bool(GameManager.event_flags.get(StringName(req.split("==")[1]), false))
+	if req.begins_with("flag!="):
+		return not bool(GameManager.event_flags.get(StringName(req.split("!=")[1]), false))
 	if req.begins_with("companion=="):
 		if GameManager.current_companion == null:
 			return false

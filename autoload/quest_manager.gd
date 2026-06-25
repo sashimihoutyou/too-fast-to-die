@@ -19,7 +19,7 @@ func get_def(id: StringName) -> QuestData:
 	return _defs.get(id, null)
 
 # イベント選択でアウトカムが確定した時に event_screen から呼ばれる。
-# 追跡系（hunt）は進捗を持ち、遅延系（poison）はペイロードを装填する。
+# 追跡系（hunt）は進捗を持ち、QuestData.payload_outcomes に該当するものはペイロードを装填する。
 func record_outcome(quest_id: StringName, outcome: StringName) -> void:
 	var def: QuestData = _defs.get(quest_id, null)
 	if def == null:
@@ -33,8 +33,7 @@ func record_outcome(quest_id: StringName, outcome: StringName) -> void:
 		"knew": _pc_can_read(),
 	}
 	_state[quest_id] = st
-	# 遅延ペイロードを装填するアウトカムか（このクエストでは poison）。
-	if outcome == &"poison" and def.payload_event != &"":
+	if def.payload_event != &"" and outcome in def.payload_outcomes:
 		_armed.append({
 			"quest_id": quest_id,
 			"event_id": def.payload_event,
@@ -146,13 +145,19 @@ func _effective_outcome(quest_id: StringName) -> String:
 		return "hunt" if complete else "lapse"
 	return String(outcome)
 
-# テレグラフを「知り得た」PC：調教師（獣読み）・放浪者（観察眼）。
-# 犬/密告者の同行による看破は同行者システム実装後に追加する（TODO）。
+# テレグラフを「知り得た」PC：調教師（獣読み）・放浪者（観察眼）・犬/密告者の同行。
 func _pc_can_read() -> bool:
 	if GameManager.current_character == null:
 		return false
 	var cid: StringName = GameManager.current_character.id
-	return cid == &"beast_master" or cid == &"wanderer"
+	if cid == &"beast_master" or cid == &"wanderer":
+		return true
+	if GameManager.current_companion == null:
+		return false
+	return GameManager.current_companion.companion_type in [
+		CompanionData.CompanionType.DOG,
+		CompanionData.CompanionType.INFORMANT,
+	]
 
 func _load_defs(path: String) -> void:
 	var dir := DirAccess.open(path)

@@ -18,6 +18,8 @@ class_name QuestData extends Resource
 
 ## 遅延ペイロード（特定アウトカムが装填する強制発火イベント）。
 @export var payload_event: StringName = &""
+## payload_event を装填するアウトカム一覧。既存クエスト互換のため既定は poison。
+@export var payload_outcomes: Array[StringName] = [&"poison"]
 ## 装填から何ノード後に発火可能になるか。
 @export var payload_min_gap: int = 1
 ## テレグラフを「知り得た」PCがペイロードを解決した時の追加カルマ（負値）。

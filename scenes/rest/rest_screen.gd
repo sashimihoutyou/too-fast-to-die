@@ -29,7 +29,7 @@ func _on_upgrade() -> void:
 		if card.upgraded:
 			continue
 		var btn := Button.new()
-		btn.text = "%s — %s" % [card.get_display_name(), card.description]
+		btn.text = _get_upgrade_preview(card)
 		btn.custom_minimum_size = Vector2(400, 40)
 		btn.add_theme_font_size_override("font_size", 15)
 		btn.pressed.connect(_on_card_upgrade.bind(card))
@@ -38,6 +38,20 @@ func _on_upgrade() -> void:
 func _on_card_upgrade(card: CardData) -> void:
 	card.upgraded = true
 	_return_to_map()
+
+func _get_upgrade_preview(card: CardData) -> String:
+	var parts: Array[String] = [card.get_display_name(), card.description]
+	if not card.upgrade_description.is_empty():
+		parts.append("強化: %s" % card.upgrade_description)
+	else:
+		var diffs: Array[String] = []
+		if card.upgraded_damage > 0 and card.upgraded_damage != card.base_damage:
+			diffs.append("ダメージ %d→%d" % [card.base_damage, card.upgraded_damage])
+		if card.upgraded_block > 0 and card.upgraded_block != card.base_block:
+			diffs.append("ブロック %d→%d" % [card.base_block, card.upgraded_block])
+		if not diffs.is_empty():
+			parts.append("強化: %s" % " / ".join(diffs))
+	return " — ".join(parts)
 
 func _return_to_map() -> void:
 	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")

@@ -91,18 +91,27 @@ text = "医薬品: 1/3"
 
 [node name="KarmaLabel" type="Label" parent="HUD"]
 layout_mode = 1
-offset_left = 620.0
+offset_left = 790.0
 offset_top = 30.0
-offset_right = 830.0
+offset_right = 1000.0
 offset_bottom = 50.0
 theme_override_font_sizes/font_size = 14
 text = "カルマ: 0 中立"
 
+[node name="BikeDurabilityLabel" type="Label" parent="HUD"]
+layout_mode = 1
+offset_left = 620.0
+offset_top = 30.0
+offset_right = 780.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 14
+text = "耐久: 15/15"
+
 [node name="DistanceLabel" type="Label" parent="HUD"]
 layout_mode = 1
-offset_left = 850.0
+offset_left = 1010.0
 offset_top = 30.0
-offset_right = 1050.0
+offset_right = 1210.0
 offset_bottom = 50.0
 theme_override_font_sizes/font_size = 14
 text = "走行: 0km"

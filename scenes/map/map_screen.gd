@@ -16,6 +16,7 @@ func _ready() -> void:
 	_draw_map()
 	_update_hud()
 	ResourceManager.fuel_changed.connect(_on_fuel_changed)
+	ResourceManager.bike_durability_changed.connect(_on_bike_durability_changed)
 	if _pending_act_intro:
 		_pending_act_intro = false
 		_show_notification("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act)
@@ -284,6 +285,7 @@ func _update_hud() -> void:
 	$HUD/FuelLabel.text = "燃料: %d/%d" % [ResourceManager.fuel, ResourceManager.tank_capacity]
 	$HUD/ScrapLabel.text = "スクラップ: %d" % ResourceManager.scrap
 	$HUD/MedicineLabel.text = "医薬品: %d/%d" % [ResourceManager.medicine, ResourceManager.medicine_max]
+	$HUD/BikeDurabilityLabel.text = "耐久: %d/%d" % [ResourceManager.bike_durability, ResourceManager.bike_max_durability]
 	$HUD/KarmaLabel.text = "カルマ: %d %s" % [KarmaManager.karma, KarmaManager.get_band_display()]
 	$HUD/DistanceLabel.text = "走行: %dkm" % GameManager.distance_km
 	$HUD/ActLabel.text = "区間%d" % GameManager.current_act
@@ -298,6 +300,9 @@ func _update_hud() -> void:
 		$HUD/CompanionLabel.text += "  信仰: %s" % GameManager.get_faith_display()
 
 func _on_fuel_changed(_val: int, _max_val: int) -> void:
+	_update_hud()
+
+func _on_bike_durability_changed(_val: int, _max_val: int) -> void:
 	_update_hud()
 
 func _show_notification(text: String) -> void:
