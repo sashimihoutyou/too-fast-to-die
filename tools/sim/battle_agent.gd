@@ -73,7 +73,7 @@ func _pick_best_card() -> CardData:
 
 	# 全敵が次ターンに与えるダメージ合計を見積もる
 	var incoming_damage := _estimate_incoming_damage()
-	var effective_hp := CombatManager.player_hp + CombatManager.player_block
+	var effective_hp: int = CombatManager.player_hp + CombatManager.player_block
 
 	# HPが危険水準ならブロックカードを優先
 	if incoming_damage > 0 and float(effective_hp) / float(CombatManager.player_max_hp) < 0.4:
@@ -96,7 +96,7 @@ func _pick_best_card() -> CardData:
 		for i in CombatManager.enemies.size():
 			if not CombatManager.enemies[i]["alive"]:
 				continue
-			var dmg := CombatManager.preview_damage(card, i)
+			var dmg: int = CombatManager.preview_damage(card, i)
 			var ehp: int = CombatManager.enemies[i]["hp"] + int(CombatManager.enemies[i]["block"])
 			if dmg >= ehp:
 				if best_kill == null or ehp < (CombatManager.enemies[best_kill_target]["hp"] + int(CombatManager.enemies[best_kill_target]["block"])):
@@ -112,7 +112,7 @@ func _pick_best_card() -> CardData:
 		var max_dmg: int = 0
 		for i in CombatManager.enemies.size():
 			if CombatManager.enemies[i]["alive"]:
-				var d := CombatManager.preview_damage(card, i)
+				var d: int = CombatManager.preview_damage(card, i)
 				if d > max_dmg:
 					max_dmg = d
 		if max_dmg > best_dmg_val:
@@ -151,7 +151,7 @@ func _pick_target(card: CardData) -> int:
 	for i in CombatManager.enemies.size():
 		if not CombatManager.enemies[i]["alive"]:
 			continue
-		var dmg := CombatManager.preview_damage(card, i)
+		var dmg: int = CombatManager.preview_damage(card, i)
 		var ehp: int = CombatManager.enemies[i]["hp"] + int(CombatManager.enemies[i]["block"])
 		if dmg >= ehp and ehp < killable_hp:
 			killable_idx = i
@@ -165,7 +165,7 @@ func _pick_target(card: CardData) -> int:
 	for i in CombatManager.enemies.size():
 		if not CombatManager.enemies[i]["alive"]:
 			continue
-		var d := CombatManager.preview_damage(card, i)
+		var d: int = CombatManager.preview_damage(card, i)
 		if d > best_dmg:
 			best_dmg = d
 			best_idx = i

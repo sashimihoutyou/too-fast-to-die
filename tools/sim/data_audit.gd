@@ -26,7 +26,7 @@ func _audit_starter_decks() -> void:
 	var characters := _load_all_characters()
 	for ch: CharacterData in characters:
 		for card_id: StringName in ch.starter_deck_ids:
-			var card := CardDatabase.get_card(card_id)
+			var card: CardData = CardDatabase.get_card(card_id)
 			if card == null:
 				_error("starter_deck", ch.id,
 					"初期デッキのカードID '%s' がCardDatabaseに存在しない" % card_id)
@@ -67,11 +67,11 @@ func _audit_upgrade_noop() -> void:
 func _audit_enemy_coverage() -> void:
 	var max_act: int = GameManager.MAX_ACT
 	for act in range(1, max_act + 1):
-		var normals := EnemyDatabase.get_enemies_for_act(act)
+		var normals: Array[EnemyData] = EnemyDatabase.get_enemies_for_act(act)
 		if normals.is_empty():
 			_error("enemy_coverage", "act%d" % act,
 				"Act%d に通常敵が存在しない" % act)
-		var boss := EnemyDatabase.get_boss_for_act(act)
+		var boss: EnemyData = EnemyDatabase.get_boss_for_act(act)
 		if boss == null:
 			_error("enemy_coverage", "act%d" % act,
 				"Act%d にボスが存在しない" % act)
