@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c5nhm5tftoo2l"
-path="res://.godot/imported/vespa.png-7c259b95cf1934328013efbce79b16b1.ctex"
+uid="uid://bymsfba8cd1m"
+path="res://.godot/imported/atarpa.png-627591d7999f7fed9e22daeabd5d1eb9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://vespa.png"
-dest_files=["res://.godot/imported/vespa.png-7c259b95cf1934328013efbce79b16b1.ctex"]
+source_file="res://assets/characters/atarpa.png"
+dest_files=["res://.godot/imported/atarpa.png-627591d7999f7fed9e22daeabd5d1eb9.ctex"]
 
 [params]
 

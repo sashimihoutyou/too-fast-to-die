@@ -25,11 +25,13 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 				"type": node_type,
 				"connections": [],
 				"visited": false,
+				"fuel_reward": 0,
 				"position": Vector2.ZERO,
 			})
 
 	_build_connections(nodes, rows)
 	_assign_positions(nodes, rows, cols)
+	_assign_fuel_rewards(nodes, rng)
 	return nodes
 
 static func _pick_node_type(row: int, total_rows: int, rng: RandomNumberGenerator, _act: int) -> NodeType:
@@ -95,6 +97,25 @@ static func _assign_positions(nodes: Array[Dictionary], total_rows: int, cols: i
 		var idx := row_nodes.find(node)
 		var y_offset := (float(idx) - float(count - 1) / 2.0) * y_spacing
 		node["position"] = Vector2(100.0 + node["row"] * x_spacing, 480.0 + y_offset)
+
+static func _assign_fuel_rewards(nodes: Array[Dictionary], rng: RandomNumberGenerator) -> void:
+	for node: Dictionary in nodes:
+		var node_type: NodeType = node["type"]
+		if node_type == NodeType.BOSS or node_type == NodeType.REST:
+			continue
+		if rng.randf() < 0.22:
+			node["fuel_reward"] = rng.randi_range(2, 5)
+
+static func calculate_travel_cost(from_node: Dictionary, to_node: Dictionary, has_companion: bool) -> int:
+	var from_pos := Vector2(0.0, 480.0)
+	if not from_node.is_empty():
+		from_pos = from_node.get("position", from_pos)
+	var to_pos: Vector2 = to_node.get("position", from_pos)
+	var distance_cost := ceili(from_pos.distance_to(to_pos) / 150.0)
+	var cost := maxi(1, distance_cost) + 1
+	if has_companion:
+		cost += 1
+	return cost
 
 static func _get_nodes_at_row(nodes: Array[Dictionary], row: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
