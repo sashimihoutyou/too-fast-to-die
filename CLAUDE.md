@@ -218,6 +218,36 @@ var audit: RefCounted = DataAuditScript.new()
 
 `preload` 経由の `.new()` は戻り値が Variant になるため、`:=` ではなく明示的な型注釈を付けること（Variant推論の禁止ルールと同根）。
 
+### `--script` モードでの Autoload グローバル未解決
+
+`--script` モードでは `GameManager` / `CombatManager` 等のAutoloadシングルトンもコンパイル時に識別子として解決されない（`Identifier not found` エラー）。`class_name` は `preload` で解決できるが、Autoloadは実行時にSceneTreeに追加されるため別の対処が必要。
+
+**エントリポイント（`extends SceneTree`）**: 同名のインスタンス変数を定義し、`_process()` 内で `root.get_node()` により解決する。既存コードの `GameManager.xxx` 呼び出しはインスタンス変数を参照するためそのまま動く。
+
+```gdscript
+# OK: 同名インスタンス変数でAutoloadグローバルをシャドウする
+var GameManager
+var CombatManager
+
+func _process(_delta: float) -> bool:
+    GameManager = root.get_node("GameManager")
+    CombatManager = root.get_node("CombatManager")
+    _run()
+    quit()
+    return true
+```
+
+**ヘルパースクリプト（`extends RefCounted`）**: `root` にアクセスできないため、コンストラクタ引数で参照を受け取る。
+
+```gdscript
+var CombatManager
+var DeckManager
+
+func _init(combat_mgr, deck_mgr) -> void:
+    CombatManager = combat_mgr
+    DeckManager = deck_mgr
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
