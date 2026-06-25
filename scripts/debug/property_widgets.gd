@@ -9,6 +9,155 @@ const EXCLUDED_PROPERTIES: PackedStringArray = [
 	"resource_local_to_scene", "resource_path", "resource_name", "script",
 ]
 
+const PROPERTY_LABELS: Dictionary = {
+	"id": "ID (id)",
+	"display_name": "表示名 (display_name)",
+	"description": "説明 (description)",
+	"ap_cost": "APコスト (ap_cost)",
+	"fuel_cost": "燃料コスト (fuel_cost)",
+	"tags": "タグ (tags)",
+	"rarity": "レアリティ (rarity)",
+	"restriction": "キャラ制限 (restriction)",
+	"excluded_characters": "除外キャラ (excluded_characters)",
+	"is_starter": "初期カード (is_starter)",
+	"is_exhaustible": "消滅 (is_exhaustible)",
+	"is_unplayable": "使用不可 (is_unplayable)",
+	"upgraded": "強化済み (upgraded)",
+	"base_damage": "基本ダメージ (base_damage)",
+	"base_block": "基本ブロック (base_block)",
+	"hit_count": "ヒット数 (hit_count)",
+	"is_aoe": "全体攻撃 (is_aoe)",
+	"requires_target": "対象選択 (requires_target)",
+	"self_damage": "自傷ダメージ (self_damage)",
+	"draw_count": "ドロー数 (draw_count)",
+	"bonus_ap": "追加AP (bonus_ap)",
+	"status_effect": "状態異常 (status_effect)",
+	"status_stacks": "効果スタック (status_stacks)",
+	"ap_cost_reduction": "APコスト軽減 (ap_cost_reduction)",
+	"upgrade_description": "強化説明 (upgrade_description)",
+	"upgraded_damage": "強化ダメージ (upgraded_damage)",
+	"upgraded_block": "強化ブロック (upgraded_block)",
+	"art": "アート (art)",
+	"category": "カテゴリ (category)",
+	"base_hp": "基本HP (base_hp)",
+	"act": "区間 (act)",
+	"is_elite": "エリート (is_elite)",
+	"is_boss": "ボス (is_boss)",
+	"weaknesses": "弱点 (weaknesses)",
+	"title": "タイトル (title)",
+	"body_text": "本文 (body_text)",
+	"required_character": "必要キャラ (required_character)",
+	"required_karma_min": "カルマ下限 (required_karma_min)",
+	"required_karma_max": "カルマ上限 (required_karma_max)",
+	"required_act": "必要区間 (required_act)",
+	"payload_only": "ペイロード専用 (payload_only)",
+	"choices": "選択肢 (choices)",
+	"label": "ラベル (label)",
+	"requirement": "条件 (requirement)",
+	"result_text": "結果テキスト (result_text)",
+	"karma_change": "カルマ変化 (karma_change)",
+	"hp_change": "HP変化 (hp_change)",
+	"scrap_change": "スクラップ変化 (scrap_change)",
+	"medicine_change": "薬品変化 (medicine_change)",
+	"triggers_combat": "戦闘発生 (triggers_combat)",
+	"starts_quest": "クエスト開始 (starts_quest)",
+	"quest_outcome": "クエスト結果 (quest_outcome)",
+	"sets_flag": "フラグ設定 (sets_flag)",
+	"heat_max": "ヒート上限 (heat_max)",
+	"companion_id": "同行者ID (companion_id)",
+	"faith_change": "信仰変化 (faith_change)",
+	"max_hp": "最大HP (max_hp)",
+	"starter_deck_ids": "初期デッキID (starter_deck_ids)",
+	"unique_system": "固有システム (unique_system)",
+	"unlock_condition": "解放条件 (unlock_condition)",
+	"portrait": "ポートレート (portrait)",
+	"can_use_guns": "銃使用可 (can_use_guns)",
+	"can_use_heavy_weapons": "重火器使用可 (can_use_heavy_weapons)",
+	"deck_limit": "デッキ上限 (deck_limit)",
+	"companion_type": "同行者タイプ (companion_type)",
+	"duration_nodes": "同行ノード数 (duration_nodes)",
+	"passive_description": "パッシブ説明 (passive_description)",
+	"risk_description": "リスク説明 (risk_description)",
+	"departure_reward_description": "離脱報酬説明 (departure_reward_description)",
+	"item_type": "アイテム種別 (item_type)",
+	"trigger": "発動条件 (trigger)",
+	"max_stack": "最大スタック (max_stack)",
+	"fuel_change": "燃料変化 (fuel_change)",
+	"block_change": "ブロック変化 (block_change)",
+	"draw_change": "ドロー変化 (draw_change)",
+	"special_effect": "特殊効果 (special_effect)",
+	"effect_value": "効果値 (effect_value)",
+	"slot": "スロット (slot)",
+	"stats": "ステータス (stats)",
+}
+
+const ENUM_LABELS: Dictionary = {
+	"MELEE": "近接 (MELEE)",
+	"RANGED": "遠距離 (RANGED)",
+	"BIKE": "バイク (BIKE)",
+	"DEFENSE": "防御 (DEFENSE)",
+	"SKILL": "スキル (SKILL)",
+	"CHARACTER": "キャラ (CHARACTER)",
+	"COMMON": "コモン (COMMON)",
+	"UNCOMMON": "アンコモン (UNCOMMON)",
+	"RARE": "レア (RARE)",
+	"NONE": "なし (NONE)",
+	"CULTIST": "カルティスト (CULTIST)",
+	"EX_RAIDER": "元レイダー (EX_RAIDER)",
+	"WANDERER": "放浪者 (WANDERER)",
+	"BEAST_MASTER": "ビーストマスター (BEAST_MASTER)",
+	"CONQUEROR": "征服者 (CONQUEROR)",
+	"HEDONIST": "快楽主義者 (HEDONIST)",
+	"HUMAN": "人間 (HUMAN)",
+	"BEAST": "ビースト (BEAST)",
+	"MACHINE": "マシン (MACHINE)",
+	"FIGHTER": "戦闘員 (FIGHTER)",
+	"TECHNICIAN": "技術者 (TECHNICIAN)",
+	"MERCHANT": "商人 (MERCHANT)",
+	"INFORMANT": "情報屋 (INFORMANT)",
+	"REFUGEE": "難民 (REFUGEE)",
+	"TRAITOR": "裏切者 (TRAITOR)",
+	"DOG": "犬 (DOG)",
+	"CONSUMABLE": "消耗品 (CONSUMABLE)",
+	"RELIC": "レリック (RELIC)",
+	"ON_USE": "使用時 (ON_USE)",
+	"PASSIVE": "常時 (PASSIVE)",
+	"ON_COMBAT_START": "戦闘開始時 (ON_COMBAT_START)",
+	"ON_TURN_START": "ターン開始時 (ON_TURN_START)",
+	"ON_TURN_END": "ターン終了時 (ON_TURN_END)",
+	"ON_COMBAT_END": "戦闘終了時 (ON_COMBAT_END)",
+	"ENGINE": "エンジン (ENGINE)",
+	"TIRES": "タイヤ (TIRES)",
+	"FRAME": "フレーム (FRAME)",
+	"TANK": "タンク (TANK)",
+	"DECORATION": "装飾 (DECORATION)",
+	"NORMAL": "ノーマル (NORMAL)",
+	"UPPER": "アッパー (UPPER)",
+}
+
+const RESOURCE_TYPE_LABELS: Dictionary = {
+	"CardData": "カードデータ (CardData)",
+	"EnemyData": "敵データ (EnemyData)",
+	"EventData": "イベントデータ (EventData)",
+	"BikePartData": "バイクパーツ (BikePartData)",
+	"CharacterData": "キャラクター (CharacterData)",
+	"CompanionData": "同行者データ (CompanionData)",
+	"ItemData": "アイテムデータ (ItemData)",
+	"EventChoiceData": "選択肢データ (EventChoiceData)",
+}
+
+
+static func get_property_label(prop_name: String) -> String:
+	return PROPERTY_LABELS.get(prop_name, prop_name)
+
+
+static func get_enum_label(enum_name: String) -> String:
+	return ENUM_LABELS.get(enum_name, enum_name)
+
+
+static func get_resource_type_label(type_name: String) -> String:
+	return RESOURCE_TYPE_LABELS.get(type_name, type_name)
+
 
 static func is_editable_property(prop: Dictionary) -> bool:
 	var prop_name: String = prop["name"]
@@ -41,7 +190,7 @@ static func create_property_row(prop: Dictionary, resource: Resource, on_changed
 	row.add_theme_constant_override("separation", 8)
 
 	var label := Label.new()
-	label.text = prop_name
+	label.text = get_property_label(prop_name)
 	label.custom_minimum_size.x = 180
 	row.add_child(label)
 
@@ -67,7 +216,7 @@ static func _create_widget_for_type(prop_name: String, prop_type: int, hint: int
 		TYPE_STRING_NAME:
 			return _create_string_name_widget(prop_name, resource, on_changed)
 		TYPE_OBJECT:
-			return _create_unsupported_label("Object: " + hint_string)
+			return _create_unsupported_label("オブジェクト (Object): " + hint_string)
 		_:
 			return _create_unsupported_label("TYPE_%d" % prop_type)
 
@@ -126,7 +275,8 @@ static func _create_enum_widget(prop_name: String, hint_string: String, resource
 	var entries: PackedStringArray = hint_string.split(",")
 	for entry: String in entries:
 		var parts: PackedStringArray = entry.split(":")
-		var label_text: String = parts[0].strip_edges()
+		var raw_name: String = parts[0].strip_edges()
+		var label_text: String = get_enum_label(raw_name)
 		var value: int = parts[1].strip_edges().to_int() if parts.size() > 1 else ob.item_count
 		ob.add_item(label_text, value)
 
@@ -175,7 +325,7 @@ static func _create_long_text_row(prop_name: String, resource: Resource, on_chan
 	var vbox := VBoxContainer.new()
 
 	var label := Label.new()
-	label.text = prop_name
+	label.text = get_property_label(prop_name)
 	vbox.add_child(label)
 
 	var te := TextEdit.new()
@@ -199,7 +349,7 @@ static func _create_array_row(prop_name: String, resource: Resource, hint: int, 
 	vbox.add_theme_constant_override("separation", 4)
 
 	var header := Label.new()
-	header.text = prop_name
+	header.text = get_property_label(prop_name)
 	vbox.add_child(header)
 
 	var elem_info: Dictionary = _parse_array_hint(hint_string)
@@ -260,7 +410,7 @@ static func _create_enum_array_widget(prop_name: String, enum_hint: String, reso
 		var entry_value: int = entry_parts[1].to_int() if entry_parts.size() > 1 else i
 
 		var cb := CheckBox.new()
-		cb.text = entry_name
+		cb.text = get_enum_label(entry_name)
 		cb.button_pressed = entry_value in current_array
 		cb.set_meta("enum_value", entry_value)
 
@@ -326,7 +476,7 @@ static func _rebuild_subresource_items(container: VBoxContainer, prop_name: Stri
 
 		var item_header := HBoxContainer.new()
 		var index_label := Label.new()
-		index_label.text = "[%d] %s" % [i, res_class]
+		index_label.text = "[%d] %s" % [i, get_resource_type_label(res_class)]
 		index_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		item_header.add_child(index_label)
 
@@ -456,7 +606,7 @@ static func _create_dictionary_row(prop_name: String, resource: Resource, on_cha
 	vbox.add_theme_constant_override("separation", 4)
 
 	var label := Label.new()
-	label.text = prop_name
+	label.text = get_property_label(prop_name)
 	vbox.add_child(label)
 
 	var items_container := VBoxContainer.new()
@@ -465,9 +615,9 @@ static func _create_dictionary_row(prop_name: String, resource: Resource, on_cha
 	var add_row := HBoxContainer.new()
 	add_row.add_theme_constant_override("separation", 4)
 	var type_selector := OptionButton.new()
-	type_selector.add_item("int", 0)
-	type_selector.add_item("float", 1)
-	type_selector.add_item("String", 2)
+	type_selector.add_item("整数 (int)", 0)
+	type_selector.add_item("小数 (float)", 1)
+	type_selector.add_item("文字列 (String)", 2)
 	add_row.add_child(type_selector)
 
 	var add_btn := Button.new()
@@ -581,7 +731,7 @@ static func _create_texture_row(prop_name: String, resource: Resource, on_change
 	vbox.add_theme_constant_override("separation", 4)
 
 	var label := Label.new()
-	label.text = prop_name
+	label.text = get_property_label(prop_name)
 	vbox.add_child(label)
 
 	var preview_row := HBoxContainer.new()
@@ -613,7 +763,7 @@ static func _create_texture_row(prop_name: String, resource: Resource, on_change
 		var fd := FileDialog.new()
 		fd.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 		fd.access = FileDialog.ACCESS_RESOURCES
-		fd.filters = PackedStringArray(["*.png, *.jpg, *.svg, *.webp ; Images"])
+		fd.filters = PackedStringArray(["*.png, *.jpg, *.svg, *.webp ; 画像ファイル"])
 		fd.size = Vector2i(600, 400)
 		fd.file_selected.connect(func(path: String) -> void:
 			var tex: Texture2D = load(path) as Texture2D
