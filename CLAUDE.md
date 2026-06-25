@@ -203,6 +203,21 @@ func _show_target_buttons(show: bool) -> void:
 func _show_target_buttons(visible_flag: bool) -> void:
 ```
 
+### `--script` モードでの `class_name` 未解決
+
+`godot --headless --script` でスタンドアロン実行する場合、Godotはプロジェクト全体の `class_name` スキャンを行わない。別ファイルで `class_name Foo` と宣言しても、`--script` のエントリポイントからは `Foo` が見えず `Could not find type "Foo"` パースエラーになる。`preload()` で明示的にスクリプトを読み込むこと。
+
+```gdscript
+# NG: --script モードでは class_name が解決されない
+var audit := DataAudit.new()
+
+# OK: preload で明示的に読み込む
+const DataAuditScript := preload("res://tools/sim/data_audit.gd")
+var audit: RefCounted = DataAuditScript.new()
+```
+
+`preload` 経由の `.new()` は戻り値が Variant になるため、`:=` ではなく明示的な型注釈を付けること（Variant推論の禁止ルールと同根）。
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
