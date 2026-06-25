@@ -9,6 +9,7 @@ func _update_display() -> void:
 	$HPLabel.text = "現在HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp]
 	var heal := CombatManager.player_max_hp * 30 / 100
 	$RestButton.text = "休息 (HP %d 回復)" % heal
+	$UpgradeButton.disabled = _get_upgradeable_cards().is_empty()
 
 func _on_rest() -> void:
 	var heal := CombatManager.player_max_hp * 30 / 100
@@ -16,8 +17,10 @@ func _on_rest() -> void:
 	_return_to_map()
 
 func _on_upgrade() -> void:
-	if DeckManager.master_deck.is_empty():
-		_return_to_map()
+	var upgradeable_cards := _get_upgradeable_cards()
+	if upgradeable_cards.is_empty():
+		$InfoLabel.text = "強化できるカードがありません。休息を選んでください。"
+		$UpgradeButton.disabled = true
 		return
 	for child in $CardContainer.get_children():
 		child.queue_free()
@@ -25,9 +28,7 @@ func _on_upgrade() -> void:
 	$UpgradeButton.visible = false
 	$InfoLabel.text = "強化するカードを選択:"
 
-	for card: CardData in DeckManager.master_deck:
-		if card.upgraded:
-			continue
+	for card: CardData in upgradeable_cards:
 		var btn := Button.new()
 		btn.text = _get_upgrade_preview(card)
 		btn.custom_minimum_size = Vector2(400, 40)
@@ -38,6 +39,13 @@ func _on_upgrade() -> void:
 func _on_card_upgrade(card: CardData) -> void:
 	card.upgraded = true
 	_return_to_map()
+
+func _get_upgradeable_cards() -> Array[CardData]:
+	var upgradeable_cards: Array[CardData] = []
+	for card: CardData in DeckManager.master_deck:
+		if not card.upgraded:
+			upgradeable_cards.append(card)
+	return upgradeable_cards
 
 func _get_upgrade_preview(card: CardData) -> String:
 	var parts: Array[String] = [card.get_display_name(), card.description]
