@@ -261,6 +261,23 @@ var pool: Array[EnemyData] = EnemyDatabase.get_enemies_for_act(act)
 var hp_pct := float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
 ```
 
+**`static` 関数からのAutoload参照**: `--script` モードでは依存先ファイル（`class_name` で参照されるスクリプト等）も再コンパイルされる。`static` 関数内でAutoloadグローバルを直接参照していると `Identifier not found` になる。`Engine.get_main_loop()` 経由で実行時に解決すること。
+
+```gdscript
+# NG: static関数内で ItemDatabase を直接参照 → --script モードでコンパイルエラー
+static func calculate_cost() -> int:
+    if ItemDatabase.has_relic(&"old_compass"):
+        return 0
+
+# OK: Engine.get_main_loop() 経由で実行時に解決
+static func calculate_cost() -> int:
+    var tree: SceneTree = Engine.get_main_loop() as SceneTree
+    if tree and tree.root.has_node("ItemDatabase"):
+        var item_db = tree.root.get_node("ItemDatabase")
+        if item_db.has_relic(&"old_compass"):
+            return 0
+```
+
 ### その他の型安全ルール
 
 - 変数宣言には可能な限り型注釈を付ける
