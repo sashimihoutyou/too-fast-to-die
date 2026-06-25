@@ -111,6 +111,26 @@ DeckManager.draw_cards()
 turn_started.emit(turn_number)
 ```
 
+### コールバックチェーンでの中間結果チェック
+
+確認ダイアログの「保存してから続行」のように、コールバック内で副作用（保存・削除等）を実行してから次のアクション（画面遷移・エディター閉じ等）を呼ぶ場合、副作用の成否を確認せずに後続を実行すると、失敗時にも処理が進んでしまう。副作用が失敗しうるなら、成否を返すメソッドに分離して結果をチェックすること。
+
+```gdscript
+# NG: 保存失敗でもon_proceedが呼ばれる
+dialog.confirmed.connect(func() -> void:
+    _do_save(resource, path)
+    on_proceed.call()
+)
+
+# OK: 保存結果を確認してから続行
+dialog.confirmed.connect(func() -> void:
+    var err: Error = _do_save_and_return(resource, path)
+    if err != OK:
+        return
+    on_proceed.call()
+)
+```
+
 ### PRESET_CENTER での動的UI配置
 
 `set_anchors_preset(Control.PRESET_CENTER)` はアンカーを0.5に設定するだけでオフセットは変更しない。`position` を設定するとアンカー位置からの追加オフセットとなり、意図せず右下にずれる。サイズの半分を負のオフセットとして明示的に指定すること。

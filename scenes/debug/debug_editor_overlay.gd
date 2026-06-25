@@ -166,7 +166,7 @@ func _build_status_bar(parent: VBoxContainer) -> void:
 	parent.add_child(separator)
 
 	_status_bar = Label.new()
-	_status_bar.text = "Ready"
+	_status_bar.text = "準備完了"
 	_status_bar.add_theme_font_size_override("font_size", 12)
 	_status_bar.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	parent.add_child(_status_bar)
@@ -268,7 +268,7 @@ func request_close() -> void:
 
 # --- Save logic ---
 
-func _do_save(resource: Resource, path: String) -> void:
+func _do_save_and_return(resource: Resource, path: String) -> Error:
 	var dir_path: String = path.get_base_dir()
 	if not DirAccess.dir_exists_absolute(dir_path):
 		DirAccess.make_dir_recursive_absolute(dir_path)
@@ -276,7 +276,7 @@ func _do_save(resource: Resource, path: String) -> void:
 	var err: Error = ResourceSaver.save(resource, path)
 	if err != OK:
 		_show_message("保存失敗", "保存に失敗しました: %s" % error_string(err))
-		return
+		return err
 
 	_editor.set_current_path(path)
 	_editor.mark_clean()
@@ -287,6 +287,11 @@ func _do_save(resource: Resource, path: String) -> void:
 
 	if DebugResourceHotReload.is_combat_active():
 		_show_toast("戦闘中の変更は次回の戦闘から反映されます")
+	return OK
+
+
+func _do_save(resource: Resource, path: String) -> void:
+	_do_save_and_return(resource, path)
 
 
 # --- Dialogs ---
@@ -332,7 +337,9 @@ func _show_unsaved_dialog_then(on_proceed: Callable) -> void:
 		var resource: Resource = _editor.get_current_resource()
 		var path: String = _editor.get_current_path()
 		if resource != null and not path.is_empty() and path.ends_with(".tres"):
-			_do_save(resource, path)
+			var err: Error = _do_save_and_return(resource, path)
+			if err != OK:
+				return
 		on_proceed.call()
 	)
 	dialog.canceled.connect(dialog.queue_free)
@@ -408,7 +415,7 @@ func _show_new_resource_dialog() -> void:
 		"CharacterData", "CompanionData", "ItemData",
 	]
 	for t: String in types:
-		type_list.add_item(t)
+		type_list.add_item(PropertyWidgets.get_resource_type_label(t))
 	type_list.select(0)
 	vbox.add_child(type_list)
 

@@ -26,7 +26,7 @@ func edit_resource(path: String) -> void:
 		_clear_properties()
 		return
 
-	_header_label.text = "%s  —  %s" % [_current_resource.get_class(), path.get_file()]
+	_header_label.text = "%s  —  %s" % [PropertyWidgets.get_resource_type_label(_current_resource.get_class()), path.get_file()]
 	_set_dirty(false)
 	_build_property_ui()
 
@@ -34,7 +34,7 @@ func edit_resource(path: String) -> void:
 func edit_new_resource(resource: Resource, path: String) -> void:
 	_current_resource = resource
 	_current_path = path
-	_header_label.text = "%s  —  %s (新規)" % [resource.get_class(), path.get_file()]
+	_header_label.text = "%s  —  %s (新規)" % [PropertyWidgets.get_resource_type_label(resource.get_class()), path.get_file()]
 	_set_dirty(true)
 	_build_property_ui()
 
