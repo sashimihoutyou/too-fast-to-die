@@ -5,17 +5,39 @@ const BattleAgentScript := preload("res://tools/sim/battle_agent.gd")
 
 const DEFAULT_RUNS := 10
 
+# --script モードではAutoloadグローバルがコンパイル時に解決されない。
+# 同名のインスタンス変数を定義し、_process 内で root.get_node() により解決する。
+var GameManager
+var CombatManager
+var DeckManager
+var ResourceManager
+var QuestManager
+var ItemDatabase
+var CardDatabase
+var EnemyDatabase
+var KarmaManager
+
 var _args: Dictionary = {}
 
 func _init() -> void:
 	_parse_args()
-	# Godot の Autoload は SceneTree._initialize() 後に使えるため、
-	# _init ではなく _process で1フレーム待って実行する。
 
 func _process(_delta: float) -> bool:
+	_resolve_autoloads()
 	_run()
 	quit()
 	return true
+
+func _resolve_autoloads() -> void:
+	GameManager = root.get_node("GameManager")
+	CombatManager = root.get_node("CombatManager")
+	DeckManager = root.get_node("DeckManager")
+	ResourceManager = root.get_node("ResourceManager")
+	QuestManager = root.get_node("QuestManager")
+	ItemDatabase = root.get_node("ItemDatabase")
+	CardDatabase = root.get_node("CardDatabase")
+	EnemyDatabase = root.get_node("EnemyDatabase")
+	KarmaManager = root.get_node("KarmaManager")
 
 func _run() -> void:
 	var character_id: StringName = StringName(_args.get("character", "ex_raider"))
@@ -27,7 +49,7 @@ func _run() -> void:
 	print("キャラクター: %s / ラン数: %d / シード: %d" % [character_id, run_count, seed_val])
 
 	# データ監査
-	var audit: RefCounted = DataAuditScript.new()
+	var audit: RefCounted = DataAuditScript.new(CardDatabase, EnemyDatabase, GameManager)
 	audit.run_all()
 	print("")
 	print(audit.get_report_text())
@@ -91,10 +113,8 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 	rng.seed = run_seed
 
 	GameManager.start_run(character)
-	# 同行者は不在として扱う
 	GameManager.dismiss_companion()
 
-	# レリックをランダムに0〜2個付与
 	_assign_random_relics(rng)
 
 	var battles_fought: int = 0
@@ -102,28 +122,24 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 	var total_damage_taken: int = 0
 	var total_cards_played: int = 0
 	var battle_logs: Array[Dictionary] = []
-	var cleared: bool = false
 
-	for act in range(1, GameManager.MAX_ACT + 1):
+	var max_act: int = GameManager.MAX_ACT
+	for act in range(1, max_act + 1):
 		GameManager.current_act = act
 		var map := MapGenerator.generate_act(act, rng.randi())
 		GameManager.map_nodes = map
 		GameManager.map_current_row = -1
 
-		# マップを走査してパスを選択する
 		var path := _pick_map_path(map, rng)
 		var previous_node: Dictionary = {}
 
 		for node: Dictionary in path:
-			# 移動コスト（燃料消費）
 			var travel_cost := MapGenerator.calculate_travel_cost(previous_node, node, false)
 			if not ResourceManager.consume_fuel(travel_cost):
-				# 燃料切れペナルティ: HP減少して続行
 				var penalty: int = travel_cost * 3
 				CombatManager.player_hp = maxi(1, CombatManager.player_hp - penalty)
 			GameManager.advance_node(travel_cost)
 
-			# 燃料報酬
 			var fuel_reward: int = int(node.get("fuel_reward", 0))
 			if fuel_reward > 0:
 				ResourceManager.add_fuel(fuel_reward)
@@ -136,8 +152,8 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					if node_type == MapGenerator.NodeType.BOSS:
 						var mod := QuestManager.get_boss_modifier(act)
 						boss_hp_scale = float(mod.get("hp_scale", 1.0))
-					var agent: RefCounted = BattleAgentScript.new(rng)
-					var hp_before := CombatManager.player_hp
+					var agent: RefCounted = BattleAgentScript.new(CombatManager, DeckManager, rng)
+					var hp_before: int = CombatManager.player_hp
 					var result: Dictionary = agent.fight(enemies, boss_hp_scale)
 					battles_fought += 1
 					total_turns += result["turns"]
@@ -168,11 +184,8 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 							"fuel_remaining": ResourceManager.fuel,
 						}
 
-					# 戦闘勝利後の報酬（燃料）
 					var act_fuel := rng.randi_range(6 + act * 2, 11 + act * 3)
 					ResourceManager.add_fuel(act_fuel)
-
-					# 報酬カード選択
 					_pick_reward_card(character, act, rng)
 
 				MapGenerator.NodeType.REST:
@@ -200,13 +213,11 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					"fuel_remaining": ResourceManager.fuel,
 				}
 
-		# Act完了 → 次のActへ
 		GameManager.advance_act()
 
-	cleared = true
 	return {
 		"cleared": true,
-		"reached_act": GameManager.MAX_ACT,
+		"reached_act": max_act,
 		"final_hp": CombatManager.player_hp,
 		"max_hp": CombatManager.player_max_hp,
 		"battles_fought": battles_fought,
@@ -220,9 +231,7 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 func _pick_map_path(map_nodes: Array[Dictionary], rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var path: Array[Dictionary] = []
 	var rows := 12
-	var current_connections: Array = []
 
-	# 最初の行からランダムに選ぶ
 	var first_row := MapGenerator._get_nodes_at_row(map_nodes, 0)
 	if first_row.is_empty():
 		return path
@@ -295,7 +304,8 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: Rand
 	return enemies
 
 func _get_boss_for_act(act: int) -> EnemyData:
-	if act >= GameManager.MAX_ACT:
+	var max_act: int = GameManager.MAX_ACT
+	if act >= max_act:
 		var boss_map := {
 			&"cultist": &"v8cult_high_priest",
 			&"ex_raider": &"cockatrice_boss",
@@ -326,7 +336,6 @@ func _pick_reward_card(character: CharacterData, act: int, rng: RandomNumberGene
 	if pool.is_empty():
 		return
 	pool.shuffle()
-	# 高ダメージ優先で3枚から1枚選ぶ
 	var candidates: Array[CardData] = []
 	for i in mini(3, pool.size()):
 		candidates.append(pool[i])
@@ -337,7 +346,6 @@ func _pick_reward_card(character: CharacterData, act: int, rng: RandomNumberGene
 		if score > best_score:
 			best = candidates[i]
 			best_score = score
-	# デッキ上限チェック
 	if character.deck_limit > 0 and DeckManager.master_deck.size() >= character.deck_limit:
 		return
 	DeckManager.add_card_to_deck(best)
@@ -356,11 +364,9 @@ func _card_score(card: CardData) -> int:
 func _handle_rest(rng: RandomNumberGenerator) -> void:
 	var hp_pct := float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
 	if hp_pct < 0.6:
-		# 休息（HP回復30%）
 		var heal := ceili(float(CombatManager.player_max_hp) * 0.3)
 		CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
 	else:
-		# カード強化
 		var upgradeable: Array[CardData] = []
 		for card: CardData in DeckManager.master_deck:
 			if not card.upgraded:
@@ -373,7 +379,6 @@ func _handle_rest(rng: RandomNumberGenerator) -> void:
 			CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
 
 func _handle_shop(rng: RandomNumberGenerator) -> void:
-	# ショップでは燃料購入（スクラップがあれば）
 	if ResourceManager.scrap >= 5 and ResourceManager.fuel < ResourceManager.tank_capacity - 5:
 		ResourceManager.consume_scrap(5)
 		ResourceManager.add_fuel(8)
@@ -387,7 +392,6 @@ func _generate_report(character: CharacterData, results: Array[Dictionary], audi
 	lines.append("- 日時: %s" % Time.get_datetime_string_from_system())
 	lines.append("")
 
-	# データ監査
 	lines.append("## データ監査")
 	lines.append("- エラー: %d 件" % audit.errors.size())
 	lines.append("- 警告: %d 件" % audit.warnings.size())
@@ -397,7 +401,6 @@ func _generate_report(character: CharacterData, results: Array[Dictionary], audi
 		lines.append("  - [WARN] %s: %s" % [w["source"], w["message"]])
 	lines.append("")
 
-	# 集計
 	var clears: int = 0
 	var total_hp: int = 0
 	var total_battles: int = 0
@@ -432,7 +435,6 @@ func _generate_report(character: CharacterData, results: Array[Dictionary], audi
 	lines.append("| 平均残燃料 | %.1f |" % [float(fuel_remaining_sum) / float(n)])
 	lines.append("")
 
-	# ラン別詳細
 	lines.append("## ラン別詳細")
 	lines.append("| # | Seed | 結果 | 到達Act | 残HP | 戦闘数 | ターン | 残燃料 |")
 	lines.append("|---|---|---|---|---|---|---|---|")

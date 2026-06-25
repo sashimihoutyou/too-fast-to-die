@@ -1,10 +1,16 @@
 extends RefCounted
-class_name BattleAgent
+
+# --script モードではAutoloadグローバルが解決されないため、
+# 呼び出し側から参照を注入する。
+var CombatManager
+var DeckManager
 
 var log_entries: Array[Dictionary] = []
 var _rng: RandomNumberGenerator
 
-func _init(rng: RandomNumberGenerator = null) -> void:
+func _init(combat_mgr, deck_mgr, rng: RandomNumberGenerator = null) -> void:
+	CombatManager = combat_mgr
+	DeckManager = deck_mgr
 	if rng != null:
 		_rng = rng
 	else:
@@ -182,7 +188,6 @@ func _is_buff_card(card: CardData) -> bool:
 		return true
 	if card.ap_cost_reduction > 0:
 		return true
-	# 近接パワーなどの特殊バフカード
 	if card.id == &"er02" or card.id == &"er09" or card.id == &"co02" or card.id == &"co04":
 		return true
 	return false
@@ -192,7 +197,6 @@ func _has_matching_attack(buff_card: CardData) -> bool:
 		if card == buff_card:
 			continue
 		if card.get_effective_damage() > 0 and CombatManager.can_play_card(card):
-			# バフが近接系なら近接攻撃があるか
 			if CardData.Tag.MELEE in buff_card.tags:
 				if CardData.Tag.MELEE in card.tags:
 					return true

@@ -1,8 +1,18 @@
 extends RefCounted
-class_name DataAudit
+
+# --script モードではAutoloadグローバルが解決されないため、
+# 呼び出し側から参照を注入する。
+var CardDatabase
+var EnemyDatabase
+var GameManager
 
 var errors: Array[Dictionary] = []
 var warnings: Array[Dictionary] = []
+
+func _init(card_db, enemy_db, game_mgr) -> void:
+	CardDatabase = card_db
+	EnemyDatabase = enemy_db
+	GameManager = game_mgr
 
 func run_all() -> void:
 	errors.clear()
@@ -55,7 +65,8 @@ func _audit_upgrade_noop() -> void:
 				"ダメージカードだが強化値が未設定（upgraded_damage=%d, base_damage=%d）" % [card.upgraded_damage, card.base_damage])
 
 func _audit_enemy_coverage() -> void:
-	for act in range(1, GameManager.MAX_ACT + 1):
+	var max_act: int = GameManager.MAX_ACT
+	for act in range(1, max_act + 1):
 		var normals := EnemyDatabase.get_enemies_for_act(act)
 		if normals.is_empty():
 			_error("enemy_coverage", "act%d" % act,
