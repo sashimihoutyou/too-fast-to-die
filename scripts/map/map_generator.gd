@@ -29,6 +29,7 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 				"position": Vector2.ZERO,
 			})
 
+	_ensure_node_type_guarantees(nodes, rows, rng)
 	_build_connections(nodes, rows)
 	_assign_positions(nodes, rows, cols)
 	_assign_fuel_rewards(nodes, rng)
@@ -61,6 +62,43 @@ static func _pick_node_type(row: int, total_rows: int, rng: RandomNumberGenerato
 		return NodeType.INFO
 	else:
 		return NodeType.ELITE
+
+static func _ensure_node_type_guarantees(nodes: Array[Dictionary], total_rows: int, _rng: RandomNumberGenerator) -> void:
+	var guaranteed: Array[Dictionary] = [
+		{"type": NodeType.SHOP, "preferred_rows": [3, 4, 8], "min_count": 1},
+		{"type": NodeType.EVENT, "preferred_rows": [2, 3, 7, 8], "min_count": 2},
+		{"type": NodeType.INFO, "preferred_rows": [4, 6, 8], "min_count": 1},
+		{"type": NodeType.REST, "preferred_rows": [6, 7], "min_count": 1},
+	]
+	var fixed_rows: Array[int] = [0, total_rows - 1, total_rows - 2, total_rows - 3, 5]
+
+	for rule: Dictionary in guaranteed:
+		var target_type: NodeType = rule["type"]
+		var min_count: int = rule["min_count"]
+		var preferred_rows: Array = rule["preferred_rows"]
+
+		var existing_count := 0
+		for node: Dictionary in nodes:
+			var nt: NodeType = node["type"]
+			if nt == target_type:
+				existing_count += 1
+
+		if existing_count >= min_count:
+			continue
+
+		var needed := min_count - existing_count
+		for pref_row: int in preferred_rows:
+			if needed <= 0:
+				break
+			if pref_row in fixed_rows:
+				continue
+			var row_nodes := _get_nodes_at_row(nodes, pref_row)
+			for node: Dictionary in row_nodes:
+				var nt: NodeType = node["type"]
+				if nt == NodeType.COMBAT and needed > 0:
+					node["type"] = target_type
+					needed -= 1
+					break
 
 static func _build_connections(nodes: Array[Dictionary], total_rows: int) -> void:
 	for row in total_rows - 1:

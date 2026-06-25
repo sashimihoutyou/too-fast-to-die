@@ -97,9 +97,11 @@ func advance_node(travel_cost: int = 2) -> void:
 	total_nodes_visited += 1
 	distance_km += randi_range(3, 6) + travel_cost
 	if current_character != null and current_character.id != &"conqueror":
-		ResourceManager.damage_bike(1)
-		if ResourceManager.bike_durability <= 0:
-			ResourceManager.consume_fuel(2)
+		var tech_immune: bool = current_companion != null and current_companion.companion_type == CompanionData.CompanionType.TECHNICIAN
+		if not tech_immune:
+			ResourceManager.damage_bike(1)
+			if ResourceManager.bike_durability <= 0:
+				ResourceManager.consume_fuel(2)
 	_tick_companion()
 	_tick_pursuit()
 	QuestManager.on_node_advanced()
@@ -127,12 +129,19 @@ func _on_companion_depart() -> void:
 	match current_companion.companion_type:
 		CompanionData.CompanionType.TRAITOR:
 			ResourceManager.consume_fuel(mini(5, ResourceManager.fuel))
+			ResourceManager.consume_scrap(mini(3, ResourceManager.scrap))
 		CompanionData.CompanionType.MERCHANT:
-			ResourceManager.add_scrap(3)
+			ResourceManager.add_scrap(5)
 		CompanionData.CompanionType.FIGHTER:
-			pass
+			KarmaManager.add_karma(2)
 		CompanionData.CompanionType.REFUGEE:
 			KarmaManager.add_karma(5)
+		CompanionData.CompanionType.TECHNICIAN:
+			ResourceManager.repair_bike(3)
+		CompanionData.CompanionType.INFORMANT:
+			advance_oasis_info()
+		CompanionData.CompanionType.DOG:
+			KarmaManager.add_karma(3)
 	current_companion = null
 	companion_nodes_remaining = 0
 

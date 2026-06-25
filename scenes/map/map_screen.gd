@@ -108,6 +108,8 @@ func _draw_connections() -> void:
 			$MapScroll/MapContainer.move_child(line, 0)
 
 func _update_available_nodes() -> void:
+	var available_ids: Array[String] = []
+
 	for nid: String in node_buttons:
 		var btn: Button = node_buttons[nid]
 		btn.disabled = true
@@ -118,16 +120,68 @@ func _update_available_nodes() -> void:
 			var nid := _node_id(node)
 			if nid in node_buttons:
 				node_buttons[nid].disabled = false
+				available_ids.append(nid)
+	else:
+		for node: Dictionary in map_nodes:
+			if node["row"] != current_row or not node["visited"]:
+				continue
+			for conn_id: String in node["connections"]:
+				var target := _find_node_by_id(conn_id)
+				if not target.is_empty() and not target["visited"]:
+					if conn_id in node_buttons:
+						node_buttons[conn_id].disabled = false
+						available_ids.append(conn_id)
+
+	_apply_available_highlights(available_ids)
+
+func _apply_available_highlights(available_ids: Array[String]) -> void:
+	for nid: String in available_ids:
+		var btn: Button = node_buttons[nid]
+		var tween := create_tween()
+		tween.set_loops()
+		tween.tween_property(btn, "modulate", Color(1.3, 1.3, 1.3, 1.0), 0.5)
+		tween.tween_property(btn, "modulate", Color.WHITE, 0.5)
+
+		var style: StyleBoxFlat = btn.get_theme_stylebox("normal").duplicate()
+		style.border_color = Color(1.0, 0.9, 0.5)
+		style.border_width_top = 2
+		style.border_width_bottom = 2
+		style.border_width_left = 2
+		style.border_width_right = 2
+		btn.add_theme_stylebox_override("normal", style)
+
+	_highlight_connections(available_ids)
+
+func _highlight_connections(available_ids: Array[String]) -> void:
+	if current_row == -1:
+		var start_pos := Vector2(25, 480)
+		for nid: String in available_ids:
+			var target := _find_node_by_id(nid)
+			if target.is_empty():
+				continue
+			var line := Line2D.new()
+			line.add_point(start_pos)
+			line.add_point(target["position"])
+			line.width = 3.0
+			line.default_color = Color(1.0, 0.9, 0.5, 0.8)
+			$MapScroll/MapContainer.add_child(line)
 		return
 
 	for node: Dictionary in map_nodes:
 		if node["row"] != current_row or not node["visited"]:
 			continue
 		for conn_id: String in node["connections"]:
+			if conn_id not in available_ids:
+				continue
 			var target := _find_node_by_id(conn_id)
-			if not target.is_empty() and not target["visited"]:
-				if conn_id in node_buttons:
-					node_buttons[conn_id].disabled = false
+			if target.is_empty():
+				continue
+			var line := Line2D.new()
+			line.add_point(node["position"])
+			line.add_point(target["position"])
+			line.width = 3.0
+			line.default_color = Color(1.0, 0.9, 0.5, 0.8)
+			$MapScroll/MapContainer.add_child(line)
 
 func _on_node_pressed(nid: String) -> void:
 	var node := _find_node_by_id(nid)
@@ -305,9 +359,13 @@ func _update_hud() -> void:
 	$HUD/ActLabel.text = "区間%d" % GameManager.current_act
 	$HUD/QuestLabel.text = QuestManager.get_hud_summary()
 	if GameManager.current_companion != null:
-		$HUD/CompanionLabel.text = "同行者: %s (%dノード)" % [GameManager.current_companion.display_name, GameManager.companion_nodes_remaining]
+		var comp := GameManager.current_companion
+		var remaining_text := "%dノード" % GameManager.companion_nodes_remaining if comp.duration_nodes >= 0 else "無期限"
+		$HUD/CompanionLabel.text = "同行者: %s (%s)" % [comp.display_name, remaining_text]
+		$HUD/CompanionLabel.tooltip_text = "%s\nパッシブ: %s\nリスク: %s\n離脱報酬: %s" % [comp.display_name, comp.passive_description, comp.risk_description, comp.departure_reward_description]
 	else:
 		$HUD/CompanionLabel.text = "同行者: なし"
+		$HUD/CompanionLabel.tooltip_text = ""
 	if GameManager.current_character != null and GameManager.current_character.unique_system == &"heat":
 		$HUD/CompanionLabel.text += "  追跡: %d%%" % GameManager.pursuit_level
 	if GameManager.is_cultist():
