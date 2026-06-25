@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "嵐が過ぎるまで待つ"
+requirement = ""
+result_text = "長い時間を無駄にしたが、バイクは無傷だ。"
+fuel_change = -2
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "燃料を使って強行突破する"
+requirement = "fuel>=5"
+result_text = "砂嵐の中を突っ切った。バイクの外装が少し傷んだが、時間は稼げた。"
+fuel_change = -3
+hp_change = -5
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "迂回路を探す"
+requirement = ""
+result_text = "遠回りしたが、途中で使えそうな物資を見つけた。"
+fuel_change = -4
+scrap_change = 2
+
+[resource]
+script = ExtResource("1")
+id = &"dust_storm"
+title = "砂嵐"
+body_text = "前方に巨大な砂嵐が迫っている。視界はほぼゼロだ。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

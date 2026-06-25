@@ -135,7 +135,13 @@ func _on_node_pressed(nid: String) -> void:
 	GameManager.map_current_row = current_row
 	GameManager.map_current_node_id = nid
 	GameManager.advance_node()
+	SaveManager.save_run()
 	_update_hud()
+
+	if GameManager.pursuit_triggered:
+		GameManager.pursuit_triggered = false
+		_enter_pursuit_combat()
+		return
 
 	var node_type: MapGenerator.NodeType = node["type"]
 	match node_type:
@@ -219,6 +225,7 @@ func _get_character_final_boss() -> EnemyData:
 		&"wanderer": &"chainlink_informant",
 		&"beast_master": &"chainlink_executive",
 		&"conqueror": &"gatekeeper",
+		&"hedonist": &"neon_eden_queen",
 	}
 	var char_id: StringName = GameManager.current_character.id
 	var boss_id: StringName = boss_by_character.get(char_id, &"")
@@ -256,8 +263,21 @@ func _enter_shop() -> void:
 func _enter_rest() -> void:
 	get_tree().change_scene_to_file("res://scenes/rest/rest_screen.tscn")
 
+func _enter_pursuit_combat() -> void:
+	_show_notification("コカトリスの追手が現れた！")
+	var enemies: Array[EnemyData] = []
+	var elites := EnemyDatabase.get_elites_for_act(GameManager.current_act)
+	if not elites.is_empty():
+		elites.shuffle()
+		enemies.append(elites[0])
+	else:
+		enemies.append(_fallback_enemy(GameManager.current_act, true, false))
+	CombatManager.start_combat(enemies)
+	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+
 func _enter_info() -> void:
-	_show_notification("オアシスの噂を聞いた…\n「東に楽園があるらしい」")
+	var info_text := GameManager.advance_oasis_info()
+	_show_notification("オアシスの噂を聞いた…\n%s" % info_text)
 	_draw_map()
 
 func _update_hud() -> void:
@@ -268,6 +288,14 @@ func _update_hud() -> void:
 	$HUD/DistanceLabel.text = "走行: %dkm" % GameManager.distance_km
 	$HUD/ActLabel.text = "区間%d" % GameManager.current_act
 	$HUD/QuestLabel.text = QuestManager.get_hud_summary()
+	if GameManager.current_companion != null:
+		$HUD/CompanionLabel.text = "同行者: %s (%dノード)" % [GameManager.current_companion.display_name, GameManager.companion_nodes_remaining]
+	else:
+		$HUD/CompanionLabel.text = "同行者: なし"
+	if GameManager.current_character != null and GameManager.current_character.unique_system == &"heat":
+		$HUD/CompanionLabel.text += "  追跡: %d%%" % GameManager.pursuit_level
+	if GameManager.is_cultist():
+		$HUD/CompanionLabel.text += "  信仰: %s" % GameManager.get_faith_display()
 
 func _on_fuel_changed(_val: int, _max_val: int) -> void:
 	_update_hud()

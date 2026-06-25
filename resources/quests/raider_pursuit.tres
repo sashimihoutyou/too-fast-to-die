@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"raider_pursuit"
+title = "コカトリスの追手"
+summary = "コカトリスの斥候を始末して追跡を振り切れ"
+required_act = 2
+node_limit = 6
+objective_match = &"cockatrice"
+objective_count = 2
+boss_target = &"cockatrice_boss"
+boss_add_enemy = &"cockatrice_scout"
+boss_mods = {
+"hunt": { "hp_scale": 0.8, "adds": 0 },
+"ignore": { "hp_scale": 1.0, "adds": 2 },
+"lapse": { "hp_scale": 1.0, "adds": 1 }
+}

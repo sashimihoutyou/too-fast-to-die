@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"wanderer_clue_chain"
+title = "ミーシャの足跡"
+summary = "ミーシャの手がかりを追え"
+required_act = 3
+node_limit = 8
+objective_match = &"chainlink"
+objective_count = 2
+payload_event = &"wanderer_clue"
+payload_min_gap = 2
+boss_target = &"chainlink_informant"
+boss_mods = {
+"hunt": { "hp_scale": 0.7, "adds": 0 },
+"ignore": { "hp_scale": 1.0, "adds": 1 },
+"lapse": { "hp_scale": 0.9, "adds": 1 }
+}

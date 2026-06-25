@@ -34,6 +34,8 @@ func _check_unlocks() -> void:
 		unlocked_characters.append(&"beast_master")
 	if not cleared_characters.is_empty() and &"conqueror" not in unlocked_characters:
 		unlocked_characters.append(&"conqueror")
+	if total_distance_km >= 750 and &"hedonist" not in unlocked_characters:
+		unlocked_characters.append(&"hedonist")
 
 func save_data() -> void:
 	var data := {

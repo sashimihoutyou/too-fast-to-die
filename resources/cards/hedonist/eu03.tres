@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"eu03"
+display_name = "甘い吐息"
+description = "魅了1付与+2ブロック。ゲージ+5"
+ap_cost = 1
+tags = [5]
+rarity = 0
+restriction = 6
+base_block = 2
+upgraded_block = 4
+requires_target = true
+status_effect = &"charm"
+status_stacks = 1

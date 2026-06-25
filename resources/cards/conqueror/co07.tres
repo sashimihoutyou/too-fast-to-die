@@ -13,3 +13,4 @@ rarity = 2
 restriction = 5
 base_damage = 1
 hit_count = 100
+upgraded_damage = 2

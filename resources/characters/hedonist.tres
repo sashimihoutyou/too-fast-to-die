@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/character_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hedonist"
+display_name = "享楽者（ホタル）"
+max_hp = 55
+starter_deck_ids = [&"st_eu01", &"st_eu01", &"st_eu03", &"defend", &"defend", &"st_eu02", &"st_intimidate", &"eu01", &"eu02", &"eu11"]
+unique_system = &"euphoria"
+unlock_condition = "累積走行距離750km"
+deck_limit = 25

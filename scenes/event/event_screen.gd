@@ -44,6 +44,12 @@ func _build_choices() -> void:
 		if not _check_requirement(choice.requirement):
 			btn.disabled = true
 			btn.text += " (条件不足)"
+		if choice.heat_max >= 0 and CombatManager.player_heat > choice.heat_max:
+			btn.disabled = true
+			if CombatManager.player_heat >= 90:
+				btn.visible = false
+			else:
+				btn.text += " (激情が高すぎる)"
 		$ChoiceContainer.add_child(btn)
 
 func _check_requirement(req: String) -> bool:
@@ -61,7 +67,16 @@ func _check_requirement(req: String) -> bool:
 		return KarmaManager.karma >= int(req.split(">=")[1])
 	if req.begins_with("character=="):
 		return GameManager.current_character.id == StringName(req.split("==")[1])
-	# companion==... / item==... など未実装の条件は満たせない扱い
+	if req.begins_with("companion=="):
+		if GameManager.current_companion == null:
+			return false
+		return GameManager.current_companion.id == StringName(req.split("==")[1])
+	if req == "no_companion":
+		return GameManager.current_companion == null
+	if req.begins_with("faith>="):
+		return GameManager.faith >= int(req.split(">=")[1])
+	if req.begins_with("faith<="):
+		return GameManager.faith <= int(req.split("<=")[1])
 	return false
 
 func _on_choice(idx: int) -> void:
@@ -103,6 +118,12 @@ func _apply_choice(choice: EventChoiceData) -> void:
 		GameManager.event_flags[choice.sets_flag] = true
 	if choice.starts_quest != &"":
 		QuestManager.record_outcome(choice.starts_quest, choice.quest_outcome)
+	if choice.faith_change != 0:
+		GameManager.add_faith(choice.faith_change)
+	if choice.companion_id != &"":
+		var comp: CompanionData = CompanionDatabase.get_companion(choice.companion_id)
+		if comp != null:
+			GameManager.recruit_companion(comp)
 
 func _start_event_combat() -> void:
 	var enemies: Array[EnemyData] = []
