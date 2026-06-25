@@ -62,6 +62,28 @@ card.tags = data.get("tags", [])
 card.tags.assign(data.get("tags", []))
 ```
 
+### コンテナの mouse_filter とボタンの重なり
+
+`VBoxContainer` / `HBoxContainer` 等のコンテナは、デフォルトの `mouse_filter` が `MOUSE_FILTER_STOP` であり、**子ノードが空でも自身の rect 内のマウスイベントを奪う**。同じ親の下でコンテナがボタンより後（子インデックスが大きい＝Z-orderが上）に配置されていると、コンテナの rect がボタンを覆い隠し、**ボタンが一切クリックできなくなる**。
+
+実例（修正済み）: 休息画面の `CardContainer`（VBoxContainer, 子index=6）が `RestButton`（index=4）/ `UpgradeButton`（index=5）と同じ Y 座標に配置されていた。CardContainer は空だが rect は offset で確保されており、MOUSE_FILTER_STOP のままだったため全ボタンが操作不能になった。
+
+- 動的にボタンを追加するコンテナは `mouse_filter = Control.MOUSE_FILTER_IGNORE`（tscn: `mouse_filter = 2`）を設定する。コンテナ自身はイベントを通過させ、子ボタンは独自の mouse_filter で正常に受け取る。
+- tscn を編集したら、同じ親の下でコンテナと固定ボタンの **rect が重なっていないか** を Z-order（子の並び順）を含めて確認する。
+
+```
+# NG: 空のVBoxContainerがボタンを覆い、クリック不能
+[node name="RestButton" type="Button" parent="."]
+offset_top = 240.0
+[node name="CardContainer" type="VBoxContainer" parent="."]
+offset_top = 240.0  # ← RestButtonと同じ領域を覆う (indexがButtonより後)
+
+# OK: mouse_filter = 2 (IGNORE) でコンテナ自身はイベントを通過させる
+[node name="CardContainer" type="VBoxContainer" parent="."]
+mouse_filter = 2
+offset_top = 240.0
+```
+
 ### PanelContainer と子ノードの配置
 
 `PanelContainer` は子ノードを自動的に全面に引き伸ばすため、複数の子を手動配置（offset指定）しても全て重なる。手動配置が必要な場合は `Panel` を使い、子ノードの `layout_mode` を `1`（アンカー）にすること。
