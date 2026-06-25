@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "母子を乗せる"
+requirement = "no_companion"
+result_text = "母親が子供を抱きかかえてバイクに乗り込む。「ありがとうございます……次の集落まで、どうか」"
+companion_id = &"refugee"
+karma_change = 5
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "食料と水を分ける"
+requirement = ""
+result_text = "母親は涙ぐみながら食料を受け取った。子供がこちらに手を振っている。"
+fuel_change = -2
+karma_change = 3
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "見なかったことにする"
+requirement = ""
+result_text = "荒野では日常の光景だ。振り返る余裕はない。"
+karma_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"hitchhiker_refugee"
+title = "路上の母子"
+body_text = "道の脇に女性と幼い子供がうずくまっている。集落を追われたか、隊商からはぐれたか。衰弱した様子で、このままでは長くもたないだろう。"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

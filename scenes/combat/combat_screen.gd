@@ -8,6 +8,7 @@ var hp_bars: Array[ProgressBar] = []
 var block_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
 var status_labels: Array[Label] = []
+var item_buttons: Array[Button] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 var _last_player_hp: int = 0
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_update_player_hud()
 	_update_hand()
 	_update_controls()
+	_update_consumable_buttons()
 
 # 元レイダー（ヒート＝激情システム）のときだけ、HUDにヒートメーターを生成する。
 func _setup_heat_meter() -> void:
@@ -372,7 +374,114 @@ func _create_card_button(card: CardData) -> Button:
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_entered.connect(_on_card_hover.bind(btn, true))
 	btn.mouse_exited.connect(_on_card_hover.bind(btn, false))
+	btn.gui_input.connect(_on_card_gui_input.bind(card))
 	return btn
+
+func _on_card_gui_input(event: InputEvent, card: CardData) -> void:
+	if event is InputEventMouseButton:
+		var me := event as InputEventMouseButton
+		if me.pressed and me.button_index == MOUSE_BUTTON_RIGHT:
+			_show_card_detail(card)
+
+func _show_card_detail(card: CardData) -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.7)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(400, 350)
+	panel.offset_left = -200
+	panel.offset_top = -175
+	panel.offset_right = 200
+	panel.offset_bottom = 175
+
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.offset_left = 15
+	vbox.offset_top = 10
+	vbox.offset_right = -15
+	vbox.offset_bottom = -50
+	vbox.add_theme_constant_override("separation", 8)
+
+	var name_label := Label.new()
+	var rarity_text := ""
+	match card.rarity:
+		CardData.Rarity.UNCOMMON: rarity_text = " [アンコモン]"
+		CardData.Rarity.RARE: rarity_text = " [レア]"
+	name_label.text = card.get_display_name() + rarity_text
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	vbox.add_child(name_label)
+
+	var tag_label := Label.new()
+	tag_label.text = _tags_to_bracket_text(card.tags)
+	tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tag_label.add_theme_font_size_override("font_size", 14)
+	tag_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	vbox.add_child(tag_label)
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
+	var cost_label := Label.new()
+	var cost_parts: Array[String] = ["AP: %d" % card.ap_cost]
+	if card.fuel_cost > 0:
+		cost_parts.append("%sコスト: %d" % [GameManager.get_travel_resource_name(), card.fuel_cost])
+	cost_label.text = " | ".join(cost_parts)
+	cost_label.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(cost_label)
+
+	var stats_parts: Array[String] = []
+	if card.get_effective_damage() > 0:
+		stats_parts.append("ダメージ: %d" % card.get_effective_damage())
+	if card.get_effective_block() > 0:
+		stats_parts.append("ブロック: %d" % card.get_effective_block())
+	if card.draw_count > 0:
+		stats_parts.append("ドロー: %d" % card.draw_count)
+	if not stats_parts.is_empty():
+		var stats_label := Label.new()
+		stats_label.text = " | ".join(stats_parts)
+		stats_label.add_theme_font_size_override("font_size", 16)
+		vbox.add_child(stats_label)
+
+	var desc_label := Label.new()
+	desc_label.text = card.description
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_label.add_theme_font_size_override("font_size", 15)
+	vbox.add_child(desc_label)
+
+	if card.flavor_text != "":
+		var flavor := Label.new()
+		flavor.text = card.flavor_text
+		flavor.autowrap_mode = TextServer.AUTOWRAP_WORD
+		flavor.add_theme_font_size_override("font_size", 13)
+		flavor.add_theme_color_override("font_color", Color(0.6, 0.6, 0.5))
+		vbox.add_child(flavor)
+
+	panel.add_child(vbox)
+
+	var close_btn := Button.new()
+	close_btn.text = "閉じる"
+	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	close_btn.custom_minimum_size = Vector2(100, 35)
+	close_btn.offset_left = -50
+	close_btn.offset_top = -42
+	close_btn.offset_right = 50
+	close_btn.offset_bottom = -8
+	close_btn.pressed.connect(overlay.queue_free)
+	panel.add_child(close_btn)
+
+	overlay.add_child(panel)
+	overlay.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton:
+			var me := event as InputEventMouseButton
+			if me.pressed:
+				overlay.queue_free()
+	)
 
 func _on_card_hover(btn: Button, hovering: bool) -> void:
 	btn.pivot_offset = Vector2(btn.size.x / 2.0, btn.size.y)
@@ -539,6 +648,54 @@ func _update_controls() -> void:
 	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1%s)" % GameManager.get_travel_resource_name()
 	$Controls/RerollButton.text = "リロール (1%s)" % GameManager.get_travel_resource_name()
 
+func _update_consumable_buttons() -> void:
+	for child in $ItemArea.get_children():
+		child.queue_free()
+	item_buttons.clear()
+
+	var consumables := ItemDatabase.get_consumables()
+	if consumables.is_empty():
+		return
+
+	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
+	for entry: Dictionary in consumables:
+		var item: ItemData = entry["item"]
+		var count: int = entry["count"]
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(130, 40)
+		btn.text = "%s ×%d" % [item.display_name, count]
+		btn.tooltip_text = item.description
+		btn.disabled = not in_turn
+		btn.add_theme_font_size_override("font_size", 13)
+		btn.focus_mode = Control.FOCUS_NONE
+
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.1, 0.2, 0.25, 0.9)
+		style.corner_radius_top_left = 6
+		style.corner_radius_top_right = 6
+		style.corner_radius_bottom_left = 6
+		style.corner_radius_bottom_right = 6
+		style.border_width_top = 1
+		style.border_width_bottom = 1
+		style.border_width_left = 1
+		style.border_width_right = 1
+		style.border_color = Color(0.3, 0.6, 0.8)
+		btn.add_theme_stylebox_override("normal", style)
+
+		btn.pressed.connect(_on_consumable_pressed.bind(item.id))
+		$ItemArea.add_child(btn)
+		item_buttons.append(btn)
+
+func _on_consumable_pressed(item_id: StringName) -> void:
+	if CombatManager.state != CombatManager.CombatState.PLAYER_TURN:
+		return
+	var item := ItemDatabase.get_item(item_id)
+	if item == null:
+		return
+	if ItemDatabase.use_consumable(item_id):
+		_update_consumable_buttons()
+		_update_player_hud()
+
 func _auto_end_turn() -> void:
 	var msg := Label.new()
 	msg.text = "使用できるカードがありません！"
@@ -577,6 +734,7 @@ func _on_turn_started(_turn: int) -> void:
 	_update_hand()
 	_update_player_hud()
 	_update_controls()
+	_update_consumable_buttons()
 	if not CombatManager.has_playable_card():
 		_auto_end_turn()
 
