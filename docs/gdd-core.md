@@ -1,17 +1,14 @@
-# Road to Oasis ― GDD コアシステム
+# Road to Oasis ― コアシステム設計
 
-> 元 GDD v2 から分割（2026-06-26）。
+> `Too_Fast_to Die_gdd_v2.md` §1–§6, §9–§15, §18, §21–§23, §25 を抽出（2026-06-26）。
 > 
 > **関連ドキュメント:**
 > - キャラクター設計 → `docs/gdd-characters.md`
 > - 同行者システム → `docs/gdd-companions.md`
 > - 物語・エンディング → `docs/gdd-narrative.md`
 > - イベント設計 → `docs/gdd-events.md`
-> - キャラクタービジュアル → `docs/character-visuals.md`
-> - PC性的態度・身体プロフィール → `docs/pc-profiles.md`
-> - シーン執筆ルール → `docs/context-types.md`
-> - 勢力別性文化 → `docs/world-rules.md`
-> - 残タスク → `docs/残りタスク.md`
+> - ビジュアル仕様 → `docs/character-visuals.md`
+> - 残りタスク → `docs/残りタスク.md`
 
 ---
 
