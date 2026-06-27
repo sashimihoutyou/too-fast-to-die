@@ -1,4 +1,4 @@
-# Too Fast to Die — 世界観固有の性的描写ルール
+# Too Fast to Die: Road to Oasis — 世界観固有の性的描写ルール
 
 ## 勢力圏ごとの性文化
 
