@@ -11,6 +11,7 @@ func _ready() -> void:
 	_load_cards_from_directory("res://resources/cards/beast_master")
 	_load_cards_from_directory("res://resources/cards/conqueror")
 	_load_cards_from_directory("res://resources/cards/hedonist")
+	_load_cards_from_directory("res://resources/cards/companions")
 	_load_cards_from_directory("res://resources/cards/contamination")
 
 func get_card(id: StringName) -> CardData:
@@ -20,6 +21,8 @@ func get_reward_pool(act: int, character_id: StringName) -> Array[CardData]:
 	var pool: Array[CardData] = []
 	var char_restriction := _character_id_to_restriction(character_id)
 	for card: CardData in _cards.values():
+		if card.id == &"eu11":
+			continue
 		if card.is_starter or card.is_unplayable:
 			continue
 		if card.restriction != CardData.CharacterRestriction.NONE:
@@ -50,6 +53,7 @@ func reload() -> void:
 	_load_cards_from_directory("res://resources/cards/beast_master")
 	_load_cards_from_directory("res://resources/cards/conqueror")
 	_load_cards_from_directory("res://resources/cards/hedonist")
+	_load_cards_from_directory("res://resources/cards/companions")
 	_load_cards_from_directory("res://resources/cards/contamination")
 
 

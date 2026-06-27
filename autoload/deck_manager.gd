@@ -10,6 +10,7 @@ var hand: Array[CardData] = []
 var discard_pile: Array[CardData] = []
 var exhaust_pile: Array[CardData] = []
 var master_deck: Array[CardData] = []
+var _temporary_instance_ids: Dictionary = {}
 
 const HAND_SIZE := 5
 
@@ -26,6 +27,7 @@ func _reset_piles() -> void:
 	hand.clear()
 	discard_pile.clear()
 	exhaust_pile.clear()
+	_temporary_instance_ids.clear()
 	shuffle_draw_pile()
 
 func start_combat() -> void:
@@ -55,12 +57,22 @@ func draw_cards(count: int = HAND_SIZE) -> Array[CardData]:
 
 func discard_hand() -> void:
 	for card: CardData in hand:
-		discard_pile.append(card)
-		card_discarded.emit(card)
+		if is_temporary_card(card):
+			_temporary_instance_ids.erase(card.instance_id)
+			card_exhausted.emit(card)
+		else:
+			discard_pile.append(card)
+			card_discarded.emit(card)
 	hand.clear()
 
 func play_card(card: CardData) -> void:
+	if not hand.has(card):
+		return
 	hand.erase(card)
+	if is_temporary_card(card):
+		_temporary_instance_ids.erase(card.instance_id)
+		card_exhausted.emit(card)
+		return
 	if card.is_exhaustible:
 		exhaust_pile.append(card)
 		card_exhausted.emit(card)
@@ -68,12 +80,53 @@ func play_card(card: CardData) -> void:
 		discard_pile.append(card)
 		card_discarded.emit(card)
 
+func add_temporary_card_to_hand(card_id: StringName) -> bool:
+	var card: CardData = CardDatabase.get_card(card_id)
+	if card == null:
+		return false
+	var copy: CardData = card.duplicate_card()
+	hand.append(copy)
+	_temporary_instance_ids[copy.instance_id] = true
+	cards_drawn.emit([copy])
+	return true
+
+func is_temporary_card(card: CardData) -> bool:
+	return card != null and _temporary_instance_ids.has(card.instance_id)
+
+func has_card_id_in_hand(card_id: StringName) -> bool:
+	for card: CardData in hand:
+		if card.id == card_id:
+			return true
+	return false
+
 func add_card_to_deck(card: CardData) -> void:
 	var copy := card.duplicate_card()
 	master_deck.append(copy)
 
+func add_card_id_to_deck(card_id: StringName) -> bool:
+	var card: CardData = CardDatabase.get_card(card_id)
+	if card == null:
+		return false
+	add_card_to_deck(card)
+	return true
+
 func remove_card_from_deck(card: CardData) -> void:
 	master_deck.erase(card)
+
+func remove_cards_by_ids(card_ids: Array[StringName]) -> void:
+	for card_id: StringName in card_ids:
+		_remove_card_by_id_from_array(master_deck, card_id)
+		_remove_card_by_id_from_array(draw_pile, card_id)
+		_remove_card_by_id_from_array(hand, card_id)
+		_remove_card_by_id_from_array(discard_pile, card_id)
+		_remove_card_by_id_from_array(exhaust_pile, card_id)
+
+func _remove_card_by_id_from_array(cards: Array[CardData], card_id: StringName) -> void:
+	for i: int in range(cards.size() - 1, -1, -1):
+		var card: CardData = cards[i]
+		if card.id == card_id:
+			cards.remove_at(i)
+			return
 
 func get_deck_count() -> int:
 	return draw_pile.size()

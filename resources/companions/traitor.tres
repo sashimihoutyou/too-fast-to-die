@@ -11,3 +11,4 @@ duration_nodes = 4
 passive_description = "毎ターン1ドロー"
 risk_description = "3ノード目にリソース窃盗+逃亡"
 departure_reward_description = ""
+deck_card_ids = [&"cc_traitor_shortcut"]

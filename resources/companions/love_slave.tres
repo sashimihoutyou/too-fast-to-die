@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"love_slave"
+display_name = "愛の奴隷"
+companion_type = 7
+duration_nodes = 5
+passive_description = "ホタル: ノード移動ごとにエクスタシー+6"
+risk_description = "3〜7ノード後に離脱予定"
+departure_reward_description = "なし"

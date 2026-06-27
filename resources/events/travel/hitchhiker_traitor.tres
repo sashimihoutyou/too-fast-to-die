@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2")
+label = "道案内として雇う"
+requirement = "no_companion"
+result_text = "男は人懐こい笑みで後部座席に収まった。「任せろ。近道を知ってる」"
+companion_id = &"traitor"
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2")
+label = "少し話を聞く"
+requirement = ""
+result_text = "話はうまいが、妙にこちらの荷物ばかり見ている。"
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2")
+label = "乗せない"
+requirement = ""
+result_text = "男は肩をすくめ、すぐ次の獲物を探すように道を眺めた。"
+
+[resource]
+script = ExtResource("1")
+id = &"hitchhiker_traitor"
+title = "笑顔の旅人"
+body_text = "清潔すぎる旅人が手を振っている。装備は軽い。笑顔はもっと軽い。「一人旅は危ない。二人なら、いろいろ楽になる」"
+choices = [SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")]

@@ -49,6 +49,9 @@ const EUPHORIA_MAX: int = 100
 var player_euphoria: int = 0
 var _climax_active: bool = false
 var _overdose_pending: bool = false
+var _love_slave_used_this_combat: bool = false
+const LOVE_SLAVE_CARD_ID := &"eu11"
+const LOVE_SLAVE_CHARM_THRESHOLD := 3
 
 # 調教師固有「獣スロット」
 var player_beasts: Array[Dictionary] = []
@@ -78,6 +81,7 @@ func reset_player_for_new_run() -> void:
 	acceleration_gauge = 0
 	_climax_active = false
 	_overdose_pending = false
+	_love_slave_used_this_combat = false
 
 func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
 	state = CombatState.INIT
@@ -90,6 +94,7 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 	acceleration_gauge = 0
 	_climax_active = false
 	_overdose_pending = false
+	_love_slave_used_this_combat = false
 	player_status_changed.emit(player_status)
 	player_heat = 0
 	heat_changed.emit(player_heat, HEAT_MAX)
@@ -167,6 +172,7 @@ func begin_turn() -> void:
 	if _has_companion(CompanionData.CompanionType.TRAITOR):
 		draw_count += 1
 	DeckManager.draw_cards(draw_count)
+	_maybe_add_love_slave_card()
 	turn_started.emit(turn_number)
 
 func get_effective_ap_cost(card: CardData) -> int:
@@ -219,6 +225,11 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	if card.is_unplayable:
 		return false
+	if card.id == LOVE_SLAVE_CARD_ID:
+		if _love_slave_used_this_combat:
+			return false
+		if not _has_love_slave_target():
+			return false
 	if _climax_active:
 		return true
 	var cost := get_effective_ap_cost(card)
@@ -226,16 +237,14 @@ func can_play_card(card: CardData) -> bool:
 		return false
 	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
 		return false
-	# 愛の奴隷：魅了5+の敵がいないと使えない
-	if card.id == &"eu11":
-		var has_charmed := false
-		for enemy: Dictionary in enemies:
-			if enemy["alive"] and int(enemy["status"].get("charm", 0)) >= 5:
-				has_charmed = true
-				break
-		if not has_charmed:
-			return false
 	return true
+
+func can_target_card(card: CardData, target_idx: int) -> bool:
+	if target_idx < 0 or target_idx >= enemies.size():
+		return false
+	if card.id == LOVE_SLAVE_CARD_ID:
+		return _is_love_slave_target(target_idx)
+	return bool(enemies[target_idx]["alive"])
 
 func has_playable_card() -> bool:
 	for card: CardData in DeckManager.hand:
@@ -245,6 +254,8 @@ func has_playable_card() -> bool:
 
 func play_card(card: CardData, target_idx: int = -1) -> void:
 	if not can_play_card(card):
+		return
+	if card.id == LOVE_SLAVE_CARD_ID and not _is_love_slave_target(target_idx):
 		return
 	var cost := get_effective_ap_cost(card)
 	var ap_before := ap
@@ -374,10 +385,12 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		return
 
 	# --- 愛の奴隷（享楽者）---
-	if card.id == &"eu11":
+	if card.id == LOVE_SLAVE_CARD_ID:
 		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 			var charm_stacks: int = int(enemies[target_idx]["status"].get("charm", 0))
-			if charm_stacks >= 5:
+			if charm_stacks >= LOVE_SLAVE_CHARM_THRESHOLD:
+				_love_slave_used_this_combat = true
+				_recruit_love_slave()
 				enemies[target_idx]["alive"] = false
 				enemies[target_idx]["hp"] = 0
 				enemy_hp_changed.emit(target_idx, 0, enemies[target_idx]["max_hp"])
@@ -522,6 +535,7 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 				elif card.id == &"eu08":
 					eu_gain = 15
 				_add_euphoria(eu_gain)
+			_maybe_add_love_slave_card()
 		else:
 			var mapped := _map_status(card.status_effect)
 			if mapped != &"":
@@ -633,15 +647,6 @@ func _execute_enemy_turns() -> void:
 		if _apply_dot_to_enemy(i):
 			continue
 		var status: Dictionary = enemies[i]["status"]
-
-		# 魅了3+: 行動スキップ
-		var charm_val: int = int(status.get("charm", 0))
-		if charm_val >= 3:
-			status["charm"] = charm_val - 1
-			enemy_status_changed.emit(i, status)
-			_decay_debuffs(status)
-			enemies[i]["turn_counter"] += 1
-			continue
 
 		var weak_active := int(status.get("weak", 0)) > 0
 		var intent: Dictionary = enemies[i]["intent"]
@@ -819,6 +824,42 @@ func _add_enemy_status(idx: int, status: StringName, stacks: int) -> void:
 	s[status] = int(s.get(status, 0)) + stacks
 	enemy_status_changed.emit(idx, s)
 
+func _maybe_add_love_slave_card() -> void:
+	if not _is_hedonist():
+		return
+	if _love_slave_used_this_combat:
+		return
+	if DeckManager.has_card_id_in_hand(LOVE_SLAVE_CARD_ID):
+		return
+	if not _has_love_slave_target():
+		return
+	DeckManager.add_temporary_card_to_hand(LOVE_SLAVE_CARD_ID)
+
+func _recruit_love_slave() -> void:
+	var companion: CompanionData = CompanionDatabase.get_companion(&"love_slave")
+	if companion == null:
+		return
+	GameManager.recruit_companion(companion)
+
+func _has_love_slave_target() -> bool:
+	for i: int in range(enemies.size()):
+		if _is_love_slave_target(i):
+			return true
+	return false
+
+func _is_love_slave_target(idx: int) -> bool:
+	if idx < 0 or idx >= enemies.size():
+		return false
+	if not bool(enemies[idx]["alive"]):
+		return false
+	var data: EnemyData = enemies[idx]["data"]
+	if data.is_boss:
+		return false
+	if data.category == EnemyData.Category.MACHINE:
+		return false
+	var status: Dictionary = enemies[idx]["status"]
+	return int(status.get("charm", 0)) >= LOVE_SLAVE_CHARM_THRESHOLD
+
 func _decay_debuffs(status: Dictionary) -> void:
 	status["weak"] = maxi(0, int(status.get("weak", 0)) - 1)
 	status["vulnerable"] = maxi(0, int(status.get("vulnerable", 0)) - 1)
@@ -876,6 +917,7 @@ func _activate_climax() -> void:
 	_climax_active = true
 	DeckManager.discard_hand()
 	DeckManager.draw_cards(7)
+	_maybe_add_love_slave_card()
 	climax_activated.emit()
 
 # ===== 獣システム =====

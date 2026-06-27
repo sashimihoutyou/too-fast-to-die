@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cc_informant_tip"
+display_name = "裏取り"
+description = "弱体1付与。1ドロー"
+ap_cost = 0
+tags = [4]
+rarity = 1
+is_starter = true
+is_exhaustible = true
+draw_count = 1
+status_effect = &"weaken"
+status_stacks = 1
+flavor_text = "撃つ前に、誰がどこへ逃げるかを知っている。"

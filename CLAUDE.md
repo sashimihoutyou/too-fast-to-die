@@ -2,19 +2,22 @@
 
 ## プロジェクト概要
 
-Godot 4.6 / GDScript製のSlay the Spire風カードバトルローグライト「Too Fast to Die: Road to Oasis」。
+Godot 4.7 / GDScript製のSlay the Spire風カードバトルローグライト「Too Fast to Die: Road to Oasis」。
 
 ## ビルド・実行
 
-- エンジン: Godot 4.6 (Mobile renderer)
+- エンジン: Godot 4.7 (Mobile renderer)
 - メインシーン: `res://scenes/main/title_screen.tscn`
 - Autoloadの登録順序は `project.godot` の `[autoload]` セクションで管理
+- PowerShell で日本語ファイルを読む場合、既定の `$OutputEncoding` が US-ASCII だとツール出力だけ文字化けする。ファイル自体の破損と誤認しないこと。`Get-Content -Encoding UTF8`、または `[System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($path))` で確認する。
+- Godot のプロジェクトロード/検証は `.godot` と Scoop の `editor_data` に cache/temp/settings を書き込む。サンドボックス内で実行するとポップアップや偽の書き込みエラー、クラッシュに見える失敗が出るため、`godot --headless --editor --quit --path .` や実行確認は権限昇格で行う。
+- `godot --headless --check-only --script some_file.gd` は `class_name` と Autoload のプロジェクトスキャンを行わないため、通常プロジェクトで解決される `GameManager` 等が未定義になる。単体スクリプト検証結果をプロジェクト全体のパースエラーと混同しないこと。
 
 ## GDScriptコーディング規約
 
 ### Variant推論の禁止
 
-Godot 4.6はデフォルトで「Variantからの型推論」を警告→エラーとして扱う。
+Godot 4.7はデフォルトで「Variantからの型推論」を警告→エラーとして扱う。
 `Array.pop_back()`、`Array.pop_front()`、`Dictionary.get()` など Variant を返すメソッドの戻り値を `:=` で受けてはならない。
 
 ```gdscript

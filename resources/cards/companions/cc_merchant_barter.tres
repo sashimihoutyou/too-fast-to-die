@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cc_merchant_barter"
+display_name = "値切りの口上"
+description = "脆弱1付与。1ドロー"
+ap_cost = 1
+tags = [4]
+rarity = 1
+is_starter = true
+draw_count = 1
+status_effect = &"vulnerable"
+status_stacks = 1
+flavor_text = "弾より安い言葉で、相手の姿勢を崩す。"

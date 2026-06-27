@@ -530,11 +530,13 @@ func _on_enemy_panel_clicked(event: InputEvent, idx: int) -> void:
 		return
 	if selected_card == null:
 		return
-	if idx < CombatManager.enemies.size() and CombatManager.enemies[idx]["alive"]:
+	if selected_card != null and CombatManager.can_target_card(selected_card, idx):
 		_on_enemy_target(idx)
 
 func _on_enemy_target(idx: int) -> void:
 	if selected_card == null:
+		return
+	if not CombatManager.can_target_card(selected_card, idx):
 		return
 	CombatManager.play_card(selected_card, idx)
 	selected_card = null
@@ -546,7 +548,8 @@ func _show_target_buttons(visible_flag: bool) -> void:
 		if i >= CombatManager.enemies.size():
 			continue
 		var alive: bool = CombatManager.enemies[i]["alive"]
-		var show_it: bool = visible_flag and alive
+		var can_target: bool = alive and (selected_card == null or CombatManager.can_target_card(selected_card, i))
+		var show_it: bool = visible_flag and can_target
 		target_buttons[i].visible = show_it
 		if i < enemy_panels.size():
 			if show_it:
@@ -854,6 +857,8 @@ func _targets_enemy_status(card: CardData) -> bool:
 		return false
 	if CombatManager._is_player_effect(card.status_effect):
 		return false
+	if card.status_effect == &"charm":
+		return true
 	return CombatManager._map_status(card.status_effect) != &""
 
 func _format_status(status: Dictionary) -> String:

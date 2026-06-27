@@ -26,6 +26,9 @@ var pursuit_level: int = 0
 var pursuit_triggered: bool = false
 var oasis_info: Dictionary = {}
 var faith: int = 80
+var recent_companion_event: StringName = &""
+var recent_companion_id: StringName = &""
+var recent_companion_type: CompanionData.CompanionType = CompanionData.CompanionType.FIGHTER
 
 const OASIS_CATEGORIES := [&"location", &"danger", &"resource", &"truth"]
 const OASIS_INFO_TEXTS := {
@@ -70,6 +73,7 @@ func start_run(character: CharacterData) -> void:
 	pursuit_triggered = false
 	oasis_info.clear()
 	faith = 80
+	clear_recent_companion_event()
 	ResourceManager.reset()
 	ItemDatabase.reset()
 	DeckManager.build_starter_deck(character)
@@ -102,15 +106,26 @@ func advance_node(travel_cost: int = 2) -> void:
 			ResourceManager.damage_bike(1)
 			if ResourceManager.bike_durability <= 0:
 				ResourceManager.consume_fuel(2)
+	_apply_companion_node_effects()
 	_tick_companion()
 	_tick_pursuit()
 	QuestManager.on_node_advanced()
 
 func recruit_companion(companion: CompanionData) -> void:
+	if current_companion != null:
+		_remove_companion_cards(current_companion)
 	current_companion = companion
-	companion_nodes_remaining = companion.duration_nodes
+	if companion.companion_type == CompanionData.CompanionType.LOVE_SLAVE:
+		companion_nodes_remaining = randi_range(3, 7)
+	else:
+		companion_nodes_remaining = companion.duration_nodes
+	_add_companion_cards(companion)
+	_set_recent_companion_event(&"recruited", companion)
 
 func dismiss_companion() -> void:
+	if current_companion != null:
+		_set_recent_companion_event(&"dismissed", current_companion)
+		_remove_companion_cards(current_companion)
 	current_companion = null
 	companion_nodes_remaining = 0
 
@@ -123,27 +138,85 @@ func _tick_companion() -> void:
 	if companion_nodes_remaining <= 0:
 		_on_companion_depart()
 
+func _apply_companion_node_effects() -> void:
+	if current_companion == null:
+		return
+	if current_character == null:
+		return
+	if current_character.unique_system != &"euphoria":
+		return
+	if current_companion.companion_type != CompanionData.CompanionType.LOVE_SLAVE:
+		return
+	CombatManager.player_euphoria = clampi(
+		CombatManager.player_euphoria + 6,
+		0,
+		CombatManager.EUPHORIA_MAX
+	)
+	CombatManager.euphoria_changed.emit(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
+
 func _on_companion_depart() -> void:
 	if current_companion == null:
 		return
+	var departing_companion: CompanionData = current_companion
 	match current_companion.companion_type:
 		CompanionData.CompanionType.TRAITOR:
 			ResourceManager.consume_fuel(mini(5, ResourceManager.fuel))
 			ResourceManager.consume_scrap(mini(3, ResourceManager.scrap))
 		CompanionData.CompanionType.MERCHANT:
-			ResourceManager.add_scrap(5)
+			ResourceManager.add_fuel(8)
 		CompanionData.CompanionType.FIGHTER:
-			KarmaManager.add_karma(2)
+			_add_departure_card(CardData.Rarity.UNCOMMON)
 		CompanionData.CompanionType.REFUGEE:
-			KarmaManager.add_karma(5)
+			KarmaManager.add_karma(15)
 		CompanionData.CompanionType.TECHNICIAN:
-			ResourceManager.repair_bike(3)
+			_equip_departure_part(BikePartData.PartRarity.UPPER)
 		CompanionData.CompanionType.INFORMANT:
 			advance_oasis_info()
 		CompanionData.CompanionType.DOG:
 			KarmaManager.add_karma(3)
+	_remove_companion_cards(current_companion)
 	current_companion = null
 	companion_nodes_remaining = 0
+	_set_recent_companion_event(&"departed", departing_companion)
+
+func _set_recent_companion_event(event_id: StringName, companion: CompanionData) -> void:
+	recent_companion_event = event_id
+	recent_companion_id = companion.id
+	recent_companion_type = companion.companion_type
+
+func clear_recent_companion_event() -> void:
+	recent_companion_event = &""
+	recent_companion_id = &""
+	recent_companion_type = CompanionData.CompanionType.FIGHTER
+
+func _add_companion_cards(companion: CompanionData) -> void:
+	for card_id: StringName in companion.deck_card_ids:
+		var _added: bool = DeckManager.add_card_id_to_deck(card_id)
+
+func _remove_companion_cards(companion: CompanionData) -> void:
+	DeckManager.remove_cards_by_ids(companion.deck_card_ids)
+
+func _add_departure_card(rarity: CardData.Rarity) -> void:
+	var pool: Array[CardData] = CardDatabase.get_reward_pool(current_act, current_character.id)
+	var candidates: Array[CardData] = []
+	for card: CardData in pool:
+		if card.rarity == rarity:
+			candidates.append(card)
+	if candidates.is_empty():
+		candidates = pool
+	if candidates.is_empty():
+		return
+	candidates.shuffle()
+	DeckManager.add_card_to_deck(candidates[0])
+
+func _equip_departure_part(rarity: BikePartData.PartRarity) -> void:
+	var candidates: Array[BikePartData] = BikePartsDatabase.get_parts_by_rarity(rarity)
+	if candidates.is_empty():
+		candidates = BikePartsDatabase.get_parts_by_rarity(BikePartData.PartRarity.NORMAL)
+	if candidates.is_empty():
+		return
+	candidates.shuffle()
+	var _old_part: BikePartData = ResourceManager.equip_part(candidates[0])
 
 func add_faith(amount: int) -> void:
 	faith = clampi(faith + amount, 0, 100)

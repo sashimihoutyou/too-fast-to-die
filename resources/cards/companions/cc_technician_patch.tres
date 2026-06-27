@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cc_technician_patch"
+display_name = "応急補強"
+description = "8ブロック"
+ap_cost = 1
+tags = [3, 4]
+rarity = 1
+is_starter = true
+base_block = 8
+flavor_text = "曲がった鉄板も、正しく縛れば盾になる。"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"cc_refugee_prayer"
+display_name = "祈りの布"
+description = "6ブロック。1ドロー"
+ap_cost = 1
+tags = [3, 4]
+rarity = 1
+is_starter = true
+base_block = 6
+draw_count = 1
+flavor_text = "破れた布にも、誰かを守った記憶は残る。"

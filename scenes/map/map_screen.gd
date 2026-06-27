@@ -4,6 +4,7 @@ var map_nodes: Array[Dictionary] = []
 var current_row: int = -1
 var node_buttons: Dictionary = {}
 var _pending_act_intro: bool = false
+var _awaiting_fragment: bool = false
 
 func _ready() -> void:
 	if _handle_post_boss():
@@ -184,12 +185,16 @@ func _highlight_connections(available_ids: Array[String]) -> void:
 			$MapScroll/MapContainer.add_child(line)
 
 func _on_node_pressed(nid: String) -> void:
-	var node := _find_node_by_id(nid)
+	if _awaiting_fragment:
+		return
+	var node: Dictionary = _find_node_by_id(nid)
 	if node.is_empty():
 		return
-	var previous_node := _get_current_map_node()
-	var travel_cost := _get_travel_cost(previous_node, node)
+	_awaiting_fragment = true
+	var previous_node: Dictionary = _get_current_map_node()
+	var travel_cost: int = _get_travel_cost(previous_node, node)
 	if not ResourceManager.consume_fuel(travel_cost):
+		_awaiting_fragment = false
 		_show_notification("%sが足りない。\n必要: %d / 現在: %d" % [_get_travel_resource_name(), travel_cost, ResourceManager.fuel])
 		return
 
@@ -198,20 +203,43 @@ func _on_node_pressed(nid: String) -> void:
 	GameManager.map_current_row = current_row
 	GameManager.map_current_node_id = nid
 	GameManager.advance_node(travel_cost)
+	var node_type: MapGenerator.NodeType = node["type"]
 	var fuel_reward: int = int(node.get("fuel_reward", 0))
+	var fuel_message: String = ""
 	if fuel_reward > 0:
 		ResourceManager.add_fuel(fuel_reward)
 		node["fuel_reward"] = 0
+		fuel_message = "%s +%d" % [_get_travel_resource_name(), fuel_reward]
 		_show_notification("%sを発見した。\n+%d" % [_get_travel_resource_name(), fuel_reward])
 	SaveManager.save_run()
 	_update_hud()
 
 	if GameManager.pursuit_triggered:
 		GameManager.pursuit_triggered = false
-		_enter_pursuit_combat()
+		AmbientFragment.consume_transient_context()
+		_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
 		return
 
-	var node_type: MapGenerator.NodeType = node["type"]
+	var proceed: Callable = Callable(self, "_process_node_type").bind(node_type)
+	if fuel_message != "":
+		_show_notification_then(fuel_message, Callable(self, "_maybe_show_ambient_fragment").bind(node_type, proceed))
+	else:
+		_maybe_show_ambient_fragment(node_type, proceed)
+
+func _maybe_show_ambient_fragment(node_type: MapGenerator.NodeType, on_done: Callable) -> void:
+	var fragment: Dictionary = AmbientFragment.pick(node_type)
+	AmbientFragment.consume_transient_context()
+	if fragment.is_empty():
+		_awaiting_fragment = false
+		on_done.call()
+		return
+	AmbientFragment.mark_seen(fragment)
+	_show_ambient_fragment(fragment, func() -> void:
+		_awaiting_fragment = false
+		on_done.call()
+	)
+
+func _process_node_type(node_type: MapGenerator.NodeType) -> void:
 	match node_type:
 		MapGenerator.NodeType.COMBAT, MapGenerator.NodeType.ELITE, MapGenerator.NodeType.BOSS:
 			_enter_combat(node_type)
@@ -348,6 +376,17 @@ func _enter_info() -> void:
 	_show_notification("オアシスの噂を聞いた…\n%s" % info_text)
 	_draw_map()
 
+func _start_pursuit_combat() -> void:
+	var enemies: Array[EnemyData] = []
+	var elites := EnemyDatabase.get_elites_for_act(GameManager.current_act)
+	if not elites.is_empty():
+		elites.shuffle()
+		enemies.append(elites[0])
+	else:
+		enemies.append(_fallback_enemy(GameManager.current_act, true, false))
+	CombatManager.start_combat(enemies)
+	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+
 func _update_hud() -> void:
 	$HUD/FuelLabel.text = "%s: %d/%d" % [_get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
 	$HUD/ScrapLabel.text = "スクラップ: %d" % ResourceManager.scrap
@@ -363,6 +402,9 @@ func _update_hud() -> void:
 		var remaining_text := "%dノード" % GameManager.companion_nodes_remaining if comp.duration_nodes >= 0 else "無期限"
 		$HUD/CompanionLabel.text = "同行者: %s (%s)" % [comp.display_name, remaining_text]
 		$HUD/CompanionLabel.tooltip_text = "%s\nパッシブ: %s\nリスク: %s\n離脱報酬: %s" % [comp.display_name, comp.passive_description, comp.risk_description, comp.departure_reward_description]
+		if comp.companion_type == CompanionData.CompanionType.TRAITOR and GameManager.companion_nodes_remaining <= 1:
+			$HUD/CompanionLabel.text += "  荷物を見ている"
+			$HUD/CompanionLabel.tooltip_text += "\n予兆: こちらの荷物に目が行き過ぎている。"
 	else:
 		$HUD/CompanionLabel.text = "同行者: なし"
 		$HUD/CompanionLabel.tooltip_text = ""
@@ -378,6 +420,11 @@ func _on_bike_durability_changed(_val: int, _max_val: int) -> void:
 	_update_hud()
 
 func _show_notification(text: String) -> void:
+	if _awaiting_fragment:
+		return
+	_show_notification_then(text)
+
+func _show_notification_then(text: String, on_close: Callable = Callable()) -> void:
 	var panel := Panel.new()
 	panel.custom_minimum_size = Vector2(400, 200)
 	panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -401,9 +448,67 @@ func _show_notification(text: String) -> void:
 	close_btn.offset_top = -50
 	close_btn.offset_right = 50
 	close_btn.offset_bottom = -10
-	close_btn.pressed.connect(panel.queue_free)
+	close_btn.pressed.connect(func() -> void:
+		panel.queue_free()
+		if on_close.is_valid():
+			on_close.call()
+	)
 	panel.add_child(close_btn)
 	add_child(panel)
+
+func _show_ambient_fragment(fragment: Dictionary, on_close: Callable) -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0.0, 0.0, 0.0, 0.72)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(760, 420)
+	panel.offset_left = -380
+	panel.offset_top = -210
+	panel.offset_right = 380
+	panel.offset_bottom = 210
+	overlay.add_child(panel)
+
+	var title := Label.new()
+	title.text = String(fragment.get("title", ""))
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_left = 28
+	title.offset_top = 24
+	title.offset_right = -28
+	title.offset_bottom = 62
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
+	panel.add_child(title)
+
+	var body := Label.new()
+	body.text = String(fragment.get("body", ""))
+	body.set_anchors_preset(Control.PRESET_FULL_RECT)
+	body.offset_left = 46
+	body.offset_top = 88
+	body.offset_right = -46
+	body.offset_bottom = -82
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD
+	body.add_theme_font_size_override("font_size", 20)
+	body.add_theme_color_override("font_color", Color(0.92, 0.9, 0.84))
+	panel.add_child(body)
+
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	close_btn.custom_minimum_size = Vector2(140, 40)
+	close_btn.offset_left = -70
+	close_btn.offset_top = -58
+	close_btn.offset_right = 70
+	close_btn.offset_bottom = -18
+	close_btn.pressed.connect(func() -> void:
+		overlay.queue_free()
+		on_close.call()
+	)
+	panel.add_child(close_btn)
 
 func _get_current_map_node() -> Dictionary:
 	if GameManager.map_current_node_id.is_empty():
