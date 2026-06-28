@@ -16,9 +16,19 @@ var _heat_label: Label = null
 var _aura_label: Label = null
 var _euphoria_label: Label = null
 var _beast_label: Label = null
+var _tooltip_panel: PanelContainer = null
+var _tooltip_title_label: Label = null
+var _tooltip_body_label: Label = null
+var _tooltip_delay_timer: Timer = null
+var _tooltip_pending_title: String = ""
+var _tooltip_pending_body: String = ""
+var _tooltip_pending_source: Control = null
+var _portrait_default_texture: Texture2D = null
 
 func _ready() -> void:
 	_last_player_hp = CombatManager.player_hp
+	_setup_tooltip_overlay()
+	_setup_player_portrait_hud()
 	_setup_signals()
 	_build_enemy_display()
 	_show_target_buttons(false)
@@ -31,16 +41,430 @@ func _ready() -> void:
 	_update_controls()
 	_update_consumable_buttons()
 
+func _setup_tooltip_overlay() -> void:
+	_tooltip_delay_timer = Timer.new()
+	_tooltip_delay_timer.one_shot = true
+	_tooltip_delay_timer.wait_time = 0.18
+	_tooltip_delay_timer.timeout.connect(_show_pending_tooltip)
+	add_child(_tooltip_delay_timer)
+
+	_tooltip_panel = PanelContainer.new()
+	_tooltip_panel.visible = false
+	_tooltip_panel.z_index = 100
+	_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tooltip_panel.custom_minimum_size = Vector2(330, 0)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.045, 0.04, 0.96)
+	style.border_color = Color(0.85, 0.68, 0.35, 0.95)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	_tooltip_panel.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+
+	_tooltip_title_label = Label.new()
+	_tooltip_title_label.add_theme_font_size_override("font_size", 16)
+	_tooltip_title_label.add_theme_color_override("font_color", Color(0.95, 0.78, 0.35))
+	_tooltip_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	box.add_child(_tooltip_title_label)
+
+	_tooltip_body_label = Label.new()
+	_tooltip_body_label.add_theme_font_size_override("font_size", 13)
+	_tooltip_body_label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.8))
+	_tooltip_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_tooltip_body_label.custom_minimum_size = Vector2(310, 0)
+	box.add_child(_tooltip_body_label)
+
+	margin.add_child(box)
+	_tooltip_panel.add_child(margin)
+	add_child(_tooltip_panel)
+
+func _setup_player_portrait_hud() -> void:
+	$PlayerHUD.mouse_entered.connect(_on_player_hud_hover.bind(true))
+	$PlayerHUD.mouse_exited.connect(_on_player_hud_hover.bind(false))
+	$PlayerHUD.mouse_default_cursor_shape = Control.CURSOR_HELP
+	var character: CharacterData = GameManager.current_character
+	if character == null:
+		return
+	$PlayerHUD/PortraitFallbackLabel.text = character.display_name
+	var portrait: Texture2D = character.portrait
+	if portrait == null:
+		portrait = _load_fallback_portrait(character.id)
+	_portrait_default_texture = portrait
+	$PlayerHUD/PortraitImage.texture = portrait
+	$PlayerHUD/PortraitFallbackLabel.visible = portrait == null
+	_update_portrait_state()
+
+func _load_fallback_portrait(character_id: StringName) -> Texture2D:
+	var path: String = _portrait_path(character_id, "normal")
+	if not ResourceLoader.exists(path):
+		path = _legacy_portrait_path(character_id)
+		if path == "" or not ResourceLoader.exists(path):
+			return null
+	return load(path) as Texture2D
+
+func _load_portrait_variant(character_id: StringName, state_key: String) -> Texture2D:
+	var path: String = _portrait_path(character_id, state_key)
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+func _portrait_path(character_id: StringName, state_key: String) -> String:
+	return "res://assets/characters/portraits/%s/%s.png" % [String(character_id), state_key]
+
+func _legacy_portrait_path(character_id: StringName) -> String:
+	match character_id:
+		&"cultist":
+			return "res://assets/characters/atarpa.png"
+		&"ex_raider":
+			return "res://assets/characters/vespa.png"
+	return ""
+
+func _request_tooltip(title: String, body: String, source: Control) -> void:
+	if source == null or title == "":
+		return
+	_tooltip_pending_title = title
+	_tooltip_pending_body = body
+	_tooltip_pending_source = source
+	if _tooltip_delay_timer != null:
+		_tooltip_delay_timer.start()
+
+func _hide_tooltip(source: Control = null) -> void:
+	if source != null and _tooltip_pending_source != source:
+		return
+	if _tooltip_delay_timer != null:
+		_tooltip_delay_timer.stop()
+	_tooltip_pending_source = null
+	if _tooltip_panel != null:
+		_tooltip_panel.visible = false
+
+func _show_pending_tooltip() -> void:
+	if _tooltip_panel == null or _tooltip_pending_source == null:
+		return
+	if not is_instance_valid(_tooltip_pending_source):
+		_hide_tooltip()
+		return
+	_tooltip_title_label.text = _tooltip_pending_title
+	_tooltip_body_label.text = _tooltip_pending_body
+	_tooltip_panel.visible = true
+	_position_tooltip(_tooltip_pending_source)
+
+func _position_tooltip(source: Control) -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var source_rect: Rect2 = source.get_global_rect()
+	var panel_size := Vector2(340.0, maxf(120.0, _tooltip_panel.size.y))
+	var pos := Vector2(source_rect.position.x + source_rect.size.x + 12.0, source_rect.position.y)
+	if pos.x + panel_size.x > viewport_size.x - 8.0:
+		pos.x = source_rect.position.x - panel_size.x - 12.0
+	if pos.x < 8.0:
+		pos.x = 8.0
+	if pos.y + panel_size.y > viewport_size.y - 8.0:
+		pos.y = viewport_size.y - panel_size.y - 8.0
+	if pos.y < 8.0:
+		pos.y = 8.0
+	_tooltip_panel.position = pos
+
+func _on_player_hud_hover(hovering: bool) -> void:
+	if hovering:
+		_request_tooltip(_get_player_tooltip_title(), _get_player_tooltip_body(), $PlayerHUD)
+	else:
+		_hide_tooltip($PlayerHUD)
+
+func _get_player_tooltip_title() -> String:
+	if GameManager.current_character == null:
+		return "プレイヤー"
+	return GameManager.current_character.display_name
+
+func _get_player_tooltip_body() -> String:
+	var lines: Array[String] = []
+	lines.append("HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp])
+	lines.append("AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap])
+	lines.append("ブロック: %d" % CombatManager.player_block)
+	lines.append("%s: %d/%d" % [GameManager.get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity])
+	var gauge_text := _get_unique_system_line()
+	if gauge_text != "":
+		lines.append(gauge_text)
+	lines.append("")
+	lines.append("状態異常")
+	lines.append_array(_status_detail_lines(CombatManager.player_status))
+	lines.append("")
+	lines.append("一時効果")
+	lines.append_array(_buff_detail_lines(CombatManager.player_buffs))
+	return "\n".join(lines)
+
+func _get_unique_system_line() -> String:
+	if GameManager.current_character == null:
+		return ""
+	match GameManager.current_character.unique_system:
+		&"acceleration":
+			return "加速: %d/%d" % [CombatManager.acceleration_gauge, CombatManager.ACCELERATION_MAX]
+		&"heat":
+			return "ヒート: %d/%d" % [CombatManager.player_heat, CombatManager.HEAT_MAX]
+		&"aura":
+			return "闘気: %d/%d" % [CombatManager.player_aura, CombatManager.AURA_MAX]
+		&"euphoria":
+			return "エクスタシー: %d/%d" % [CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX]
+		&"beast":
+			return "獣: %s" % _beast_summary()
+		&"lone_wolf":
+			return "ローンウルフ: %s" % ("有効" if GameManager.current_companion == null else "同行者あり")
+	return ""
+
+func _beast_summary() -> String:
+	if CombatManager.player_beasts.is_empty():
+		return "なし"
+	var parts: Array[String] = []
+	for beast: Dictionary in CombatManager.player_beasts:
+		var alive: bool = bool(beast.get("alive", false))
+		if alive:
+			var beast_name: String = String(beast.get("name", "獣"))
+			var hp: int = int(beast.get("hp", 0))
+			var max_hp: int = int(beast.get("max_hp", 0))
+			var attack: int = int(beast.get("attack", 0))
+			parts.append("%s HP%d/%d 攻%d" % [beast_name, hp, max_hp, attack])
+	return "、".join(parts) if not parts.is_empty() else "なし"
+
+func _status_detail_lines(status: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	for key: String in ["burn", "bleed", "weak", "vulnerable", "strength", "atk_down", "charm"]:
+		var value: int = int(status.get(key, 0))
+		if value <= 0:
+			continue
+		lines.append("%s %d: %s" % [_status_display_name(key), value, _status_description(key)])
+	if lines.is_empty():
+		lines.append("なし")
+	return lines
+
+func _buff_detail_lines(buffs: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	for key: String in ["ultimate", "overcharge", "melee_power", "ranged_double", "strength_turn"]:
+		var value: int = int(buffs.get(key, 0))
+		if value <= 0:
+			continue
+		lines.append("%s %d: %s" % [_buff_display_name(key), value, _buff_description(key)])
+	if lines.is_empty():
+		lines.append("なし")
+	return lines
+
+func _status_display_name(status_id: String) -> String:
+	match status_id:
+		"burn": return "炎上"
+		"bleed": return "出血"
+		"weak": return "弱体"
+		"vulnerable": return "脆弱"
+		"strength": return "筋力"
+		"atk_down": return "攻撃低下"
+		"charm": return "魅了"
+	return status_id
+
+func _status_description(status_id: String) -> String:
+	match status_id:
+		"burn": return "ターン処理時に値ぶんのダメージ。毎ターン1減少。"
+		"bleed": return "ターン処理時に値ぶんのダメージ。毎ターン1減少。"
+		"weak": return "与える攻撃ダメージが25%低下。毎ターン1減少。"
+		"vulnerable": return "受ける攻撃ダメージが50%増加。毎ターン1減少。"
+		"strength": return "攻撃ダメージに値ぶん加算。"
+		"atk_down": return "次の攻撃ダメージから値ぶん減少。敵の攻撃後に消える。"
+		"charm": return "享楽者の特殊効果。一定値以上で専用カードの対象になる。"
+	return "未登録の状態です。"
+
+func _buff_display_name(buff_id: String) -> String:
+	match buff_id:
+		"ultimate": return "アルティメット"
+		"overcharge": return "過充電"
+		"melee_power": return "近接強化"
+		"ranged_double": return "射撃倍化"
+		"strength_turn": return "一時筋力"
+	return buff_id
+
+func _buff_description(buff_id: String) -> String:
+	match buff_id:
+		"ultimate": return "カードAPコスト-1。残りターンで減少。"
+		"overcharge": return "AP不足でもカードを使える。足りないAPはHPで支払う。"
+		"melee_power": return "近接攻撃のダメージ+3。"
+		"ranged_double": return "射撃攻撃のダメージを倍化し、使用ごとに1減少。"
+		"strength_turn": return "このターンだけ筋力を上げる。次ターン開始時に戻る。"
+	return "未登録の一時効果です。"
+
+func _card_tooltip_body(card: CardData) -> String:
+	var lines: Array[String] = []
+	var effective_cost: int = CombatManager.get_effective_ap_cost(card)
+	var cost_text := "AP: %d" % effective_cost
+	if effective_cost != card.ap_cost:
+		cost_text += " (元%d)" % card.ap_cost
+	if card.fuel_cost > 0:
+		cost_text += " / %s: %d" % [GameManager.get_travel_resource_name(), card.fuel_cost]
+	lines.append(cost_text)
+	if not card.tags.is_empty():
+		lines.append("タグ: %s" % _tags_to_text(card.tags))
+	var stats: Array[String] = []
+	var preview_damage: int = card.get_effective_damage()
+	if selected_card == card:
+		var target_idx: int = _get_sole_alive_enemy()
+		if target_idx >= 0:
+			preview_damage = CombatManager.preview_damage(card, target_idx)
+	if preview_damage > 0:
+		stats.append("ダメージ: %d × %d" % [preview_damage, card.hit_count])
+	if card.get_effective_block() > 0:
+		stats.append("ブロック: %d" % card.get_effective_block())
+	if card.draw_count > 0:
+		stats.append("ドロー: %d" % card.draw_count)
+	if card.bonus_ap > 0:
+		stats.append("AP回復: %d" % card.bonus_ap)
+	if not stats.is_empty():
+		lines.append(" / ".join(stats))
+	lines.append("")
+	lines.append(card.description)
+	var effect_lines: Array[String] = _card_effect_detail_lines(card)
+	if not effect_lines.is_empty():
+		lines.append("")
+		lines.append("効果補足")
+		lines.append_array(effect_lines)
+	return "\n".join(lines)
+
+func _card_effect_detail_lines(card: CardData) -> Array[String]:
+	var lines: Array[String] = []
+	if card.status_effect != &"" and card.status_stacks != 0:
+		var effect_key := String(CombatManager._map_status(card.status_effect))
+		if CombatManager._is_player_effect(card.status_effect):
+			effect_key = String(card.status_effect)
+			lines.append("%s %d: %s" % [_buff_display_name(effect_key), card.status_stacks, _buff_description(effect_key)])
+		elif card.status_effect == &"charm":
+			lines.append("%s %d: %s" % [_status_display_name("charm"), card.status_stacks, _status_description("charm")])
+		elif effect_key != "":
+			lines.append("%s %d: %s" % [_status_display_name(effect_key), card.status_stacks, _status_description(effect_key)])
+	if card.ap_cost_reduction > 0:
+		lines.append("AP軽減 %d: この戦闘中のカードコストを下げる効果。" % card.ap_cost_reduction)
+	if card.self_damage > 0:
+		lines.append("自傷 %d: 使用時に自分のHPを失う。" % card.self_damage)
+	return lines
+
+func _enemy_tooltip_title(idx: int) -> String:
+	if idx < 0 or idx >= CombatManager.enemies.size():
+		return "敵"
+	var enemy: Dictionary = CombatManager.enemies[idx]
+	var data: EnemyData = enemy["data"]
+	return data.display_name
+
+func _enemy_tooltip_body(idx: int) -> String:
+	if idx < 0 or idx >= CombatManager.enemies.size():
+		return ""
+	var enemy: Dictionary = CombatManager.enemies[idx]
+	var data: EnemyData = enemy["data"]
+	var lines: Array[String] = []
+	lines.append("HP: %d/%d" % [int(enemy.get("hp", 0)), int(enemy.get("max_hp", 0))])
+	lines.append("ブロック: %d" % int(enemy.get("block", 0)))
+	lines.append("種別: %s" % _enemy_category_name(data.category))
+	if not data.weaknesses.is_empty():
+		lines.append("弱点: %s" % _tags_to_text(data.weaknesses))
+	var intent: Dictionary = enemy.get("intent", {})
+	var intent_text := _format_intent_detail(intent)
+	if intent_text != "":
+		lines.append("次の行動: %s" % intent_text)
+	lines.append("")
+	lines.append("状態異常")
+	var status: Dictionary = enemy.get("status", {})
+	lines.append_array(_status_detail_lines(status))
+	return "\n".join(lines)
+
+func _enemy_category_name(category: EnemyData.Category) -> String:
+	match category:
+		EnemyData.Category.BEAST: return "獣"
+		EnemyData.Category.HUMAN: return "人間"
+		EnemyData.Category.MACHINE: return "機械"
+	return "不明"
+
+func _enemy_category_icon(category: EnemyData.Category) -> String:
+	match category:
+		EnemyData.Category.BEAST: return "BEAST"
+		EnemyData.Category.HUMAN: return "HUMAN"
+		EnemyData.Category.MACHINE: return "MACHINE"
+	return "ENEMY"
+
+func _format_intent_detail(intent: Dictionary) -> String:
+	if intent.is_empty():
+		return ""
+	var intent_type: String = String(intent.get("type", ""))
+	var label_text: String = String(intent.get("label", ""))
+	match intent_type:
+		"attack":
+			var value: int = int(intent.get("value", 0))
+			var hits: int = int(intent.get("hits", 1))
+			return "%s %d×%d" % [label_text, value, hits] if hits > 1 else "%s %d" % [label_text, value]
+		"defend":
+			return "%s ブロック%d" % [label_text, int(intent.get("value", 0))]
+		"attack_defend":
+			return "%s 攻撃%d / ブロック%d" % [label_text, int(intent.get("attack", 0)), int(intent.get("block", 0))]
+	return label_text
+
+func _on_enemy_hover(idx: int, panel: Control, hovering: bool) -> void:
+	if hovering:
+		_request_tooltip(_enemy_tooltip_title(idx), _enemy_tooltip_body(idx), panel)
+	else:
+		_hide_tooltip(panel)
+
+func _update_portrait_state() -> void:
+	if not has_node("PlayerHUD/PortraitImage"):
+		return
+	var state_text := "通常"
+	var state_key := "normal"
+	var tint := Color(1.0, 1.0, 1.0, 1.0)
+	var hp_rate := 1.0
+	if CombatManager.player_max_hp > 0:
+		hp_rate = float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
+	var has_dot: bool = int(CombatManager.player_status.get("burn", 0)) > 0 or int(CombatManager.player_status.get("bleed", 0)) > 0
+	var has_debuff: bool = has_dot or int(CombatManager.player_status.get("weak", 0)) > 0 or int(CombatManager.player_status.get("vulnerable", 0)) > 0
+	var ultimate_active: bool = int(CombatManager.player_buffs.get("ultimate", 0)) > 0
+	if CombatManager.player_hp <= 0:
+		state_text = "戦闘不能"
+		state_key = "down"
+		tint = Color(0.35, 0.35, 0.35, 1.0)
+	elif ultimate_active:
+		state_text = "アルティメット"
+		state_key = "ultimate"
+		tint = Color(0.55, 0.95, 1.0, 1.0)
+	elif hp_rate <= 0.25:
+		state_text = "瀕死"
+		state_key = "low_hp"
+		tint = Color(1.0, 0.45, 0.38, 1.0)
+	elif has_debuff:
+		state_text = "異常"
+		state_key = "debuffed"
+		tint = Color(0.8, 0.55, 0.95, 1.0)
+	elif CombatManager.player_block > 0 or int(CombatManager.player_status.get("strength", 0)) > 0:
+		state_text = "優勢"
+		state_key = "buffed"
+		tint = Color(0.75, 1.0, 0.72, 1.0)
+	var variant: Texture2D = null
+	if GameManager.current_character != null:
+		variant = _load_portrait_variant(GameManager.current_character.id, state_key)
+	$PlayerHUD/PortraitImage.texture = variant if variant != null else _portrait_default_texture
+	$PlayerHUD/PortraitImage.modulate = tint
+	$PlayerHUD/PortraitFallbackLabel.modulate = tint
+	$PlayerHUD/PortraitStateLabel.text = state_text
+
 # 元レイダー（ヒート＝激情システム）のときだけ、HUDにヒートメーターを生成する。
 func _setup_heat_meter() -> void:
 	if GameManager.current_character.unique_system != &"heat":
 		return
 	_heat_label = Label.new()
-	_heat_label.offset_left = 200.0
-	_heat_label.offset_top = 96.0
+	_heat_label.offset_left = 235.0
+	_heat_label.offset_top = 218.0
 	_heat_label.offset_right = 340.0
-	_heat_label.offset_bottom = 116.0
-	_heat_label.add_theme_font_size_override("font_size", 14)
+	_heat_label.offset_bottom = 252.0
+	_heat_label.add_theme_font_size_override("font_size", 12)
 	_heat_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
 	$PlayerHUD.add_child(_heat_label)
 	_on_heat_changed(CombatManager.player_heat, CombatManager.HEAT_MAX)
@@ -49,11 +473,11 @@ func _setup_aura_meter() -> void:
 	if GameManager.current_character.unique_system != &"aura":
 		return
 	_aura_label = Label.new()
-	_aura_label.offset_left = 200.0
-	_aura_label.offset_top = 96.0
-	_aura_label.offset_right = 380.0
-	_aura_label.offset_bottom = 116.0
-	_aura_label.add_theme_font_size_override("font_size", 14)
+	_aura_label.offset_left = 235.0
+	_aura_label.offset_top = 218.0
+	_aura_label.offset_right = 340.0
+	_aura_label.offset_bottom = 252.0
+	_aura_label.add_theme_font_size_override("font_size", 12)
 	_aura_label.add_theme_color_override("font_color", Color(0.2, 0.6, 1.0))
 	$PlayerHUD.add_child(_aura_label)
 	_on_aura_changed(CombatManager.player_aura, CombatManager.AURA_MAX)
@@ -62,11 +486,11 @@ func _setup_euphoria_meter() -> void:
 	if GameManager.current_character.unique_system != &"euphoria":
 		return
 	_euphoria_label = Label.new()
-	_euphoria_label.offset_left = 200.0
-	_euphoria_label.offset_top = 96.0
-	_euphoria_label.offset_right = 420.0
-	_euphoria_label.offset_bottom = 116.0
-	_euphoria_label.add_theme_font_size_override("font_size", 14)
+	_euphoria_label.offset_left = 235.0
+	_euphoria_label.offset_top = 218.0
+	_euphoria_label.offset_right = 340.0
+	_euphoria_label.offset_bottom = 252.0
+	_euphoria_label.add_theme_font_size_override("font_size", 12)
 	_euphoria_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.8))
 	$PlayerHUD.add_child(_euphoria_label)
 	_on_euphoria_changed(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
@@ -75,18 +499,19 @@ func _setup_beast_display() -> void:
 	if GameManager.current_character.unique_system != &"beast":
 		return
 	_beast_label = Label.new()
-	_beast_label.offset_left = 200.0
-	_beast_label.offset_top = 96.0
-	_beast_label.offset_right = 500.0
-	_beast_label.offset_bottom = 116.0
-	_beast_label.add_theme_font_size_override("font_size", 14)
+	_beast_label.offset_left = 235.0
+	_beast_label.offset_top = 218.0
+	_beast_label.offset_right = 340.0
+	_beast_label.offset_bottom = 252.0
+	_beast_label.add_theme_font_size_override("font_size", 12)
 	_beast_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.3))
 	$PlayerHUD.add_child(_beast_label)
 	_on_beast_changed()
 
 func _on_heat_changed(value: int, max_value: int) -> void:
 	if _heat_label != null:
-		_heat_label.text = "🔥ヒート %d/%d" % [value, max_value]
+		_heat_label.text = "ヒート %d/%d" % [value, max_value]
+	_update_portrait_state()
 	for btn: Button in [$Controls/EndTurnButton, $Controls/FleeButton, $Controls/RerollButton]:
 		btn.focus_mode = Control.FOCUS_NONE
 	$Controls/EndTurnButton.text = "ターン終了 (Space)"
@@ -94,9 +519,8 @@ func _on_heat_changed(value: int, max_value: int) -> void:
 
 func _on_aura_changed(value: int, max_value: int) -> void:
 	if _aura_label != null:
-		var filled := roundi(float(value) / float(max_value) * 10.0)
-		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
-		_aura_label.text = "闘気 %s %d/%d" % [bar, value, max_value]
+		_aura_label.text = "闘気 %d/%d" % [value, max_value]
+	_update_portrait_state()
 
 func _on_euphoria_changed(value: int, max_value: int) -> void:
 	if _euphoria_label != null:
@@ -111,9 +535,8 @@ func _on_euphoria_changed(value: int, max_value: int) -> void:
 			zone = "高揚"
 		else:
 			zone = "絶頂"
-		var filled := roundi(float(value) / float(max_value) * 10.0)
-		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
-		_euphoria_label.text = "💜 %s %s %d/%d" % [zone, bar, value, max_value]
+		_euphoria_label.text = "%s %d/%d" % [zone, value, max_value]
+	_update_portrait_state()
 
 func _on_climax_activated() -> void:
 	_flash_screen(Color(0.8, 0.2, 0.8, 0.4))
@@ -140,16 +563,20 @@ func _on_beast_changed() -> void:
 		return
 	if CombatManager.player_beasts.is_empty():
 		_beast_label.text = "🐾 獣: なし"
+		_update_portrait_state()
 		return
+	var alive_count: int = 0
 	var parts: Array[String] = []
 	for beast: Dictionary in CombatManager.player_beasts:
 		var alive: bool = beast.get("alive", false)
 		if alive:
+			alive_count += 1
 			var name_str: String = beast.get("name", "獣")
 			var bhp: int = beast.get("hp", 0)
 			var bmax: int = beast.get("max_hp", 0)
 			parts.append("%s(%d/%d)" % [name_str, bhp, bmax])
-	_beast_label.text = "🐾 獣: %s" % ", ".join(parts) if not parts.is_empty() else "🐾 獣: なし"
+	_beast_label.text = "獣 %d/%d" % [alive_count, CombatManager.BEAST_MAX]
+	_update_portrait_state()
 
 func _setup_signals() -> void:
 	CombatManager.turn_started.connect(_on_turn_started)
@@ -194,15 +621,15 @@ func _build_enemy_display() -> void:
 		var enemy: Dictionary = CombatManager.enemies[i]
 		var data: EnemyData = enemy["data"]
 		var panel := PanelContainer.new()
-		panel.custom_minimum_size = Vector2(160, 200)
+		panel.custom_minimum_size = Vector2(220, 360)
 		var style := StyleBoxFlat.new()
 		match data.category:
 			EnemyData.Category.BEAST:
-				style.bg_color = Color(0.3, 0.15, 0.1, 0.9)
+				style.bg_color = Color(0.20, 0.10, 0.07, 0.82)
 			EnemyData.Category.HUMAN:
-				style.bg_color = Color(0.2, 0.15, 0.15, 0.9)
+				style.bg_color = Color(0.14, 0.10, 0.10, 0.82)
 			EnemyData.Category.MACHINE:
-				style.bg_color = Color(0.15, 0.15, 0.25, 0.9)
+				style.bg_color = Color(0.09, 0.10, 0.16, 0.82)
 		style.corner_radius_top_left = 6
 		style.corner_radius_top_right = 6
 		style.corner_radius_bottom_left = 6
@@ -210,30 +637,24 @@ func _build_enemy_display() -> void:
 		panel.add_theme_stylebox_override("panel", style)
 
 		var vbox := VBoxContainer.new()
-		vbox.add_theme_constant_override("separation", 4)
+		vbox.add_theme_constant_override("separation", 6)
 
 		var name_label := Label.new()
 		name_label.text = data.display_name
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.add_theme_font_size_override("font_size", 16)
+		name_label.add_theme_font_size_override("font_size", 18)
 		name_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.6))
 		name_label.name = "NameLabel"
 		vbox.add_child(name_label)
 
-		var icon_label := Label.new()
-		match data.category:
-			EnemyData.Category.BEAST: icon_label.text = "🐺"
-			EnemyData.Category.HUMAN: icon_label.text = "🗡"
-			EnemyData.Category.MACHINE: icon_label.text = "⚙"
-		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon_label.add_theme_font_size_override("font_size", 48)
-		vbox.add_child(icon_label)
+		var visual := _create_enemy_visual(data)
+		vbox.add_child(visual)
 
 		var hp_label := Label.new()
 		hp_label.name = "HPLabel"
 		hp_label.text = "HP: %d/%d" % [enemy["hp"], enemy["max_hp"]]
 		hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hp_label.add_theme_font_size_override("font_size", 14)
+		hp_label.add_theme_font_size_override("font_size", 16)
 		hp_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
 		vbox.add_child(hp_label)
 
@@ -242,7 +663,7 @@ func _build_enemy_display() -> void:
 		hp_bar.max_value = enemy["max_hp"]
 		hp_bar.value = enemy["hp"]
 		hp_bar.show_percentage = false
-		hp_bar.custom_minimum_size = Vector2(0, 10)
+		hp_bar.custom_minimum_size = Vector2(0, 14)
 		vbox.add_child(hp_bar)
 
 		if not data.weaknesses.is_empty():
@@ -257,7 +678,7 @@ func _build_enemy_display() -> void:
 		block_label.name = "BlockLabel"
 		block_label.text = ""
 		block_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		block_label.add_theme_font_size_override("font_size", 14)
+		block_label.add_theme_font_size_override("font_size", 15)
 		block_label.add_theme_color_override("font_color", Color(0.4, 0.6, 0.9))
 		vbox.add_child(block_label)
 
@@ -265,7 +686,7 @@ func _build_enemy_display() -> void:
 		intent_label.name = "IntentLabel"
 		intent_label.text = ""
 		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		intent_label.add_theme_font_size_override("font_size", 13)
+		intent_label.add_theme_font_size_override("font_size", 15)
 		intent_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
 		vbox.add_child(intent_label)
 
@@ -273,13 +694,14 @@ func _build_enemy_display() -> void:
 		status_label.name = "StatusLabel"
 		status_label.text = _format_status(enemy.get("status", {}))
 		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		status_label.add_theme_font_size_override("font_size", 13)
+		status_label.add_theme_font_size_override("font_size", 14)
 		status_label.add_theme_color_override("font_color", Color(0.85, 0.55, 0.85))
 		vbox.add_child(status_label)
 
 		var target_btn := Button.new()
 		target_btn.text = "攻撃対象"
-		target_btn.add_theme_font_size_override("font_size", 12)
+		target_btn.custom_minimum_size = Vector2(0, 34)
+		target_btn.add_theme_font_size_override("font_size", 13)
 		target_btn.focus_mode = Control.FOCUS_NONE
 		target_btn.pressed.connect(_on_enemy_target.bind(i))
 		target_btn.name = "TargetButton"
@@ -287,6 +709,8 @@ func _build_enemy_display() -> void:
 
 		panel.add_child(vbox)
 		panel.gui_input.connect(_on_enemy_panel_clicked.bind(i))
+		panel.mouse_entered.connect(_on_enemy_hover.bind(i, panel, true))
+		panel.mouse_exited.connect(_on_enemy_hover.bind(i, panel, false))
 		panel.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		$EnemyArea.add_child(panel)
 		enemy_panels.append(panel)
@@ -296,6 +720,55 @@ func _build_enemy_display() -> void:
 		block_labels.append(block_label)
 		intent_labels.append(intent_label)
 		status_labels.append(status_label)
+
+func _create_enemy_visual(data: EnemyData) -> Control:
+	if data.art != null:
+		var art_rect := TextureRect.new()
+		art_rect.custom_minimum_size = Vector2(200, 190)
+		art_rect.texture = data.art
+		art_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		art_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return art_rect
+
+	var frame := Panel.new()
+	frame.custom_minimum_size = Vector2(200, 190)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	match data.category:
+		EnemyData.Category.BEAST:
+			style.bg_color = Color(0.28, 0.13, 0.08, 0.78)
+			style.border_color = Color(0.85, 0.42, 0.22, 0.75)
+		EnemyData.Category.HUMAN:
+			style.bg_color = Color(0.18, 0.13, 0.12, 0.78)
+			style.border_color = Color(0.78, 0.58, 0.42, 0.75)
+		EnemyData.Category.MACHINE:
+			style.bg_color = Color(0.10, 0.13, 0.20, 0.78)
+			style.border_color = Color(0.42, 0.65, 0.9, 0.75)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	frame.add_theme_stylebox_override("panel", style)
+
+	var icon := Label.new()
+	icon.text = _enemy_category_icon(data.category)
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 8
+	icon.offset_top = 8
+	icon.offset_right = -8
+	icon.offset_bottom = -8
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon.add_theme_font_size_override("font_size", 26)
+	icon.add_theme_color_override("font_color", Color(0.95, 0.85, 0.65, 0.85))
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(icon)
+	return frame
 
 func _update_hand() -> void:
 	for child in $HandArea.get_children():
@@ -372,8 +845,8 @@ func _create_card_button(card: CardData) -> Button:
 	btn.add_theme_stylebox_override("normal", style)
 	btn.add_theme_font_size_override("font_size", 13)
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.mouse_entered.connect(_on_card_hover.bind(btn, true))
-	btn.mouse_exited.connect(_on_card_hover.bind(btn, false))
+	btn.mouse_entered.connect(_on_card_hover.bind(btn, card, true))
+	btn.mouse_exited.connect(_on_card_hover.bind(btn, card, false))
 	btn.gui_input.connect(_on_card_gui_input.bind(card))
 	return btn
 
@@ -483,16 +956,18 @@ func _show_card_detail(card: CardData) -> void:
 				overlay.queue_free()
 	)
 
-func _on_card_hover(btn: Button, hovering: bool) -> void:
+func _on_card_hover(btn: Button, card: CardData, hovering: bool) -> void:
 	btn.pivot_offset = Vector2(btn.size.x / 2.0, btn.size.y)
 	var tw := btn.create_tween()
 	tw.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	if hovering:
 		tw.tween_property(btn, "scale", Vector2(1.12, 1.12), 0.08)
 		btn.z_index = 1
+		_request_tooltip(card.get_display_name(), _card_tooltip_body(card), btn)
 	else:
 		tw.tween_property(btn, "scale", Vector2.ONE, 0.06)
 		btn.z_index = 0
+		_hide_tooltip(btn)
 
 func _on_card_selected(card: CardData) -> void:
 	if not CombatManager.can_play_card(card):
@@ -635,12 +1110,13 @@ func _update_player_hud() -> void:
 	else:
 		$PlayerHUD/APLabel.text = "AP: %d/%d" % [CombatManager.ap, CombatManager.max_ap]
 		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
-	$PlayerHUD/BlockLabel.text = "ブロック: %d" % CombatManager.player_block
-	$PlayerHUD/FuelLabel.text = "%s: %d/%d" % [GameManager.get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
-	$PlayerHUD/DeckLabel.text = "山札: %d | 捨札: %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
+	$PlayerHUD/BlockLabel.text = "防御: %d" % CombatManager.player_block
+	$PlayerHUD/FuelLabel.text = "%s %d/%d" % [GameManager.get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
+	$PlayerHUD/DeckLabel.text = "山 %d / 捨 %d" % [DeckManager.get_deck_count(), DeckManager.get_discard_count()]
 	$PlayerHUD/StatusLabel.text = _format_status(CombatManager.player_status)
 	_update_gauge_display()
 	_update_buff_display()
+	_update_portrait_state()
 
 func _update_controls() -> void:
 	var in_turn := CombatManager.state == CombatManager.CombatState.PLAYER_TURN
@@ -761,6 +1237,8 @@ func _on_enemy_hp_changed(idx: int, hp: int, max_hp: int) -> void:
 		hp_bars[idx].value = hp
 	if idx < enemy_panels.size():
 		_pop_node(enemy_panels[idx])
+		if _tooltip_pending_source == enemy_panels[idx] and _tooltip_panel != null and _tooltip_panel.visible:
+			_request_tooltip(_enemy_tooltip_title(idx), _enemy_tooltip_body(idx), enemy_panels[idx])
 
 func _on_enemy_block_changed(idx: int, block: int) -> void:
 	if idx < block_labels.size():
@@ -794,15 +1272,21 @@ func _on_enemy_intent_updated(idx: int, intent: Dictionary) -> void:
 func _on_enemy_status_changed(idx: int, status: Dictionary) -> void:
 	if idx < status_labels.size():
 		status_labels[idx].text = _format_status(status)
+	if idx < enemy_panels.size() and _tooltip_pending_source == enemy_panels[idx] and _tooltip_panel != null and _tooltip_panel.visible:
+		_request_tooltip(_enemy_tooltip_title(idx), _enemy_tooltip_body(idx), enemy_panels[idx])
 
 func _on_player_status_changed(status: Dictionary) -> void:
 	$PlayerHUD/StatusLabel.text = _format_status(status)
+	_update_portrait_state()
+	if _tooltip_pending_source == $PlayerHUD and _tooltip_panel != null and _tooltip_panel.visible:
+		_request_tooltip(_get_player_tooltip_title(), _get_player_tooltip_body(), $PlayerHUD)
 
 func _on_acceleration_changed(_gauge: int, _max_gauge: int) -> void:
 	_update_gauge_display()
 
 func _on_player_buffs_changed(_buffs: Dictionary) -> void:
 	_update_buff_display()
+	_update_portrait_state()
 	_update_hand()
 
 func _on_ultimate_activated() -> void:
@@ -829,9 +1313,7 @@ func _update_gauge_display() -> void:
 	if CombatManager._is_cultist():
 		var gauge := CombatManager.acceleration_gauge
 		var mx := CombatManager.ACCELERATION_MAX
-		var filled := roundi(float(gauge) / float(mx) * 10.0)
-		var bar := "█".repeat(filled) + "░".repeat(10 - filled)
-		$PlayerHUD/GaugeLabel.text = "加速 %s %d/%d" % [bar, gauge, mx]
+		$PlayerHUD/GaugeLabel.text = "加速 %d/%d" % [gauge, mx]
 	else:
 		$PlayerHUD/GaugeLabel.text = ""
 
@@ -892,6 +1374,9 @@ func _on_player_hp_changed(hp: int, max_hp: int) -> void:
 	$PlayerHUD/HPLabel.text = "HP: %d/%d" % [hp, max_hp]
 	$PlayerHUD/HPBar.max_value = max_hp
 	$PlayerHUD/HPBar.value = hp
+	_update_portrait_state()
+	if _tooltip_pending_source == $PlayerHUD and _tooltip_panel != null and _tooltip_panel.visible:
+		_request_tooltip(_get_player_tooltip_title(), _get_player_tooltip_body(), $PlayerHUD)
 	if hp < _last_player_hp:
 		_flash_screen(Color(0.8, 0.1, 0.1, 0.35))
 	_last_player_hp = hp
@@ -915,7 +1400,8 @@ func _pop_node(node: Control) -> void:
 	tw.tween_property(node, "scale", Vector2.ONE, 0.10)
 
 func _on_player_block_changed(block: int) -> void:
-	$PlayerHUD/BlockLabel.text = "ブロック: %d" % block
+	$PlayerHUD/BlockLabel.text = "防御: %d" % block
+	_update_portrait_state()
 
 func _on_ap_changed(new_ap: int) -> void:
 	if new_ap < 0:
@@ -924,6 +1410,7 @@ func _on_ap_changed(new_ap: int) -> void:
 	else:
 		$PlayerHUD/APLabel.text = "AP: %d/%d" % [new_ap, CombatManager.max_ap]
 		$PlayerHUD/APLabel.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+	_update_portrait_state()
 	_update_hand()
 	_update_controls()
 

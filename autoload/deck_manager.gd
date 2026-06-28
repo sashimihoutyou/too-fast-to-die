@@ -87,7 +87,9 @@ func add_temporary_card_to_hand(card_id: StringName) -> bool:
 	var copy: CardData = card.duplicate_card()
 	hand.append(copy)
 	_temporary_instance_ids[copy.instance_id] = true
-	cards_drawn.emit([copy])
+	var drawn: Array[CardData] = []
+	drawn.append(copy)
+	cards_drawn.emit(drawn)
 	return true
 
 func is_temporary_card(card: CardData) -> bool:

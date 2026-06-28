@@ -22,7 +22,9 @@ func _ready() -> void:
 	$HUD/MedicineButton.pressed.connect(_use_medicine)
 	if _pending_act_intro:
 		_pending_act_intro = false
-		_show_notification("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act)
+		_show_notification_then("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act, Callable(self, "_show_pending_companion_notifications"))
+	else:
+		_show_pending_companion_notifications()
 
 # ボス撃破後にこの画面へ戻った場合の処理。
 # 最終区間ならクリア画面へ、そうでなければ次の区間へ進める。
@@ -214,17 +216,18 @@ func _on_node_pressed(nid: String) -> void:
 	SaveManager.save_run()
 	_update_hud()
 
-	if GameManager.pursuit_triggered:
-		GameManager.pursuit_triggered = false
-		AmbientFragment.consume_transient_context()
-		_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
-		return
-
 	var proceed: Callable = Callable(self, "_process_node_type").bind(node_type)
-	if fuel_message != "":
-		_show_notification_then(fuel_message, Callable(self, "_maybe_show_ambient_fragment").bind(node_type, proceed))
-	else:
-		_maybe_show_ambient_fragment(node_type, proceed)
+	_show_pending_companion_notifications(func() -> void:
+		if GameManager.pursuit_triggered:
+			GameManager.pursuit_triggered = false
+			AmbientFragment.consume_transient_context()
+			_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
+			return
+		if fuel_message != "":
+			_show_notification_then(fuel_message, Callable(self, "_maybe_show_ambient_fragment").bind(node_type, proceed))
+		else:
+			_maybe_show_ambient_fragment(node_type, proceed)
+	)
 
 func _maybe_show_ambient_fragment(node_type: MapGenerator.NodeType, on_done: Callable) -> void:
 	var fragment: Dictionary = AmbientFragment.pick(node_type)
@@ -455,6 +458,19 @@ func _show_notification_then(text: String, on_close: Callable = Callable()) -> v
 	)
 	panel.add_child(close_btn)
 	add_child(panel)
+
+func _show_pending_companion_notifications(on_done: Callable = Callable()) -> void:
+	var messages: Array[String] = GameManager.consume_companion_notifications()
+	_show_companion_notification_chain(messages, 0, on_done)
+
+func _show_companion_notification_chain(messages: Array[String], index: int, on_done: Callable) -> void:
+	if index >= messages.size():
+		if on_done.is_valid():
+			on_done.call()
+		return
+	_show_notification_then(messages[index], func() -> void:
+		_show_companion_notification_chain(messages, index + 1, on_done)
+	)
 
 func _show_ambient_fragment(fragment: Dictionary, on_close: Callable) -> void:
 	var overlay := ColorRect.new()

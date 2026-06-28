@@ -3,6 +3,7 @@ extends Node
 signal state_changed(new_state: StringName)
 signal run_started(character: CharacterData)
 signal run_ended(result: StringName, distance: int)
+signal companion_notification_queued(message: String)
 
 enum GameState { TITLE, CHARACTER_SELECT, MAP, COMBAT, EVENT, SHOP, REST, GAME_OVER, RESULT }
 
@@ -29,6 +30,7 @@ var faith: int = 80
 var recent_companion_event: StringName = &""
 var recent_companion_id: StringName = &""
 var recent_companion_type: CompanionData.CompanionType = CompanionData.CompanionType.FIGHTER
+var companion_notifications: Array[String] = []
 
 const OASIS_CATEGORIES := [&"location", &"danger", &"resource", &"truth"]
 const OASIS_INFO_TEXTS := {
@@ -73,6 +75,7 @@ func start_run(character: CharacterData) -> void:
 	pursuit_triggered = false
 	oasis_info.clear()
 	faith = 80
+	companion_notifications.clear()
 	clear_recent_companion_event()
 	ResourceManager.reset()
 	ItemDatabase.reset()
@@ -113,7 +116,10 @@ func advance_node(travel_cost: int = 2) -> void:
 
 func recruit_companion(companion: CompanionData) -> void:
 	if current_companion != null:
+		_queue_companion_notification("%sと別れ、%sを同行者にした。" % [current_companion.display_name, companion.display_name])
 		_remove_companion_cards(current_companion)
+	else:
+		_queue_companion_notification("%sが同行者になった。" % companion.display_name)
 	current_companion = companion
 	if companion.companion_type == CompanionData.CompanionType.LOVE_SLAVE:
 		companion_nodes_remaining = randi_range(3, 7)
@@ -125,6 +131,7 @@ func recruit_companion(companion: CompanionData) -> void:
 func dismiss_companion() -> void:
 	if current_companion != null:
 		_set_recent_companion_event(&"dismissed", current_companion)
+		_queue_companion_notification("%sと別れた。" % current_companion.display_name)
 		_remove_companion_cards(current_companion)
 	current_companion = null
 	companion_nodes_remaining = 0
@@ -158,26 +165,41 @@ func _on_companion_depart() -> void:
 	if current_companion == null:
 		return
 	var departing_companion: CompanionData = current_companion
+	var reward_text: String = ""
 	match current_companion.companion_type:
 		CompanionData.CompanionType.TRAITOR:
-			ResourceManager.consume_fuel(mini(5, ResourceManager.fuel))
-			ResourceManager.consume_scrap(mini(3, ResourceManager.scrap))
+			var stolen_fuel: int = mini(5, ResourceManager.fuel)
+			var stolen_scrap: int = mini(3, ResourceManager.scrap)
+			ResourceManager.consume_fuel(stolen_fuel)
+			ResourceManager.consume_scrap(stolen_scrap)
+			reward_text = "燃料%d、スクラップ%dを持ち去られた。" % [stolen_fuel, stolen_scrap]
 		CompanionData.CompanionType.MERCHANT:
 			ResourceManager.add_fuel(8)
+			reward_text = "%s +8" % get_travel_resource_name()
 		CompanionData.CompanionType.FIGHTER:
-			_add_departure_card(CardData.Rarity.UNCOMMON)
+			var card: CardData = _add_departure_card(CardData.Rarity.UNCOMMON)
+			if card != null:
+				reward_text = "カード「%s」を受け取った。" % card.get_display_name()
 		CompanionData.CompanionType.REFUGEE:
 			KarmaManager.add_karma(15)
+			reward_text = "カルマ +15"
 		CompanionData.CompanionType.TECHNICIAN:
-			_equip_departure_part(BikePartData.PartRarity.UPPER)
+			var part: BikePartData = _equip_departure_part(BikePartData.PartRarity.UPPER)
+			if part != null:
+				reward_text = "バイクパーツ「%s」を装着した。" % part.display_name
 		CompanionData.CompanionType.INFORMANT:
-			advance_oasis_info()
+			reward_text = advance_oasis_info()
 		CompanionData.CompanionType.DOG:
 			KarmaManager.add_karma(3)
+			reward_text = "カルマ +3"
 	_remove_companion_cards(current_companion)
 	current_companion = null
 	companion_nodes_remaining = 0
 	_set_recent_companion_event(&"departed", departing_companion)
+	if reward_text.is_empty():
+		_queue_companion_notification("%sが去っていった。" % departing_companion.display_name)
+	else:
+		_queue_companion_notification("%sが去っていった。\n%s" % [departing_companion.display_name, reward_text])
 
 func _set_recent_companion_event(event_id: StringName, companion: CompanionData) -> void:
 	recent_companion_event = event_id
@@ -189,6 +211,17 @@ func clear_recent_companion_event() -> void:
 	recent_companion_id = &""
 	recent_companion_type = CompanionData.CompanionType.FIGHTER
 
+func consume_companion_notifications() -> Array[String]:
+	var messages: Array[String] = companion_notifications.duplicate()
+	companion_notifications.clear()
+	return messages
+
+func _queue_companion_notification(message: String) -> void:
+	if message.is_empty():
+		return
+	companion_notifications.append(message)
+	companion_notification_queued.emit(message)
+
 func _add_companion_cards(companion: CompanionData) -> void:
 	for card_id: StringName in companion.deck_card_ids:
 		var _added: bool = DeckManager.add_card_id_to_deck(card_id)
@@ -196,7 +229,7 @@ func _add_companion_cards(companion: CompanionData) -> void:
 func _remove_companion_cards(companion: CompanionData) -> void:
 	DeckManager.remove_cards_by_ids(companion.deck_card_ids)
 
-func _add_departure_card(rarity: CardData.Rarity) -> void:
+func _add_departure_card(rarity: CardData.Rarity) -> CardData:
 	var pool: Array[CardData] = CardDatabase.get_reward_pool(current_act, current_character.id)
 	var candidates: Array[CardData] = []
 	for card: CardData in pool:
@@ -205,18 +238,20 @@ func _add_departure_card(rarity: CardData.Rarity) -> void:
 	if candidates.is_empty():
 		candidates = pool
 	if candidates.is_empty():
-		return
+		return null
 	candidates.shuffle()
 	DeckManager.add_card_to_deck(candidates[0])
+	return candidates[0]
 
-func _equip_departure_part(rarity: BikePartData.PartRarity) -> void:
+func _equip_departure_part(rarity: BikePartData.PartRarity) -> BikePartData:
 	var candidates: Array[BikePartData] = BikePartsDatabase.get_parts_by_rarity(rarity)
 	if candidates.is_empty():
 		candidates = BikePartsDatabase.get_parts_by_rarity(BikePartData.PartRarity.NORMAL)
 	if candidates.is_empty():
-		return
+		return null
 	candidates.shuffle()
 	var _old_part: BikePartData = ResourceManager.equip_part(candidates[0])
+	return candidates[0]
 
 func add_faith(amount: int) -> void:
 	faith = clampi(faith + amount, 0, 100)

@@ -95,6 +95,8 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 	_climax_active = false
 	_overdose_pending = false
 	_love_slave_used_this_combat = false
+	if _is_hedonist() and player_euphoria >= EUPHORIA_MAX:
+		player_euphoria = 0
 	player_status_changed.emit(player_status)
 	player_heat = 0
 	heat_changed.emit(player_heat, HEAT_MAX)
@@ -637,8 +639,17 @@ func _check_enemies_alive() -> void:
 		if enemies[i]["alive"]:
 			all_dead = false
 	if all_dead:
+		_clear_climax_after_victory()
 		state = CombatState.VICTORY
 		combat_won.emit(_generate_rewards())
+
+func _clear_climax_after_victory() -> void:
+	if not _climax_active:
+		return
+	_climax_active = false
+	_overdose_pending = false
+	player_euphoria = 0
+	euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
 
 func _execute_enemy_turns() -> void:
 	for i in enemies.size():
