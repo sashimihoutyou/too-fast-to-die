@@ -277,7 +277,7 @@ func get_faith_display() -> String:
 func is_cultist() -> bool:
 	if current_character == null:
 		return false
-	return current_character.unique_system == &"acceleration"
+	return current_character.unique_system == &"gear"
 
 func advance_oasis_info() -> String:
 	var available: Array[StringName] = []

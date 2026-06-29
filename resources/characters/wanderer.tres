@@ -5,9 +5,8 @@
 [resource]
 script = ExtResource("1")
 id = &"wanderer"
-display_name = "放浪者（ウェス）"
+display_name = "放浪者（ウェズリー）"
 max_hp = 60
 starter_deck_ids = [&"st_we01", &"st_we01", &"st_we02", &"defend", &"st_guard_stance", &"st_sweep", &"st_intimidate", &"wa01", &"wa02", &"wa11"]
-unique_system = &"lone_wolf"
+unique_system = &"investigation"
 unlock_condition = "初期解放"
-deck_limit = 25

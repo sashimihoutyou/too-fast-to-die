@@ -80,6 +80,18 @@ func play_card(card: CardData) -> void:
 		discard_pile.append(card)
 		card_discarded.emit(card)
 
+func exhaust_random_card_from_hand() -> void:
+	if hand.is_empty():
+		return
+	var idx: int = randi() % hand.size()
+	var card: CardData = hand[idx]
+	hand.remove_at(idx)
+	if is_temporary_card(card):
+		_temporary_instance_ids.erase(card.instance_id)
+	else:
+		exhaust_pile.append(card)
+	card_exhausted.emit(card)
+
 func add_temporary_card_to_hand(card_id: StringName) -> bool:
 	var card: CardData = CardDatabase.get_card(card_id)
 	if card == null:

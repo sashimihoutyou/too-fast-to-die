@@ -5,10 +5,13 @@
 [resource]
 script = ExtResource("1")
 id = &"wa02"
-display_name = "孤狼の勘"
-description = "2ドロー。同行者なし: 3ドロー"
+display_name = "聞き込み"
+description = "調査1消費。敵1体に調査1、1ドロー"
 ap_cost = 1
 tags = [5]
 restriction = 3
 is_starter = true
-draw_count = 2
+draw_count = 1
+requires_target = true
+status_effect = &"investigate"
+status_stacks = 1

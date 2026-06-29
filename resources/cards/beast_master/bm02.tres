@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1")
 id = &"bm02"
-display_name = "獣の号令"
-description = "場の全獣が即座に攻撃"
+display_name = "攻撃指示"
+description = "全相棒が2倍ダメージで即時攻撃。このターン相棒の軽減0"
+ap_cost = 1
 tags = [5]
 restriction = 4
 is_starter = true
-upgraded_block = 3

@@ -10,5 +10,6 @@ max_hp = 90
 starter_deck_ids = [&"co01", &"co01", &"co01", &"co04", &"co02", &"co02", &"co09", &"st_heavy_strike", &"st_intimidate", &"co11"]
 unique_system = &"aura"
 unlock_condition = "いずれかのキャラで初回クリア"
+is_playable = false
 can_use_guns = false
 can_use_heavy_weapons = false

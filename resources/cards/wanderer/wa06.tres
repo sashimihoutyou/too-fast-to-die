@@ -5,9 +5,11 @@
 [resource]
 script = ExtResource("1")
 id = &"wa06"
-display_name = "ファイナルラウンド"
-description = "固有カード種数×6ダメ"
+display_name = "Q.E.D."
+description = "ミッシング・リンク成立中の敵1体に18ダメ、スタン1、ガードブレイク2"
 ap_cost = 3
 tags = [5]
 rarity = 2
 restriction = 3
+base_damage = 18
+requires_target = true

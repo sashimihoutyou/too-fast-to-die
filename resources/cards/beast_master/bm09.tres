@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"bm09"
 display_name = "群れの怒り"
-description = "コレクションからランダム獣を0APで召喚。消耗"
+description = "相棒をランダムな獣に入れ替える。消耗"
 ap_cost = 2
 tags = [5]
 rarity = 2

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"er01"
 display_name = "ランページ"
-description = "ヒート÷3のダメージ（100%時≒33）"
+description = "ヒート70以上: ヒート60消費。25+残りヒート÷2ダメ。撃破時、ヒート10消費で別敵に半分追撃"
 ap_cost = 2
 tags = [5]
 restriction = 2

@@ -17,6 +17,7 @@ signal enemy_status_changed(idx: int, status: Dictionary)
 signal player_status_changed(status: Dictionary)
 signal heat_changed(value: int, max_value: int)
 signal acceleration_changed(gauge: int, max_gauge: int)
+signal investigation_changed(value: int, max_value: int)
 signal aura_changed(value: int, max_value: int)
 signal euphoria_changed(value: int, max_value: int)
 signal player_buffs_changed(buffs: Dictionary)
@@ -40,34 +41,43 @@ var player_status: Dictionary = {}
 const HEAT_MAX: int = 100
 var player_heat: int = 0
 
-# 覇者固有資源「闘気（オーラ）」
+# 覇者NPCカード用資源「闘気（オーラ）」
 const AURA_MAX: int = 100
 var player_aura: int = 0
+
+# アータル固有資源「速度（ギア）」
+const GEAR_MIN: int = 1
+const GEAR_MAX: int = 6
+const FULL_THROTTLE_TURNS: int = 2
+var player_gear: int = GEAR_MIN
+var _free_bike_fuel_turns: int = 0
+var _engine_brake_used_this_turn: bool = false
+var _regular_draw_done: bool = false
+var _skip_regular_draw_this_turn: bool = false
+
+# ウェズリー固有資源「調査ゲージ」
+const INVESTIGATION_MAX: int = 5
+var player_investigation: int = INVESTIGATION_MAX
 
 # 享楽者固有資源「エクスタシー」
 const EUPHORIA_MAX: int = 100
 var player_euphoria: int = 0
 var _climax_active: bool = false
 var _overdose_pending: bool = false
+var _overdose_resolved_this_combat: bool = false
 var _love_slave_used_this_combat: bool = false
 const LOVE_SLAVE_CARD_ID := &"eu11"
 const LOVE_SLAVE_CHARM_THRESHOLD := 3
 
-# 調教師固有「獣スロット」
+# ミーシャ固有「相棒スロット」
 var player_beasts: Array[Dictionary] = []
-const BEAST_MAX := 5
+const BEAST_MAX := 1
 
 var enemies: Array[Dictionary] = []
-
-var acceleration_gauge: int = 0
-const ACCELERATION_MAX := 30
-const ACCEL_ATTACK := 3
-const ACCEL_BUFF := 5
-const ACCEL_BLOCK_CAP := 10
 var player_buffs: Dictionary = {}
 
 func _new_buffs_dict() -> Dictionary:
-	return {"melee_power": 0, "ranged_double": 0, "overcharge": 0, "ultimate": 0}
+	return {"melee_power": 0, "ranged_double": 0, "overcharge": 0, "ultimate": 0, "partner_defense": 0}
 
 func reset_player_for_new_run() -> void:
 	player_max_hp = GameManager.current_character.max_hp
@@ -75,12 +85,18 @@ func reset_player_for_new_run() -> void:
 	player_status = _new_status_dict()
 	player_heat = 0
 	player_aura = 0
+	player_gear = GEAR_MIN
+	player_investigation = INVESTIGATION_MAX
 	player_euphoria = 50 if _is_hedonist() else 0
 	player_beasts.clear()
 	player_buffs = _new_buffs_dict()
-	acceleration_gauge = 0
+	_free_bike_fuel_turns = 0
+	_engine_brake_used_this_turn = false
+	_regular_draw_done = false
+	_skip_regular_draw_this_turn = false
 	_climax_active = false
 	_overdose_pending = false
+	_overdose_resolved_this_combat = false
 	_love_slave_used_this_combat = false
 
 func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
@@ -91,9 +107,15 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 	player_block = 0
 	player_status = _new_status_dict()
 	player_buffs = _new_buffs_dict()
-	acceleration_gauge = 0
+	player_gear = GEAR_MIN
+	player_investigation = INVESTIGATION_MAX
+	_free_bike_fuel_turns = 0
+	_engine_brake_used_this_turn = false
+	_regular_draw_done = false
+	_skip_regular_draw_this_turn = false
 	_climax_active = false
 	_overdose_pending = false
+	_overdose_resolved_this_combat = false
 	_love_slave_used_this_combat = false
 	if _is_hedonist() and player_euphoria >= EUPHORIA_MAX:
 		player_euphoria = 0
@@ -104,8 +126,10 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 	aura_changed.emit(player_aura, AURA_MAX)
 	if _is_hedonist():
 		euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
+	if _is_wanderer():
+		investigation_changed.emit(player_investigation, INVESTIGATION_MAX)
 	player_buffs_changed.emit(player_buffs)
-	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
+	acceleration_changed.emit(player_gear, GEAR_MAX)
 	enemies.clear()
 	for ed: EnemyData in enemy_list:
 		var ehp := ed.base_hp
@@ -121,6 +145,9 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 			"turn_counter": 0,
 			"status": _new_status_dict(),
 		})
+	if _is_beast_master():
+		player_beasts.clear()
+		add_beast("虎", 20, 5, 2)
 	_apply_relic_triggers(ItemData.TriggerTiming.ON_COMBAT_START)
 	DeckManager.start_combat()
 	begin_turn()
@@ -131,7 +158,16 @@ func begin_turn() -> void:
 	ap = max_ap
 	ap_cost_reduction = 0
 	player_block = 0
+	_engine_brake_used_this_turn = false
+	_regular_draw_done = false
+	_skip_regular_draw_this_turn = false
 	player_block_changed.emit(player_block)
+
+	if _is_cultist():
+		_tick_gear_start_of_turn()
+
+	if _is_wanderer():
+		_tick_investigation_start_of_turn()
 
 	# オーバードーズ（享楽者：クライマックス翌ターン）
 	if _overdose_pending:
@@ -140,13 +176,17 @@ func begin_turn() -> void:
 		player_hp = maxi(1, ceili(float(player_hp) / 2.0))
 		player_max_hp = maxi(1, player_max_hp - 3)
 		player_hp = mini(player_hp, player_max_hp)
+		_overdose_resolved_this_combat = true
 		player_hp_changed.emit(player_hp, player_max_hp)
 
-	# ユーフォリアゾーンによるAP補正
+	if _is_hedonist() and not _climax_active:
+		_tick_euphoria_start_of_turn()
+
+	# エクスタシーゾーンによるAP補正
 	if _is_hedonist():
 		if player_euphoria <= 9:
-			ap = maxi(0, ap - 2)
-			_damage_player(2)
+			ap = maxi(0, ap - 1)
+			_damage_player(1)
 		elif player_euphoria <= 32:
 			ap = maxi(0, ap - 1)
 		elif player_euphoria >= 75 and player_euphoria < 100:
@@ -167,13 +207,19 @@ func begin_turn() -> void:
 	_update_all_intents()
 
 	var draw_count := DeckManager.HAND_SIZE
-	if _is_hedonist() and player_euphoria >= 75 and player_euphoria < 100:
-		draw_count += 1
 	if _is_hedonist() and player_euphoria <= 9:
 		draw_count = maxi(1, draw_count - 1)
 	if _has_companion(CompanionData.CompanionType.TRAITOR):
 		draw_count += 1
-	DeckManager.draw_cards(draw_count)
+	if _is_cultist() and _is_full_throttle_active():
+		draw_count += 2
+	elif _is_cultist() and player_gear >= 4:
+		draw_count += 1
+	if _is_hedonist() and player_euphoria >= 60 and player_euphoria < 100:
+		draw_count += 1
+	if not _skip_regular_draw_this_turn:
+		DeckManager.draw_cards(draw_count)
+	_regular_draw_done = true
 	_maybe_add_love_slave_card()
 	turn_started.emit(turn_number)
 
@@ -181,21 +227,30 @@ func get_effective_ap_cost(card: CardData) -> int:
 	var reduction := ap_cost_reduction
 	if int(player_buffs.get("ultimate", 0)) > 0:
 		reduction += 1
+	if _is_cultist() and player_gear >= 5 and CardData.Tag.BIKE in card.tags:
+		reduction += 1
 	if _climax_active:
 		return 0
 	if reduction > 0:
 		return maxi(0, card.ap_cost - reduction)
 	return card.ap_cost
 
+func get_effective_fuel_cost(card: CardData) -> int:
+	if _is_cultist() and _free_bike_fuel_turns > 0 and CardData.Tag.BIKE in card.tags:
+		return 0
+	return card.fuel_cost
+
 func preview_damage(card: CardData, idx: int) -> int:
 	if idx < 0 or idx >= enemies.size():
 		return 0
 	var base := card.get_effective_damage()
+	if is_heat_card_transformed(card):
+		base = card.get_effective_block()
 	if card.id == &"er01":
-		if card.upgraded:
-			base = int(player_heat / 2.0)
-		else:
-			base = int(player_heat / 3.0)
+		if player_heat < 70:
+			return 0
+		var remaining_heat := maxi(0, player_heat - 60)
+		base = 25 + int(float(remaining_heat) * 0.5)
 	elif card.id == &"er06" and player_heat >= HEAT_MAX / 2:
 		base += 5
 	elif card.id == &"co08":
@@ -213,10 +268,16 @@ func preview_damage(card: CardData, idx: int) -> int:
 			base += bonus
 	if base <= 0:
 		return 0
-	var per_hit := _apply_player_attack_mods(base, card.tags, false)
+	var preview_tags: Array[CardData.Tag] = []
+	preview_tags.assign(card.tags)
+	if is_heat_card_transformed(card):
+		preview_tags.clear()
+		preview_tags.append(CardData.Tag.MELEE)
+		preview_tags.append(CardData.Tag.CHARACTER)
+	var per_hit := _apply_player_attack_mods(base, preview_tags, false)
 	if _climax_active:
 		per_hit *= 2
-	if is_weak_against(idx, card.tags):
+	if is_weak_against(idx, preview_tags):
 		per_hit = int(per_hit * 1.5)
 	if int(enemies[idx]["status"].get("vulnerable", 0)) > 0:
 		per_hit = int(per_hit * 1.5)
@@ -232,12 +293,19 @@ func can_play_card(card: CardData) -> bool:
 			return false
 		if not _has_love_slave_target():
 			return false
+	if card.id == &"er01" and player_heat < 70:
+		return false
+	if card.id == &"wa06" and not _has_missing_link_target():
+		return false
+	if card.status_effect == &"investigate" and player_investigation <= 0:
+		return false
 	if _climax_active:
 		return true
 	var cost := get_effective_ap_cost(card)
 	if cost > ap and int(player_buffs.get("overcharge", 0)) <= 0:
 		return false
-	if card.fuel_cost > 0 and ResourceManager.fuel < card.fuel_cost:
+	var fuel_cost := get_effective_fuel_cost(card)
+	if fuel_cost > 0 and ResourceManager.fuel < fuel_cost:
 		return false
 	return true
 
@@ -246,6 +314,8 @@ func can_target_card(card: CardData, target_idx: int) -> bool:
 		return false
 	if card.id == LOVE_SLAVE_CARD_ID:
 		return _is_love_slave_target(target_idx)
+	if card.id == &"wa06":
+		return _is_missing_link_target(target_idx)
 	return bool(enemies[target_idx]["alive"])
 
 func has_playable_card() -> bool:
@@ -267,8 +337,9 @@ func play_card(card: CardData, target_idx: int = -1) -> void:
 		if debt > 0:
 			player_hp = maxi(0, player_hp - debt * 3)
 			player_hp_changed.emit(player_hp, player_max_hp)
-	if card.fuel_cost > 0:
-		ResourceManager.consume_fuel(card.fuel_cost)
+	var fuel_cost := get_effective_fuel_cost(card)
+	if fuel_cost > 0:
+		ResourceManager.consume_fuel(fuel_cost)
 	if card.ap_cost_reduction > 0:
 		ap_cost_reduction = maxi(ap_cost_reduction, card.ap_cost_reduction)
 	ap_changed.emit(ap)
@@ -295,10 +366,18 @@ func end_player_turn() -> void:
 		if not all_dead:
 			_overdose_pending = true
 
+	if _is_cultist() and not _is_full_throttle_active() and player_gear >= 3:
+		player_block += 2
+		player_block_changed.emit(player_block)
+
+	if _is_hedonist() and player_euphoria >= 60 and player_euphoria <= 74:
+		DeckManager.exhaust_random_card_from_hand()
+
 	DeckManager.discard_hand()
 	_tick_player_buffs()
 	state = CombatState.ENEMY_TURN
 	_execute_enemy_turns()
+	_clear_partner_turn_state()
 	_check_enemies_alive()
 	if state == CombatState.VICTORY:
 		return
@@ -339,12 +418,20 @@ func emergency_reroll() -> bool:
 func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	# --- ヒート消費系の特殊カード ---
 	if card.id == &"er01":
-		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
-			var divisor: float = 2.0 if card.upgraded else 3.0
-			var rampage := _apply_player_attack_mods(int(player_heat / divisor))
+		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
+			_add_heat(-60)
+			var remaining_heat: int = player_heat
+			var rampage: int = _apply_player_attack_mods(25 + int(float(remaining_heat) * 0.5), card.tags)
 			if _climax_active:
 				rampage *= 2
 			_damage_enemy(target_idx, rampage, card.tags)
+			if int(enemies[target_idx]["hp"]) <= 0 and player_heat >= 10:
+				var follow_damage: int = int(float(rampage) * 0.5)
+				for i: int in range(enemies.size()):
+					if i != target_idx and bool(enemies[i]["alive"]):
+						_add_heat(-10)
+						_damage_enemy(i, follow_damage, card.tags)
+						break
 		return
 	if card.id == &"er08":
 		if player_heat > 0:
@@ -388,7 +475,7 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 
 	# --- 愛の奴隷（享楽者）---
 	if card.id == LOVE_SLAVE_CARD_ID:
-		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
 			var charm_stacks: int = int(enemies[target_idx]["status"].get("charm", 0))
 			if charm_stacks >= LOVE_SLAVE_CHARM_THRESHOLD:
 				_love_slave_used_this_combat = true
@@ -399,17 +486,28 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 				enemy_defeated.emit(target_idx)
 		return
 
+	# --- ウェズリー Q.E.D. ---
+	if card.id == &"wa06":
+		if target_idx >= 0 and _is_missing_link_target(target_idx):
+			var qed_damage: int = _apply_player_attack_mods(card.get_effective_damage(), card.tags)
+			if _climax_active:
+				qed_damage *= 2
+			_damage_enemy(target_idx, qed_damage, card.tags)
+			_add_enemy_status(target_idx, &"stun", 1)
+			_add_enemy_status(target_idx, &"guard_break", 2)
+		return
+
 	# --- ロミオとジュリエット（享楽者最強技）---
 	if card.id == &"eu_new1":
-		if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
 			var hit := _apply_player_attack_mods(card.get_effective_damage(), card.tags)
 			if _climax_active:
 				hit *= 2
 			for h in card.hit_count:
-				if enemies[target_idx]["alive"]:
+				if bool(enemies[target_idx]["alive"]):
 					_damage_enemy(target_idx, hit, card.tags)
 			# 追加の近接15ダメージ
-			if enemies[target_idx]["alive"]:
+			if bool(enemies[target_idx]["alive"]):
 				var melee_hit := _apply_player_attack_mods(15, [CardData.Tag.MELEE])
 				if _climax_active:
 					melee_hit *= 2
@@ -418,12 +516,17 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 			_add_euphoria(card.status_stacks)
 		return
 
-	# --- 調教師 獣カード ---
+	# --- ミーシャ 相棒カード ---
 	if card.id == &"bm02":
-		_beast_auto_attack()
-		if card.upgraded:
-			player_block += card.get_effective_block()
-			player_block_changed.emit(player_block)
+		_partner_attack_instruction()
+		return
+	if card.id == &"bm11":
+		player_buffs["partner_defense"] = 1
+		for beast: Dictionary in player_beasts:
+			if bool(beast.get("alive", false)):
+				beast["guard_bonus"] = 2
+		player_buffs_changed.emit(player_buffs)
+		beast_changed.emit()
 		return
 	if card.id == &"bm03":
 		_heal_beasts(8 if card.upgraded else 5)
@@ -441,6 +544,14 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 
 	var dmg := card.get_effective_damage()
 	var blk := card.get_effective_block()
+	var attack_tags: Array[CardData.Tag] = []
+	attack_tags.assign(card.tags)
+	if is_heat_card_transformed(card):
+		dmg = blk
+		blk = 0
+		attack_tags.clear()
+		attack_tags.append(CardData.Tag.MELEE)
+		attack_tags.append(CardData.Tag.CHARACTER)
 
 	# バーサーカースラッシュ: ヒート50%以上で+5
 	if card.id == &"er06" and player_heat >= HEAT_MAX / 2:
@@ -500,20 +611,20 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 
 	var killed_with_card := false
 	if dmg > 0:
-		var hit_dmg := _apply_player_attack_mods(dmg, card.tags)
+		var hit_dmg := _apply_player_attack_mods(dmg, attack_tags)
 		if _climax_active:
 			hit_dmg *= 2
 		if card.is_aoe:
 			for i in enemies.size():
 				if enemies[i]["alive"]:
-					_damage_enemy(i, hit_dmg * card.hit_count, card.tags)
+					_damage_enemy(i, hit_dmg * card.hit_count, attack_tags)
 					if enemies[i]["hp"] <= 0:
 						killed_with_card = true
 		else:
 			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 				for h in card.hit_count:
 					if enemies[target_idx]["alive"]:
-						_damage_enemy(target_idx, hit_dmg, card.tags)
+						_damage_enemy(target_idx, hit_dmg, attack_tags)
 				if enemies[target_idx]["hp"] <= 0:
 					killed_with_card = true
 
@@ -538,6 +649,10 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 					eu_gain = 15
 				_add_euphoria(eu_gain)
 			_maybe_add_love_slave_card()
+		elif card.status_effect == &"investigate":
+			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
+				_add_enemy_status(target_idx, &"investigation", card.status_stacks)
+				_add_investigation(-1)
 		else:
 			var mapped := _map_status(card.status_effect)
 			if mapped != &"":
@@ -548,8 +663,8 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 				elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
 					_add_enemy_status(target_idx, mapped, card.status_stacks)
 
-	if _is_cultist():
-		_fill_acceleration_from_card(card)
+	if _is_cultist() and _gear_enabled() and GameManager.get_faith_band() == &"zealot" and CardData.Tag.BIKE in card.tags:
+		_add_gear(1)
 
 	# ヒート（激情）資源ゲイン
 	if card.status_effect == &"heat":
@@ -623,22 +738,33 @@ func _damage_player(amount: int, from_enemy: bool = false) -> void:
 			player_block = 0
 		player_block_changed.emit(player_block)
 	if remaining > 0:
+		if from_enemy and _is_beast_master():
+			remaining = _redirect_damage_to_partners(remaining)
 		player_hp = maxi(0, player_hp - remaining)
 		player_hp_changed.emit(player_hp, player_max_hp)
-	if from_enemy and blocked > 0 and _is_cultist():
-		_add_acceleration(mini(blocked, ACCEL_BLOCK_CAP))
+	if from_enemy and blocked > 0 and _is_heat_character():
+		_add_heat(-int(float(blocked) * 0.3))
+	if from_enemy and remaining > 0 and _is_heat_character():
+		_add_heat(maxi(1, int(ceil(float(remaining) * 0.5))))
 
 func _check_enemies_alive() -> void:
 	var all_dead := true
 	for i in enemies.size():
-		if enemies[i]["hp"] <= 0 and enemies[i]["alive"]:
+		var enemy_hp: int = int(enemies[i]["hp"])
+		var enemy_alive: bool = bool(enemies[i]["alive"])
+		if enemy_hp <= 0 and enemy_alive:
 			enemies[i]["alive"] = false
 			var defeated_data: EnemyData = enemies[i]["data"]
 			QuestManager.on_enemy_defeated(defeated_data)
+			if _is_heat_character():
+				_add_heat(10)
 			enemy_defeated.emit(i)
-		if enemies[i]["alive"]:
+		if bool(enemies[i]["alive"]):
 			all_dead = false
 	if all_dead:
+		if _overdose_resolved_this_combat and _is_hedonist():
+			player_euphoria = 10
+			euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
 		_clear_climax_after_victory()
 		state = CombatState.VICTORY
 		combat_won.emit(_generate_rewards())
@@ -648,22 +774,33 @@ func _clear_climax_after_victory() -> void:
 		return
 	_climax_active = false
 	_overdose_pending = false
-	player_euphoria = 0
+	player_euphoria = 40
 	euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
 
 func _execute_enemy_turns() -> void:
 	for i in enemies.size():
-		if not enemies[i]["alive"]:
+		if not bool(enemies[i]["alive"]):
 			continue
 		if _apply_dot_to_enemy(i):
 			continue
 		var status: Dictionary = enemies[i]["status"]
+		if int(status.get("stun", 0)) > 0:
+			status["stun"] = maxi(0, int(status.get("stun", 0)) - 1)
+			_decay_debuffs(status)
+			enemy_status_changed.emit(i, status)
+			enemies[i]["turn_counter"] += 1
+			continue
 
 		var weak_active := int(status.get("weak", 0)) > 0
 		var intent: Dictionary = enemies[i]["intent"]
 		enemies[i]["block"] = 0
 		enemy_block_changed.emit(i, 0)
 		var atk_down: int = int(status.get("atk_down", 0))
+		var charm_stacks: int = int(status.get("charm", 0))
+		if charm_stacks >= 2:
+			atk_down += 5
+		elif charm_stacks >= 1:
+			atk_down += 3
 		var fighter_reduce: int = 1 if _has_companion(CompanionData.CompanionType.FIGHTER) else 0
 		match intent.get("type", ""):
 			"attack":
@@ -674,11 +811,15 @@ func _execute_enemy_turns() -> void:
 				status["atk_down"] = 0
 			"defend":
 				var blk: int = intent.get("value", 0)
+				if int(status.get("guard_break", 0)) > 0:
+					blk = 0
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 			"attack_defend":
 				var dmg: int = maxi(0, _apply_weak(intent.get("attack", 0), weak_active) - atk_down - fighter_reduce)
 				var blk: int = intent.get("block", 0)
+				if int(status.get("guard_break", 0)) > 0:
+					blk = 0
 				enemies[i]["block"] = blk
 				enemy_block_changed.emit(i, enemies[i]["block"])
 				_damage_player(dmg, true)
@@ -689,7 +830,7 @@ func _execute_enemy_turns() -> void:
 
 func _update_all_intents() -> void:
 	for i in enemies.size():
-		if not enemies[i]["alive"]:
+		if not bool(enemies[i]["alive"]):
 			continue
 		enemies[i]["intent"] = _get_enemy_intent(enemies[i])
 		enemy_intent_updated.emit(i, enemies[i]["intent"])
@@ -786,7 +927,7 @@ func _generate_rewards() -> Array:
 # ===== ステータス効果システム =====
 
 func _new_status_dict() -> Dictionary:
-	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0, "atk_down": 0, "charm": 0}
+	return {"weak": 0, "vulnerable": 0, "burn": 0, "bleed": 0, "strength": 0, "atk_down": 0, "charm": 0, "investigation": 0, "stun": 0, "guard_break": 0}
 
 func _map_status(se: StringName) -> StringName:
 	match se:
@@ -808,6 +949,13 @@ func _apply_player_attack_mods(base: int, tags: Array[CardData.Tag] = [], consum
 	var dmg := base + int(player_status.get("strength", 0))
 	if CardData.Tag.BIKE in tags:
 		dmg += ResourceManager.get_stat_bonus("bike_attack_bonus")
+		if _is_cultist():
+			dmg += _gear_bike_damage_bonus()
+	if _is_heat_character():
+		if player_heat >= 90:
+			dmg += 5
+		elif player_heat >= 50:
+			dmg += 2
 	if CardData.Tag.MELEE in tags and int(player_buffs.get("melee_power", 0)) > 0:
 		dmg += 3
 	if int(player_buffs.get("overcharge", 0)) > 0 and ap <= 0:
@@ -876,6 +1024,7 @@ func _decay_debuffs(status: Dictionary) -> void:
 	status["vulnerable"] = maxi(0, int(status.get("vulnerable", 0)) - 1)
 	status["burn"] = maxi(0, int(status.get("burn", 0)) - 1)
 	status["bleed"] = maxi(0, int(status.get("bleed", 0)) - 1)
+	status["guard_break"] = maxi(0, int(status.get("guard_break", 0)) - 1)
 
 func _apply_dot_to_enemy(idx: int) -> bool:
 	var enemy := enemies[idx]
@@ -912,17 +1061,183 @@ func _add_heat(amount: int) -> void:
 	player_heat = clampi(player_heat + amount, 0, HEAT_MAX)
 	heat_changed.emit(player_heat, HEAT_MAX)
 
+func is_heat_card_transformed(card: CardData) -> bool:
+	if not _is_heat_character():
+		return false
+	if player_heat < 50:
+		return false
+	if CardData.Tag.DEFENSE not in card.tags:
+		return false
+	if card.get_effective_block() <= 0:
+		return false
+	if player_heat >= 90:
+		return true
+	var best_card: CardData = null
+	var best_block: int = -1
+	for hand_card: CardData in DeckManager.hand:
+		if CardData.Tag.DEFENSE not in hand_card.tags:
+			continue
+		var block_value: int = hand_card.get_effective_block()
+		if block_value > best_block:
+			best_block = block_value
+			best_card = hand_card
+	return card == best_card
+
 # ===== オーラ（闘気）=====
 func _add_aura(amount: int) -> void:
 	player_aura = clampi(player_aura + amount, 0, AURA_MAX)
 	aura_changed.emit(player_aura, AURA_MAX)
 
+# ===== 速度（ギア）=====
+func _gear_enabled() -> bool:
+	return _is_cultist() and GameManager.get_faith_band() != &"apostate"
+
+func _gear_cap() -> int:
+	if GameManager.get_faith_band() == &"doubting":
+		return 5
+	return GEAR_MAX
+
+func _is_full_throttle_active() -> bool:
+	return int(player_buffs.get("ultimate", 0)) > 0
+
+func _tick_gear_start_of_turn() -> void:
+	if not _gear_enabled():
+		player_gear = GEAR_MIN
+		acceleration_changed.emit(player_gear, GEAR_MAX)
+		return
+	if _is_full_throttle_active():
+		return
+	_add_gear(1)
+
+func _add_gear(amount: int) -> void:
+	if amount == 0:
+		return
+	if not _gear_enabled():
+		return
+	var cap: int = _gear_cap()
+	player_gear = clampi(player_gear + amount, GEAR_MIN, cap)
+	acceleration_changed.emit(player_gear, GEAR_MAX)
+	if player_gear >= GEAR_MAX:
+		_activate_ultimate()
+
+func _gear_bike_damage_bonus() -> int:
+	if _is_full_throttle_active():
+		return 0
+	match player_gear:
+		2:
+			return 1
+		3:
+			return 2
+		4:
+			return 3
+		5:
+			return 4
+	return 0
+
+func can_engine_brake() -> bool:
+	if state != CombatState.PLAYER_TURN:
+		return false
+	if not _gear_enabled():
+		return false
+	if _is_full_throttle_active():
+		return false
+	if _engine_brake_used_this_turn:
+		return false
+	return player_gear > GEAR_MIN
+
+func engine_brake() -> bool:
+	if not can_engine_brake():
+		return false
+	_engine_brake_used_this_turn = true
+	player_gear = maxi(GEAR_MIN, player_gear - 1)
+	player_block += 3
+	acceleration_changed.emit(player_gear, GEAR_MAX)
+	player_block_changed.emit(player_block)
+	return true
+
+func _activate_ultimate() -> void:
+	player_buffs["ultimate"] = FULL_THROTTLE_TURNS
+	player_gear = GEAR_MAX
+	_free_bike_fuel_turns = 1
+	acceleration_changed.emit(player_gear, GEAR_MAX)
+	player_buffs_changed.emit(player_buffs)
+	DeckManager.discard_hand()
+	DeckManager.draw_cards(DeckManager.HAND_SIZE + 2)
+	if not _regular_draw_done:
+		_skip_regular_draw_this_turn = true
+	ultimate_activated.emit()
+
+# ===== 調査ゲージ =====
+func _tick_investigation_start_of_turn() -> void:
+	if GameManager.current_companion == null:
+		return
+	if GameManager.current_companion.companion_type == CompanionData.CompanionType.DOG:
+		return
+	_add_investigation(-1)
+	if player_investigation <= 0:
+		_clear_random_investigated_enemy()
+		player_investigation = 3
+		investigation_changed.emit(player_investigation, INVESTIGATION_MAX)
+
+func _add_investigation(amount: int) -> void:
+	player_investigation = clampi(player_investigation + amount, 0, INVESTIGATION_MAX)
+	investigation_changed.emit(player_investigation, INVESTIGATION_MAX)
+
+func _clear_random_investigated_enemy() -> void:
+	var candidates: Array[int] = []
+	for i: int in range(enemies.size()):
+		var status: Dictionary = enemies[i]["status"]
+		if int(status.get("investigation", 0)) > 0:
+			candidates.append(i)
+	if candidates.is_empty():
+		return
+	var idx: int = candidates[randi() % candidates.size()]
+	var status: Dictionary = enemies[idx]["status"]
+	status["investigation"] = 0
+	enemy_status_changed.emit(idx, status)
+
+func _has_missing_link_target() -> bool:
+	for i: int in range(enemies.size()):
+		if _is_missing_link_target(i):
+			return true
+	return false
+
+func _is_missing_link_target(idx: int) -> bool:
+	if idx < 0 or idx >= enemies.size():
+		return false
+	if not bool(enemies[idx]["alive"]):
+		return false
+	var total: int = 0
+	for enemy: Dictionary in enemies:
+		var status: Dictionary = enemy["status"]
+		total += int(status.get("investigation", 0))
+	var target_status: Dictionary = enemies[idx]["status"]
+	return int(target_status.get("investigation", 0)) >= 3 or total >= 5
+
 # ===== エクスタシー =====
 func _add_euphoria(amount: int) -> void:
+	if amount > 0 and player_euphoria >= 95 and player_euphoria < EUPHORIA_MAX:
+		player_euphoria = EUPHORIA_MAX
+		euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
+		if not _climax_active:
+			_activate_climax()
+		return
 	player_euphoria = clampi(player_euphoria + amount, 0, EUPHORIA_MAX)
 	euphoria_changed.emit(player_euphoria, EUPHORIA_MAX)
 	if player_euphoria >= EUPHORIA_MAX and not _climax_active:
 		_activate_climax()
+
+func _tick_euphoria_start_of_turn() -> void:
+	_add_euphoria(-8)
+	var charm_gain: int = 0
+	for enemy: Dictionary in enemies:
+		if not bool(enemy.get("alive", false)):
+			continue
+		var status: Dictionary = enemy["status"]
+		if int(status.get("charm", 0)) > 0:
+			charm_gain += 3
+	if charm_gain > 0:
+		_add_euphoria(charm_gain)
 
 func _activate_climax() -> void:
 	_climax_active = true
@@ -934,19 +1249,31 @@ func _activate_climax() -> void:
 # ===== 獣システム =====
 func _beast_auto_attack() -> void:
 	for beast: Dictionary in player_beasts:
-		if not beast.get("alive", false):
+		if not bool(beast.get("alive", false)):
 			continue
-		var atk: int = beast.get("attack", 3)
+		var atk: int = int(beast.get("attack", 3))
 		for i in enemies.size():
-			if enemies[i]["alive"]:
+			if bool(enemies[i]["alive"]):
 				_damage_enemy(i, atk)
 				break
 	beast_changed.emit()
 
-func add_beast(beast_name: String, hp: int, atk: int) -> void:
+func add_beast(beast_name: String, hp: int, atk: int, guard: int = 0) -> void:
 	if player_beasts.size() >= BEAST_MAX:
 		return
-	player_beasts.append({"name": beast_name, "hp": hp, "max_hp": hp, "attack": atk, "alive": true})
+	player_beasts.append({"name": beast_name, "hp": hp, "max_hp": hp, "attack": atk, "guard": guard, "guard_bonus": 0, "alive": true})
+	beast_changed.emit()
+
+func _partner_attack_instruction() -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		var atk: int = int(beast.get("attack", 0)) * 2
+		beast["guard_bonus"] = -int(beast.get("guard", 0))
+		for i: int in range(enemies.size()):
+			if bool(enemies[i]["alive"]):
+				_damage_enemy(i, atk)
+				break
 	beast_changed.emit()
 
 func _heal_beasts(amount: int) -> void:
@@ -966,44 +1293,98 @@ func _buff_beasts_attack(amount: int) -> void:
 
 func _summon_random_beast() -> void:
 	var candidates: Array[Dictionary] = [
-		{"name": "野犬", "hp": 8, "attack": 3},
-		{"name": "砂狐", "hp": 6, "attack": 4},
-		{"name": "荒野の鷹", "hp": 5, "attack": 5},
+		{"name": "デビルフ", "hp": 8, "attack": 8, "guard": 0},
+		{"name": "変異グリズリー", "hp": 30, "attack": 4, "guard": 5},
+		{"name": "汚染イーグル", "hp": 6, "attack": 3, "guard": 0},
 	]
 	var pick: Dictionary = candidates[randi() % candidates.size()]
-	add_beast(String(pick.get("name", "獣")), int(pick.get("hp", 6)), int(pick.get("attack", 3)))
+	if player_beasts.size() >= BEAST_MAX:
+		player_beasts.clear()
+	add_beast(String(pick.get("name", "獣")), int(pick.get("hp", 6)), int(pick.get("attack", 3)), int(pick.get("guard", 0)))
 
 func damage_beast(idx: int, amount: int) -> void:
 	if idx < 0 or idx >= player_beasts.size():
 		return
 	var beast := player_beasts[idx]
-	if not beast.get("alive", false):
+	if not bool(beast.get("alive", false)):
 		return
-	beast["hp"] = maxi(0, beast["hp"] - amount)
-	if beast["hp"] <= 0:
+	beast["hp"] = maxi(0, int(beast.get("hp", 0)) - amount)
+	if int(beast.get("hp", 0)) <= 0:
+		beast["alive"] = false
+	beast_changed.emit()
+
+func _redirect_damage_to_partners(amount: int) -> int:
+	var alive_indices: Array[int] = []
+	for i: int in range(player_beasts.size()):
+		var beast: Dictionary = player_beasts[i]
+		if bool(beast.get("alive", false)):
+			alive_indices.append(i)
+	if alive_indices.is_empty():
+		return amount
+	if int(player_buffs.get("partner_defense", 0)) > 0:
+		var each_damage: int = int(ceil(float(amount) / float(alive_indices.size())))
+		for idx: int in alive_indices:
+			_damage_partner_with_guard(idx, each_damage)
+		return 0
+	var share_count: int = alive_indices.size() + 1
+	var player_share: int = int(ceil(float(amount) / float(share_count)))
+	var beast_share: int = int(floor(float(amount) / float(share_count)))
+	for idx: int in alive_indices:
+		_damage_partner_with_guard(idx, beast_share)
+	return player_share
+
+func _damage_partner_with_guard(idx: int, amount: int) -> void:
+	if idx < 0 or idx >= player_beasts.size():
+		return
+	var beast: Dictionary = player_beasts[idx]
+	var guard: int = maxi(0, int(beast.get("guard", 0)) + int(beast.get("guard_bonus", 0)))
+	var final_damage: int = maxi(0, amount - guard)
+	beast["hp"] = maxi(0, int(beast.get("hp", 0)) - final_damage)
+	if int(beast.get("hp", 0)) <= 0:
 		beast["alive"] = false
 	beast_changed.emit()
 
 func _tick_player_buffs() -> void:
 	var changed := false
+	var ultimate_before: int = int(player_buffs.get("ultimate", 0))
 	for key: String in ["melee_power", "overcharge", "ultimate"]:
 		var val: int = int(player_buffs.get(key, 0))
 		if val > 0:
 			player_buffs[key] = val - 1
 			changed = true
+	if _free_bike_fuel_turns > 0:
+		_free_bike_fuel_turns -= 1
+	if ultimate_before > 0 and int(player_buffs.get("ultimate", 0)) <= 0:
+		player_gear = GEAR_MIN
+		acceleration_changed.emit(player_gear, GEAR_MAX)
 	if changed:
 		player_buffs_changed.emit(player_buffs)
+
+func _clear_partner_turn_state() -> void:
+	var buffs_changed := false
+	var beasts_changed := false
+	if int(player_buffs.get("partner_defense", 0)) > 0:
+		player_buffs["partner_defense"] = 0
+		buffs_changed = true
+	for beast: Dictionary in player_beasts:
+		if int(beast.get("guard_bonus", 0)) != 0:
+			beast["guard_bonus"] = 0
+			beasts_changed = true
+	if buffs_changed:
+		player_buffs_changed.emit(player_buffs)
+	if beasts_changed:
+		beast_changed.emit()
 
 # ===== キャラ判定ヘルパー =====
 func _is_cultist() -> bool:
 	if GameManager.current_character == null:
 		return false
-	return GameManager.current_character.unique_system == &"acceleration"
+	return GameManager.current_character.unique_system == &"gear"
 
 func _is_wanderer() -> bool:
 	if GameManager.current_character == null:
 		return false
-	return GameManager.current_character.unique_system == &"lone_wolf"
+	return GameManager.current_character.unique_system == &"investigation"
 
 func _is_conqueror() -> bool:
 	if GameManager.current_character == null:
@@ -1013,7 +1394,12 @@ func _is_conqueror() -> bool:
 func _is_beast_master() -> bool:
 	if GameManager.current_character == null:
 		return false
-	return GameManager.current_character.unique_system == &"beast"
+	return GameManager.current_character.unique_system == &"partner"
+
+func _is_heat_character() -> bool:
+	if GameManager.current_character == null:
+		return false
+	return GameManager.current_character.unique_system == &"heat"
 
 func _is_hedonist() -> bool:
 	if GameManager.current_character == null:
@@ -1045,28 +1431,6 @@ func _apply_player_effect(effect: StringName, stacks: int) -> void:
 		&"ranged_double":
 			player_buffs["ranged_double"] = int(player_buffs.get("ranged_double", 0)) + stacks
 	player_buffs_changed.emit(player_buffs)
-
-func _add_acceleration(amount: int) -> void:
-	if acceleration_gauge >= ACCELERATION_MAX:
-		return
-	acceleration_gauge = mini(acceleration_gauge + amount, ACCELERATION_MAX)
-	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
-	if acceleration_gauge >= ACCELERATION_MAX:
-		_activate_ultimate()
-
-func _activate_ultimate() -> void:
-	player_buffs["ultimate"] = 3
-	acceleration_gauge = 0
-	acceleration_changed.emit(acceleration_gauge, ACCELERATION_MAX)
-	player_buffs_changed.emit(player_buffs)
-	DeckManager.draw_cards(3)
-	ultimate_activated.emit()
-
-func _fill_acceleration_from_card(card: CardData) -> void:
-	if card.get_effective_damage() > 0:
-		_add_acceleration(ACCEL_ATTACK)
-	else:
-		_add_acceleration(ACCEL_BUFF)
 
 func _apply_relic_triggers(timing: ItemData.TriggerTiming) -> void:
 	for relic: ItemData in ItemDatabase.get_relics():

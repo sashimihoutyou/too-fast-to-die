@@ -14,8 +14,10 @@ var awaiting_reward: bool = false
 var _last_player_hp: int = 0
 var _heat_label: Label = null
 var _aura_label: Label = null
+var _investigation_label: Label = null
 var _euphoria_label: Label = null
 var _beast_label: Label = null
+var _engine_brake_button: Button = null
 var _tooltip_panel: PanelContainer = null
 var _tooltip_title_label: Label = null
 var _tooltip_body_label: Label = null
@@ -34,8 +36,10 @@ func _ready() -> void:
 	_show_target_buttons(false)
 	_setup_heat_meter()
 	_setup_aura_meter()
+	_setup_investigation_meter()
 	_setup_euphoria_meter()
 	_setup_beast_display()
+	_setup_engine_brake_button()
 	_update_player_hud()
 	_update_hand()
 	_update_controls()
@@ -208,18 +212,18 @@ func _get_unique_system_line() -> String:
 	if GameManager.current_character == null:
 		return ""
 	match GameManager.current_character.unique_system:
-		&"acceleration":
-			return "加速: %d/%d" % [CombatManager.acceleration_gauge, CombatManager.ACCELERATION_MAX]
+		&"gear":
+			return "ギア: %d/%d" % [CombatManager.player_gear, CombatManager.GEAR_MAX]
 		&"heat":
 			return "ヒート: %d/%d" % [CombatManager.player_heat, CombatManager.HEAT_MAX]
+		&"investigation":
+			return "調査: %d/%d" % [CombatManager.player_investigation, CombatManager.INVESTIGATION_MAX]
 		&"aura":
 			return "闘気: %d/%d" % [CombatManager.player_aura, CombatManager.AURA_MAX]
 		&"euphoria":
 			return "エクスタシー: %d/%d" % [CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX]
-		&"beast":
-			return "獣: %s" % _beast_summary()
-		&"lone_wolf":
-			return "ローンウルフ: %s" % ("有効" if GameManager.current_companion == null else "同行者あり")
+		&"partner":
+			return "相棒: %s" % _beast_summary()
 	return ""
 
 func _beast_summary() -> String:
@@ -233,12 +237,13 @@ func _beast_summary() -> String:
 			var hp: int = int(beast.get("hp", 0))
 			var max_hp: int = int(beast.get("max_hp", 0))
 			var attack: int = int(beast.get("attack", 0))
-			parts.append("%s HP%d/%d 攻%d" % [beast_name, hp, max_hp, attack])
+			var guard: int = int(beast.get("guard", 0)) + int(beast.get("guard_bonus", 0))
+			parts.append("%s HP%d/%d 攻%d 軽%d" % [beast_name, hp, max_hp, attack, maxi(0, guard)])
 	return "、".join(parts) if not parts.is_empty() else "なし"
 
 func _status_detail_lines(status: Dictionary) -> Array[String]:
 	var lines: Array[String] = []
-	for key: String in ["burn", "bleed", "weak", "vulnerable", "strength", "atk_down", "charm"]:
+	for key: String in ["burn", "bleed", "weak", "vulnerable", "strength", "atk_down", "charm", "investigation", "stun", "guard_break"]:
 		var value: int = int(status.get(key, 0))
 		if value <= 0:
 			continue
@@ -249,7 +254,7 @@ func _status_detail_lines(status: Dictionary) -> Array[String]:
 
 func _buff_detail_lines(buffs: Dictionary) -> Array[String]:
 	var lines: Array[String] = []
-	for key: String in ["ultimate", "overcharge", "melee_power", "ranged_double", "strength_turn"]:
+	for key: String in ["ultimate", "overcharge", "melee_power", "ranged_double", "strength_turn", "partner_defense"]:
 		var value: int = int(buffs.get(key, 0))
 		if value <= 0:
 			continue
@@ -267,6 +272,9 @@ func _status_display_name(status_id: String) -> String:
 		"strength": return "筋力"
 		"atk_down": return "攻撃低下"
 		"charm": return "魅了"
+		"investigation": return "調査"
+		"stun": return "スタン"
+		"guard_break": return "ガードブレイク"
 	return status_id
 
 func _status_description(status_id: String) -> String:
@@ -277,25 +285,30 @@ func _status_description(status_id: String) -> String:
 		"vulnerable": return "受ける攻撃ダメージが50%増加。毎ターン1減少。"
 		"strength": return "攻撃ダメージに値ぶん加算。"
 		"atk_down": return "次の攻撃ダメージから値ぶん減少。敵の攻撃後に消える。"
-		"charm": return "享楽者の特殊効果。一定値以上で専用カードの対象になる。"
+		"charm": return "攻撃力を下げる。3以上で愛の奴隷の対象になる。"
+		"investigation": return "3以上、または敵全体で5以上になるとQ.E.D.の対象になる。"
+		"stun": return "次の行動を失う。"
+		"guard_break": return "ブロックを得られない。"
 	return "未登録の状態です。"
 
 func _buff_display_name(buff_id: String) -> String:
 	match buff_id:
-		"ultimate": return "アルティメット"
+		"ultimate": return "フルスロットル"
 		"overcharge": return "過充電"
 		"melee_power": return "近接強化"
 		"ranged_double": return "射撃倍化"
 		"strength_turn": return "一時筋力"
+		"partner_defense": return "防御指示"
 	return buff_id
 
 func _buff_description(buff_id: String) -> String:
 	match buff_id:
-		"ultimate": return "カードAPコスト-1。残りターンで減少。"
+		"ultimate": return "カードAPコスト-1。発動ターンはバイクカードの燃料コスト0。"
 		"overcharge": return "AP不足でもカードを使える。足りないAPはHPで支払う。"
 		"melee_power": return "近接攻撃のダメージ+3。"
 		"ranged_double": return "射撃攻撃のダメージを倍化し、使用ごとに1減少。"
 		"strength_turn": return "このターンだけ筋力を上げる。次ターン開始時に戻る。"
+		"partner_defense": return "このターンの被ダメージを相棒が引き受ける。"
 	return "未登録の一時効果です。"
 
 func _card_tooltip_body(card: CardData) -> String:
@@ -304,13 +317,16 @@ func _card_tooltip_body(card: CardData) -> String:
 	var cost_text := "AP: %d" % effective_cost
 	if effective_cost != card.ap_cost:
 		cost_text += " (元%d)" % card.ap_cost
-	if card.fuel_cost > 0:
-		cost_text += " / %s: %d" % [GameManager.get_travel_resource_name(), card.fuel_cost]
+	var fuel_cost: int = CombatManager.get_effective_fuel_cost(card)
+	if fuel_cost > 0:
+		cost_text += " / %s: %d" % [GameManager.get_travel_resource_name(), fuel_cost]
 	lines.append(cost_text)
-	if not card.tags.is_empty():
+	if CombatManager.is_heat_card_transformed(card):
+		lines.append("タグ: 近接・固有")
+	elif not card.tags.is_empty():
 		lines.append("タグ: %s" % _tags_to_text(card.tags))
 	var stats: Array[String] = []
-	var preview_damage: int = card.get_effective_damage()
+	var preview_damage: int = card.get_effective_block() if CombatManager.is_heat_card_transformed(card) else card.get_effective_damage()
 	if selected_card == card:
 		var target_idx: int = _get_sole_alive_enemy()
 		if target_idx >= 0:
@@ -318,7 +334,8 @@ func _card_tooltip_body(card: CardData) -> String:
 	if preview_damage > 0:
 		stats.append("ダメージ: %d × %d" % [preview_damage, card.hit_count])
 	if card.get_effective_block() > 0:
-		stats.append("ブロック: %d" % card.get_effective_block())
+		if not CombatManager.is_heat_card_transformed(card):
+			stats.append("ブロック: %d" % card.get_effective_block())
 	if card.draw_count > 0:
 		stats.append("ドロー: %d" % card.draw_count)
 	if card.bonus_ap > 0:
@@ -326,7 +343,10 @@ func _card_tooltip_body(card: CardData) -> String:
 	if not stats.is_empty():
 		lines.append(" / ".join(stats))
 	lines.append("")
-	lines.append(card.description)
+	if CombatManager.is_heat_card_transformed(card):
+		lines.append("元のブロック値をダメージに変える。ターン終了時に元へ戻る。")
+	else:
+		lines.append(card.description)
 	var effect_lines: Array[String] = _card_effect_detail_lines(card)
 	if not effect_lines.is_empty():
 		lines.append("")
@@ -343,6 +363,8 @@ func _card_effect_detail_lines(card: CardData) -> Array[String]:
 			lines.append("%s %d: %s" % [_buff_display_name(effect_key), card.status_stacks, _buff_description(effect_key)])
 		elif card.status_effect == &"charm":
 			lines.append("%s %d: %s" % [_status_display_name("charm"), card.status_stacks, _status_description("charm")])
+		elif card.status_effect == &"investigate":
+			lines.append("%s %d: %s" % [_status_display_name("investigation"), card.status_stacks, _status_description("investigation")])
 		elif effect_key != "":
 			lines.append("%s %d: %s" % [_status_display_name(effect_key), card.status_stacks, _status_description(effect_key)])
 	if card.ap_cost_reduction > 0:
@@ -482,6 +504,19 @@ func _setup_aura_meter() -> void:
 	$PlayerHUD.add_child(_aura_label)
 	_on_aura_changed(CombatManager.player_aura, CombatManager.AURA_MAX)
 
+func _setup_investigation_meter() -> void:
+	if GameManager.current_character.unique_system != &"investigation":
+		return
+	_investigation_label = Label.new()
+	_investigation_label.offset_left = 235.0
+	_investigation_label.offset_top = 218.0
+	_investigation_label.offset_right = 360.0
+	_investigation_label.offset_bottom = 252.0
+	_investigation_label.add_theme_font_size_override("font_size", 12)
+	_investigation_label.add_theme_color_override("font_color", Color(0.45, 0.75, 1.0))
+	$PlayerHUD.add_child(_investigation_label)
+	_on_investigation_changed(CombatManager.player_investigation, CombatManager.INVESTIGATION_MAX)
+
 func _setup_euphoria_meter() -> void:
 	if GameManager.current_character.unique_system != &"euphoria":
 		return
@@ -496,7 +531,7 @@ func _setup_euphoria_meter() -> void:
 	_on_euphoria_changed(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
 
 func _setup_beast_display() -> void:
-	if GameManager.current_character.unique_system != &"beast":
+	if GameManager.current_character.unique_system != &"partner":
 		return
 	_beast_label = Label.new()
 	_beast_label.offset_left = 235.0
@@ -522,6 +557,11 @@ func _on_aura_changed(value: int, max_value: int) -> void:
 		_aura_label.text = "闘気 %d/%d" % [value, max_value]
 	_update_portrait_state()
 
+func _on_investigation_changed(value: int, max_value: int) -> void:
+	if _investigation_label != null:
+		_investigation_label.text = "調査 %d/%d" % [value, max_value]
+	_update_portrait_state()
+
 func _on_euphoria_changed(value: int, max_value: int) -> void:
 	if _euphoria_label != null:
 		var zone := ""
@@ -529,8 +569,10 @@ func _on_euphoria_changed(value: int, max_value: int) -> void:
 			zone = "枯渇"
 		elif value <= 32:
 			zone = "倦怠"
-		elif value <= 74:
+		elif value <= 59:
 			zone = "平常"
+		elif value <= 74:
+			zone = "バズ"
 		elif value < 100:
 			zone = "高揚"
 		else:
@@ -562,7 +604,7 @@ func _on_beast_changed() -> void:
 	if _beast_label == null:
 		return
 	if CombatManager.player_beasts.is_empty():
-		_beast_label.text = "🐾 獣: なし"
+		_beast_label.text = "相棒: なし"
 		_update_portrait_state()
 		return
 	var alive_count: int = 0
@@ -571,11 +613,11 @@ func _on_beast_changed() -> void:
 		var alive: bool = beast.get("alive", false)
 		if alive:
 			alive_count += 1
-			var name_str: String = beast.get("name", "獣")
-			var bhp: int = beast.get("hp", 0)
-			var bmax: int = beast.get("max_hp", 0)
+			var name_str: String = String(beast.get("name", "獣"))
+			var bhp: int = int(beast.get("hp", 0))
+			var bmax: int = int(beast.get("max_hp", 0))
 			parts.append("%s(%d/%d)" % [name_str, bhp, bmax])
-	_beast_label.text = "獣 %d/%d" % [alive_count, CombatManager.BEAST_MAX]
+	_beast_label.text = "相棒 %d/%d" % [alive_count, CombatManager.BEAST_MAX]
 	_update_portrait_state()
 
 func _setup_signals() -> void:
@@ -588,6 +630,7 @@ func _setup_signals() -> void:
 	CombatManager.enemy_status_changed.connect(_on_enemy_status_changed)
 	CombatManager.player_status_changed.connect(_on_player_status_changed)
 	CombatManager.heat_changed.connect(_on_heat_changed)
+	CombatManager.investigation_changed.connect(_on_investigation_changed)
 	CombatManager.player_hp_changed.connect(_on_player_hp_changed)
 	CombatManager.player_block_changed.connect(_on_player_block_changed)
 	CombatManager.ap_changed.connect(_on_ap_changed)
@@ -605,6 +648,17 @@ func _setup_signals() -> void:
 	$Controls/EndTurnButton.pressed.connect(_on_end_turn)
 	$Controls/FleeButton.pressed.connect(_on_flee)
 	$Controls/RerollButton.pressed.connect(_on_reroll)
+
+func _setup_engine_brake_button() -> void:
+	if GameManager.current_character.unique_system != &"gear":
+		return
+	_engine_brake_button = Button.new()
+	_engine_brake_button.text = "エンジンブレーキ"
+	_engine_brake_button.custom_minimum_size = Vector2(170, 40)
+	_engine_brake_button.tooltip_text = "ギア-1、ブロック+3。1ターン1回。"
+	_engine_brake_button.focus_mode = Control.FOCUS_NONE
+	_engine_brake_button.pressed.connect(_on_engine_brake)
+	$Controls.add_child(_engine_brake_button)
 
 func _build_enemy_display() -> void:
 	for child in $EnemyArea.get_children():
@@ -812,17 +866,24 @@ func _create_card_button(card: CardData) -> Button:
 	if effective_cost != card.ap_cost:
 		cost_text = "%dAP(-%d)" % [effective_cost, card.ap_cost - effective_cost]
 	if card.fuel_cost > 0:
-		cost_text += "+%d燃" % card.fuel_cost
+		var fuel_cost: int = CombatManager.get_effective_fuel_cost(card)
+		if fuel_cost > 0:
+			cost_text += "+%d燃" % fuel_cost
 
-	var tag_text := _tags_to_bracket_text(card.tags)
+	var transformed: bool = CombatManager.is_heat_card_transformed(card)
+	var tag_text: String = "[近接][固有]" if transformed else _tags_to_bracket_text(card.tags)
+	var display_name: String = "怒りの一撃" if transformed else card.get_display_name()
+	var description: String = "%dダメージ（元: %s）" % [card.get_effective_block(), card.get_display_name()] if transformed else card.description
 
-	btn.text = "%s\n%s\n%s\n%s" % [cost_text, card.get_display_name(), tag_text, card.description]
+	btn.text = "%s\n%s\n%s\n%s" % [cost_text, display_name, tag_text, description]
 	btn.disabled = not can_play or card.is_unplayable
 	btn.pressed.connect(_on_card_selected.bind(card))
 
 	var style := StyleBoxFlat.new()
 	if card.is_unplayable:
 		style.bg_color = Color(0.3, 0.1, 0.3, 0.9)
+	elif transformed:
+		style.bg_color = Color(0.42, 0.12, 0.08, 0.9)
 	elif can_play:
 		match card.rarity:
 			CardData.Rarity.COMMON: style.bg_color = Color(0.2, 0.2, 0.2, 0.9)
@@ -902,8 +963,9 @@ func _show_card_detail(card: CardData) -> void:
 
 	var cost_label := Label.new()
 	var cost_parts: Array[String] = ["AP: %d" % card.ap_cost]
-	if card.fuel_cost > 0:
-		cost_parts.append("%sコスト: %d" % [GameManager.get_travel_resource_name(), card.fuel_cost])
+	var detail_fuel_cost: int = CombatManager.get_effective_fuel_cost(card)
+	if detail_fuel_cost > 0:
+		cost_parts.append("%sコスト: %d" % [GameManager.get_travel_resource_name(), detail_fuel_cost])
 	cost_label.text = " | ".join(cost_parts)
 	cost_label.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(cost_label)
@@ -972,7 +1034,7 @@ func _on_card_hover(btn: Button, card: CardData, hovering: bool) -> void:
 func _on_card_selected(card: CardData) -> void:
 	if not CombatManager.can_play_card(card):
 		return
-	var needs_target := (card.base_damage > 0 or card.requires_target or _targets_enemy_status(card)) and not card.is_aoe
+	var needs_target := (card.base_damage > 0 or card.requires_target or _targets_enemy_status(card) or CombatManager.is_heat_card_transformed(card)) and not card.is_aoe
 	if needs_target:
 		var alive_idx := _get_sole_alive_enemy()
 		if alive_idx >= 0:
@@ -1126,6 +1188,8 @@ func _update_controls() -> void:
 	$Controls/RerollButton.disabled = not in_turn or ResourceManager.fuel < 1
 	$Controls/FleeButton.text = "逃走不可（ボス）" if is_boss else "逃走 (1%s)" % GameManager.get_travel_resource_name()
 	$Controls/RerollButton.text = "リロール (1%s)" % GameManager.get_travel_resource_name()
+	if _engine_brake_button != null:
+		_engine_brake_button.disabled = not CombatManager.can_engine_brake()
 
 func _update_consumable_buttons() -> void:
 	for child in $ItemArea.get_children():
@@ -1209,6 +1273,11 @@ func _on_reroll() -> void:
 	_update_player_hud()
 	_update_controls()
 
+func _on_engine_brake() -> void:
+	if CombatManager.engine_brake():
+		_update_player_hud()
+		_update_controls()
+
 func _on_turn_started(_turn: int) -> void:
 	_update_hand()
 	_update_player_hud()
@@ -1283,6 +1352,7 @@ func _on_player_status_changed(status: Dictionary) -> void:
 
 func _on_acceleration_changed(_gauge: int, _max_gauge: int) -> void:
 	_update_gauge_display()
+	_update_controls()
 
 func _on_player_buffs_changed(_buffs: Dictionary) -> void:
 	_update_buff_display()
@@ -1292,7 +1362,7 @@ func _on_player_buffs_changed(_buffs: Dictionary) -> void:
 func _on_ultimate_activated() -> void:
 	_flash_screen(Color(0.2, 0.8, 0.9, 0.4))
 	var msg := Label.new()
-	msg.text = "アルティメット発動！"
+	msg.text = "フルスロットル！"
 	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	msg.set_anchors_preset(Control.PRESET_CENTER)
@@ -1311,9 +1381,9 @@ func _on_ultimate_activated() -> void:
 
 func _update_gauge_display() -> void:
 	if CombatManager._is_cultist():
-		var gauge := CombatManager.acceleration_gauge
-		var mx := CombatManager.ACCELERATION_MAX
-		$PlayerHUD/GaugeLabel.text = "加速 %d/%d" % [gauge, mx]
+		var gear: int = CombatManager.player_gear
+		var mx: int = CombatManager.GEAR_MAX
+		$PlayerHUD/GaugeLabel.text = "ギア %d/%d" % [gear, mx]
 	else:
 		$PlayerHUD/GaugeLabel.text = ""
 
@@ -1324,14 +1394,17 @@ func _update_buff_display() -> void:
 	var oc: int = int(buffs.get("overcharge", 0))
 	var mp: int = int(buffs.get("melee_power", 0))
 	var rd: int = int(buffs.get("ranged_double", 0))
+	var pd: int = int(buffs.get("partner_defense", 0))
 	if ult > 0:
-		parts.append("ULT(%dt)" % ult)
+		parts.append("フルスロットル(%dt)" % ult)
 	if oc > 0:
 		parts.append("過充電(%dt)" % oc)
 	if mp > 0:
 		parts.append("近+3(%dt)" % mp)
 	if rd > 0:
 		parts.append("射×2(%d)" % rd)
+	if pd > 0:
+		parts.append("防御指示")
 	$PlayerHUD/BuffLabel.text = " ".join(parts)
 
 func _targets_enemy_status(card: CardData) -> bool:
@@ -1340,6 +1413,8 @@ func _targets_enemy_status(card: CardData) -> bool:
 	if CombatManager._is_player_effect(card.status_effect):
 		return false
 	if card.status_effect == &"charm":
+		return true
+	if card.status_effect == &"investigate":
 		return true
 	return CombatManager._map_status(card.status_effect) != &""
 
@@ -1354,6 +1429,9 @@ func _format_status(status: Dictionary) -> String:
 	var strg: int = int(status.get("strength", 0))
 	var atk_down: int = int(status.get("atk_down", 0))
 	var charm: int = int(status.get("charm", 0))
+	var investigation: int = int(status.get("investigation", 0))
+	var stun: int = int(status.get("stun", 0))
+	var guard_break: int = int(status.get("guard_break", 0))
 	if burn > 0:
 		parts.append("🔥%d" % burn)
 	if bleed > 0:
@@ -1368,6 +1446,12 @@ func _format_status(status: Dictionary) -> String:
 		parts.append("攻-%d" % atk_down)
 	if charm > 0:
 		parts.append("💘%d" % charm)
+	if investigation > 0:
+		parts.append("調%d" % investigation)
+	if stun > 0:
+		parts.append("止%d" % stun)
+	if guard_break > 0:
+		parts.append("砕%d" % guard_break)
 	return " ".join(parts)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:

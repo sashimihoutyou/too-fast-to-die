@@ -22,7 +22,7 @@ func _load_characters() -> void:
 		if not dir.current_is_dir() and file_name.ends_with(".tres"):
 			var full_path := CHARACTER_DIR.path_join(file_name)
 			var character: CharacterData = load(full_path)
-			if character != null and character.id != &"":
+			if character != null and character.id != &"" and character.is_playable:
 				_characters.append(character)
 		file_name = dir.get_next()
 
@@ -70,10 +70,10 @@ func _on_back() -> void:
 
 func _system_display_name(system: StringName) -> String:
 	match system:
-		&"acceleration": return "加速ゲージ"
+		&"gear": return "速度（ギア）"
 		&"heat": return "ヒート（激情）"
-		&"lone_wolf": return "ローンウルフ"
-		&"beast": return "獣召喚"
+		&"investigation": return "調査ゲージ"
+		&"partner": return "相棒"
 		&"aura": return "闘気（オーラ）"
 		&"euphoria": return "エクスタシー"
 	return "なし"

@@ -32,8 +32,6 @@ func _check_unlocks() -> void:
 		unlocked_characters.append(&"wanderer")
 	if total_distance_km >= 500 and &"beast_master" not in unlocked_characters:
 		unlocked_characters.append(&"beast_master")
-	if not cleared_characters.is_empty() and &"conqueror" not in unlocked_characters:
-		unlocked_characters.append(&"conqueror")
 	if total_distance_km >= 750 and &"hedonist" not in unlocked_characters:
 		unlocked_characters.append(&"hedonist")
 
@@ -62,7 +60,9 @@ func load_data() -> void:
 	total_runs = data.get("total_runs", 0)
 	unlocked_characters.clear()
 	for c in data.get("unlocked_characters", ["cultist", "ex_raider", "wanderer", "beast_master", "hedonist"]):
-		unlocked_characters.append(StringName(c))
+		var character_id := StringName(c)
+		if character_id != &"conqueror":
+			unlocked_characters.append(character_id)
 	cleared_characters.clear()
 	for c in data.get("cleared_characters", []):
 		cleared_characters.append(StringName(c))
