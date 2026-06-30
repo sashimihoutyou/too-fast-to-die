@@ -259,7 +259,11 @@ func _enter_combat(node_type: MapGenerator.NodeType) -> void:
 	var enemies := _get_enemies_for_node(node_type)
 	var boss_hp_scale := 1.0
 	if node_type == MapGenerator.NodeType.BOSS:
-		var mod := QuestManager.get_boss_modifier(GameManager.current_act)
+		var boss_id: StringName = &""
+		if not enemies.is_empty():
+			var boss: EnemyData = enemies[0]
+			boss_id = boss.id
+		var mod := QuestManager.get_boss_modifier(GameManager.current_act, boss_id)
 		boss_hp_scale = float(mod.get("hp_scale", 1.0))
 	CombatManager.start_combat(enemies, boss_hp_scale)
 	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
@@ -299,7 +303,7 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]
 				boss = _fallback_enemy(act, false, true)
 			enemies.append(boss)
 			# サブストーリーのアウトカムに応じてボスに取り巻きを追加する。
-			var mod := QuestManager.get_boss_modifier(act)
+			var mod := QuestManager.get_boss_modifier(act, boss.id)
 			var adds: int = int(mod.get("adds", 0))
 			var add_id: StringName = mod.get("add_enemy", &"")
 			if adds > 0 and add_id != &"":

@@ -16,6 +16,8 @@ var ItemDatabase
 var CardDatabase
 var EnemyDatabase
 var KarmaManager
+var EventManager
+var CompanionDatabase
 
 var _args: Dictionary = {}
 
@@ -38,18 +40,21 @@ func _resolve_autoloads() -> void:
 	CardDatabase = root.get_node("CardDatabase")
 	EnemyDatabase = root.get_node("EnemyDatabase")
 	KarmaManager = root.get_node("KarmaManager")
+	EventManager = root.get_node("EventManager")
+	CompanionDatabase = root.get_node("CompanionDatabase")
 
 func _run() -> void:
 	var character_id: StringName = StringName(_args.get("character", "ex_raider"))
 	var run_count: int = int(_args.get("runs", str(DEFAULT_RUNS)))
 	var seed_val: int = int(_args.get("seed", "0"))
+	var strategy: String = _args.get("strategy", "smart")
 	var report_path: String = _args.get("report", "")
 
 	print("=== 擬似テストプレイシミュレーター ===")
-	print("キャラクター: %s / ラン数: %d / シード: %d" % [character_id, run_count, seed_val])
+	print("キャラクター: %s / ラン数: %d / シード: %d / 戦略: %s" % [character_id, run_count, seed_val, strategy])
 
 	# データ監査
-	var audit: RefCounted = DataAuditScript.new(CardDatabase, EnemyDatabase, GameManager)
+	var audit: RefCounted = DataAuditScript.new(CardDatabase, EnemyDatabase, GameManager, ItemDatabase)
 	audit.run_all()
 	print("")
 	print(audit.get_report_text())
@@ -70,7 +75,7 @@ func _run() -> void:
 	var run_results: Array[Dictionary] = []
 	for run_idx in run_count:
 		var run_seed: int = rng.randi()
-		var result := _simulate_run(character, run_seed)
+		var result := _simulate_run(character, run_seed, strategy)
 		result["run_index"] = run_idx
 		result["seed"] = run_seed
 		run_results.append(result)
@@ -82,7 +87,7 @@ func _run() -> void:
 		])
 
 	# レポート生成
-	var report := _generate_report(character, run_results, audit)
+	var report := _generate_report(character, run_results, audit, strategy)
 	print("")
 	print(report)
 
@@ -108,7 +113,7 @@ func _run() -> void:
 			f.close()
 			print("JSON出力: %s" % json_path)
 
-func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
+func _simulate_run(character: CharacterData, run_seed: int, strategy: String) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = run_seed
 
@@ -126,14 +131,15 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 	var max_act: int = GameManager.MAX_ACT
 	for act in range(1, max_act + 1):
 		GameManager.current_act = act
-		var map := MapGenerator.generate_act(act, rng.randi())
+		var map: Array[Dictionary] = MapGenerator.generate_act(act, rng.randi())
 		GameManager.map_nodes = map
 		GameManager.map_current_row = -1
 
-		var path := _pick_map_path(map, rng)
 		var previous_node: Dictionary = {}
+		var current_node: Dictionary = _pick_first_node(map, rng, strategy)
 
-		for node: Dictionary in path:
+		while not current_node.is_empty():
+			var node: Dictionary = current_node
 			var travel_cost := MapGenerator.calculate_travel_cost(previous_node, node, false)
 			if not ResourceManager.consume_fuel(travel_cost):
 				var penalty: int = travel_cost * 3
@@ -150,9 +156,13 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					var enemies := _get_enemies_for_node(node_type, act, rng)
 					var boss_hp_scale := 1.0
 					if node_type == MapGenerator.NodeType.BOSS:
-						var mod: Dictionary = QuestManager.get_boss_modifier(act)
+						var boss_id: StringName = &""
+						if not enemies.is_empty():
+							var boss: EnemyData = enemies[0]
+							boss_id = boss.id
+						var mod: Dictionary = QuestManager.get_boss_modifier(act, boss_id)
 						boss_hp_scale = float(mod.get("hp_scale", 1.0))
-					var agent: RefCounted = BattleAgentScript.new(CombatManager, DeckManager, rng)
+					var agent: RefCounted = BattleAgentScript.new(CombatManager, DeckManager, rng, strategy, ItemDatabase)
 					var hp_before: int = CombatManager.player_hp
 					var result: Dictionary = agent.fight(enemies, boss_hp_scale)
 					battles_fought += 1
@@ -186,17 +196,45 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 
 					var act_fuel := rng.randi_range(6 + act * 2, 11 + act * 3)
 					ResourceManager.add_fuel(act_fuel)
-					_pick_reward_card(character, act, rng)
+					_apply_post_combat_items(node_type, enemies, rng)
+					_pick_reward_card(character, act, rng, strategy)
 
 				MapGenerator.NodeType.REST:
-					_handle_rest(rng)
+					_handle_rest(rng, strategy)
 				MapGenerator.NodeType.SHOP:
-					_handle_shop(rng)
+					_handle_shop(rng, strategy)
 				MapGenerator.NodeType.EVENT:
-					pass
+					var event_result: Dictionary = _handle_event(rng, strategy)
+					if bool(event_result.get("battle", false)):
+						battles_fought += 1
+						total_turns += int(event_result.get("turns", 0))
+						total_damage_taken += int(event_result.get("damage_taken", 0))
+						total_cards_played += int(event_result.get("cards_played", 0))
+						battle_logs.append({
+							"act": act,
+							"type": "イベント戦闘",
+							"won": bool(event_result.get("won", true)),
+							"turns": int(event_result.get("turns", 0)),
+							"hp_before": int(event_result.get("hp_before", CombatManager.player_hp)),
+							"hp_after": CombatManager.player_hp,
+						})
+						if not bool(event_result.get("won", true)):
+							return {
+								"cleared": false,
+								"reached_act": act,
+								"final_hp": 0,
+								"max_hp": CombatManager.player_max_hp,
+								"battles_fought": battles_fought,
+								"total_turns": total_turns,
+								"total_damage_taken": total_damage_taken,
+								"total_cards_played": total_cards_played,
+								"battle_logs": battle_logs,
+								"fuel_remaining": ResourceManager.fuel,
+							}
 				MapGenerator.NodeType.INFO:
-					pass
+					_handle_info(rng)
 
+			_maybe_use_medicine(strategy)
 			previous_node = node
 
 			if CombatManager.player_hp <= 0:
@@ -212,6 +250,7 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 					"battle_logs": battle_logs,
 					"fuel_remaining": ResourceManager.fuel,
 				}
+			current_node = _pick_next_node(map, node, rng, strategy)
 
 		GameManager.advance_act()
 
@@ -228,32 +267,76 @@ func _simulate_run(character: CharacterData, run_seed: int) -> Dictionary:
 		"fuel_remaining": ResourceManager.fuel,
 	}
 
-func _pick_map_path(map_nodes: Array[Dictionary], rng: RandomNumberGenerator) -> Array[Dictionary]:
-	var path: Array[Dictionary] = []
-	var rows := 12
-
+func _pick_first_node(map_nodes: Array[Dictionary], rng: RandomNumberGenerator, strategy: String) -> Dictionary:
 	var first_row := MapGenerator._get_nodes_at_row(map_nodes, 0)
 	if first_row.is_empty():
-		return path
-	var current := first_row[rng.randi() % first_row.size()]
-	path.append(current)
+		return {}
+	return _pick_node_by_strategy(first_row, rng, strategy)
 
-	for row in range(1, rows):
-		var connections: Array = current.get("connections", [])
-		if connections.is_empty():
-			break
-		var next_id: String = connections[rng.randi() % connections.size()]
-		var found := false
-		for node: Dictionary in map_nodes:
-			if "%d_%d" % [node["row"], node["col"]] == next_id:
-				current = node
-				path.append(current)
-				found = true
-				break
-		if not found:
-			break
+func _pick_next_node(map_nodes: Array[Dictionary], current: Dictionary, rng: RandomNumberGenerator, strategy: String) -> Dictionary:
+	var connections: Array = current.get("connections", [])
+	if connections.is_empty():
+		return {}
+	var candidates: Array[Dictionary] = []
+	for next_id_variant: Variant in connections:
+		var next_id: String = String(next_id_variant)
+		var node: Dictionary = _find_node_by_id(map_nodes, next_id)
+		if not node.is_empty():
+			candidates.append(node)
+	if candidates.is_empty():
+		return {}
+	return _pick_node_by_strategy(candidates, rng, strategy)
 
-	return path
+func _find_node_by_id(map_nodes: Array[Dictionary], node_id: String) -> Dictionary:
+	for node: Dictionary in map_nodes:
+		if "%d_%d" % [node["row"], node["col"]] == node_id:
+			return node
+	return {}
+
+func _pick_node_by_strategy(candidates: Array[Dictionary], rng: RandomNumberGenerator, strategy: String) -> Dictionary:
+	if strategy == "reckless":
+		return candidates[rng.randi() % candidates.size()]
+	var best_nodes: Array[Dictionary] = []
+	var best_score: int = -999999
+	for node: Dictionary in candidates:
+		var score: int = _score_node(node)
+		if score > best_score:
+			best_score = score
+			best_nodes.clear()
+			best_nodes.append(node)
+		elif score == best_score:
+			best_nodes.append(node)
+	if best_nodes.is_empty():
+		return candidates[rng.randi() % candidates.size()]
+	return best_nodes[rng.randi() % best_nodes.size()]
+
+func _score_node(node: Dictionary) -> int:
+	var node_type: MapGenerator.NodeType = node["type"]
+	var hp_pct: float = float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
+	var score: int = 0
+	match node_type:
+		MapGenerator.NodeType.BOSS:
+			score = 100
+		MapGenerator.NodeType.REST:
+			score = 45 if hp_pct < 0.75 else 8
+		MapGenerator.NodeType.EVENT:
+			score = 24
+		MapGenerator.NodeType.SHOP:
+			score = 18
+			if ResourceManager.scrap >= 5 or ResourceManager.fuel < 10:
+				score += 10
+		MapGenerator.NodeType.INFO:
+			score = 12
+		MapGenerator.NodeType.COMBAT:
+			score = 10 if hp_pct >= 0.45 else -10
+		MapGenerator.NodeType.ELITE:
+			score = 20 if hp_pct >= 0.75 else -35
+	var fuel_reward: int = int(node.get("fuel_reward", 0))
+	if ResourceManager.fuel < 10:
+		score += fuel_reward * 4
+	else:
+		score += fuel_reward
+	return score
 
 func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: RandomNumberGenerator) -> Array[EnemyData]:
 	var enemies: Array[EnemyData] = []
@@ -283,7 +366,8 @@ func _get_enemies_for_node(node_type: MapGenerator.NodeType, act: int, rng: Rand
 			var boss := _get_boss_for_act(act)
 			if boss != null:
 				enemies.append(boss)
-			var mod: Dictionary = QuestManager.get_boss_modifier(act)
+			var boss_id: StringName = boss.id if boss != null else &""
+			var mod: Dictionary = QuestManager.get_boss_modifier(act, boss_id)
 			var adds: int = int(mod.get("adds", 0))
 			var add_id: StringName = mod.get("add_enemy", &"")
 			if adds > 0 and add_id != &"":
@@ -331,22 +415,34 @@ func _assign_random_relics(rng: RandomNumberGenerator) -> void:
 	for i in count:
 		ItemDatabase.add_to_inventory(all_relics[i].id)
 
-func _pick_reward_card(character: CharacterData, act: int, rng: RandomNumberGenerator) -> void:
+func _pick_reward_card(character: CharacterData, act: int, rng: RandomNumberGenerator, strategy: String) -> void:
 	var pool: Array[CardData] = CardDatabase.get_reward_pool(act, character.id)
 	if pool.is_empty():
 		return
-	pool.shuffle()
+	_shuffle_cards(pool, rng)
 	var candidates: Array[CardData] = []
 	for i in mini(3, pool.size()):
 		candidates.append(pool[i])
+	if strategy == "reckless":
+		if character.deck_limit > 0 and DeckManager.master_deck.size() >= character.deck_limit:
+			return
+		DeckManager.add_card_to_deck(candidates[rng.randi() % candidates.size()])
+		return
 	var best: CardData = candidates[0]
 	var best_score: int = _card_score(best)
 	for i in range(1, candidates.size()):
-		var score := _card_score(candidates[i])
+		var score: int = _card_score(candidates[i])
 		if score > best_score:
 			best = candidates[i]
 			best_score = score
 	if character.deck_limit > 0 and DeckManager.master_deck.size() >= character.deck_limit:
+		return
+	var skip_threshold := 9
+	if DeckManager.master_deck.size() >= 22:
+		skip_threshold = 16
+	elif DeckManager.master_deck.size() >= 18:
+		skip_threshold = 13
+	if best_score < skip_threshold:
 		return
 	DeckManager.add_card_to_deck(best)
 
@@ -361,10 +457,11 @@ func _card_score(card: CardData) -> int:
 		score += 2
 	return score
 
-func _handle_rest(rng: RandomNumberGenerator) -> void:
+func _handle_rest(rng: RandomNumberGenerator, strategy: String) -> void:
 	var hp_pct := float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
-	if hp_pct < 0.6:
-		var heal := ceili(float(CombatManager.player_max_hp) * 0.3)
+	var heal_threshold := 0.85 if strategy == "smart" else 0.35
+	if hp_pct < heal_threshold:
+		var heal := ceili(float(CombatManager.player_max_hp) * 0.5)
 		CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
 	else:
 		var upgradeable: Array[CardData] = []
@@ -375,20 +472,348 @@ func _handle_rest(rng: RandomNumberGenerator) -> void:
 			var card: CardData = upgradeable[rng.randi() % upgradeable.size()]
 			card.upgraded = true
 		else:
-			var heal := ceili(float(CombatManager.player_max_hp) * 0.3)
+			var heal := ceili(float(CombatManager.player_max_hp) * 0.5)
 			CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
 
-func _handle_shop(rng: RandomNumberGenerator) -> void:
+func _handle_shop(rng: RandomNumberGenerator, strategy: String) -> void:
+	if strategy == "smart":
+		_buy_shop_medicine()
+		_buy_shop_item(rng)
+		_buy_shop_card(rng)
 	if ResourceManager.scrap >= 5 and ResourceManager.fuel < ResourceManager.tank_capacity - 5:
 		ResourceManager.consume_scrap(5)
 		ResourceManager.add_fuel(8)
 
-func _generate_report(character: CharacterData, results: Array[Dictionary], audit: RefCounted) -> String:
+func _buy_shop_medicine() -> void:
+	var medicine_cost := 4
+	if ResourceManager.medicine >= ResourceManager.medicine_max:
+		return
+	if ResourceManager.fuel < medicine_cost + 10:
+		return
+	if CombatManager.player_hp >= CombatManager.player_max_hp and ResourceManager.medicine >= 1:
+		return
+	if ResourceManager.consume_fuel(medicine_cost):
+		ResourceManager.add_medicine(1)
+
+func _buy_shop_item(rng: RandomNumberGenerator) -> void:
+	var all_items: Array[ItemData] = ItemDatabase.get_all_items()
+	if all_items.is_empty():
+		return
+	_shuffle_items(all_items, rng)
+	var best_item: ItemData = null
+	var best_score: int = -999
+	var offer_count: int = mini(2, all_items.size())
+	for i in offer_count:
+		var item: ItemData = all_items[i]
+		if ItemDatabase.get_inventory_count(item.id) >= item.max_stack:
+			continue
+		var score: int = _item_shop_score(item)
+		if score > best_score:
+			best_item = item
+			best_score = score
+	if best_item == null or best_score < 10:
+		return
+	var cost: int = _item_shop_cost(best_item)
+	if ResourceManager.fuel < cost + 8:
+		return
+	if ResourceManager.consume_fuel(cost):
+		ItemDatabase.add_to_inventory(best_item.id)
+
+func _buy_shop_card(rng: RandomNumberGenerator) -> void:
+	var character: CharacterData = GameManager.current_character
+	if character == null:
+		return
+	if character.deck_limit > 0 and DeckManager.master_deck.size() >= character.deck_limit:
+		return
+	var pool: Array[CardData] = CardDatabase.get_reward_pool(GameManager.current_act, character.id)
+	if pool.is_empty():
+		return
+	_shuffle_cards(pool, rng)
+	var best: CardData = pool[0]
+	var best_score: int = _card_score(best)
+	for i in range(1, mini(4, pool.size())):
+		var card: CardData = pool[i]
+		var score: int = _card_score(card)
+		if score > best_score:
+			best = card
+			best_score = score
+	var threshold := 13
+	if DeckManager.master_deck.size() <= 15:
+		threshold = 10
+	if best_score < threshold:
+		return
+	var cost: int = 4 + int(best.rarity) * 3
+	if ResourceManager.fuel < cost + 8:
+		return
+	if ResourceManager.consume_fuel(cost):
+		DeckManager.add_card_to_deck(best)
+
+func _item_shop_score(item: ItemData) -> int:
+	match item.id:
+		&"sacred_amulet":
+			return 28
+		&"mutant_jacket":
+			return 24
+		&"old_compass":
+			return 18
+		&"stim_shot":
+			return 18
+		&"flash_bomb":
+			return 14
+		&"fuel_additive":
+			return 8
+	var score: int = 0
+	if item.item_type == ItemData.ItemType.RELIC:
+		score += 14 + int(item.rarity) * 4
+	score += item.hp_change
+	score += item.block_change * 2
+	score += item.draw_change * 4
+	score += item.fuel_change
+	return score
+
+func _item_shop_cost(item: ItemData) -> int:
+	var cost: int = 3 + int(item.rarity) * 3
+	if item.item_type == ItemData.ItemType.RELIC:
+		cost += 4
+	return cost
+
+func _maybe_use_medicine(strategy: String) -> void:
+	if strategy != "smart":
+		return
+	if ResourceManager.medicine <= 0:
+		return
+	if CombatManager.player_hp <= 0 or CombatManager.player_hp >= CombatManager.player_max_hp:
+		return
+	var hp_pct: float = float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
+	var missing_hp: int = CombatManager.player_max_hp - CombatManager.player_hp
+	if hp_pct > 0.55 and missing_hp < 18:
+		return
+	if ResourceManager.use_medicine():
+		CombatManager.player_hp = mini(CombatManager.player_hp + 15, CombatManager.player_max_hp)
+
+func _shuffle_cards(cards: Array[CardData], rng: RandomNumberGenerator) -> void:
+	for i in range(cards.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: CardData = cards[i]
+		cards[i] = cards[j]
+		cards[j] = tmp
+
+func _shuffle_items(items: Array[ItemData], rng: RandomNumberGenerator) -> void:
+	for i in range(items.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp: ItemData = items[i]
+		items[i] = items[j]
+		items[j] = tmp
+
+func _handle_event(rng: RandomNumberGenerator, strategy: String) -> Dictionary:
+	var event: EventData = _pick_event_for_sim(rng)
+	if event == null:
+		return {}
+	var choices: Array[EventChoiceData] = []
+	for choice: EventChoiceData in event.choices:
+		if _check_choice_requirement(choice.requirement):
+			choices.append(choice)
+	if choices.is_empty():
+		return {}
+	var choice: EventChoiceData = _pick_choice_by_strategy(choices, strategy, rng)
+	_apply_choice(choice)
+	if not choice.triggers_combat:
+		return {}
+	var enemies: Array[EnemyData] = _enemies_from_ids(choice.combat_enemy_ids, rng)
+	if enemies.is_empty():
+		return {}
+	var hp_before: int = CombatManager.player_hp
+	var agent: RefCounted = BattleAgentScript.new(CombatManager, DeckManager, rng, strategy, ItemDatabase)
+	var result: Dictionary = agent.fight(enemies)
+	var cards_played: int = 0
+	for entry: Dictionary in result["log"]:
+		if entry.get("action", "") == "play":
+			cards_played += 1
+	return {
+		"battle": true,
+		"won": bool(result["won"]),
+		"turns": int(result["turns"]),
+		"hp_before": hp_before,
+		"damage_taken": maxi(0, hp_before - int(result["player_hp"])),
+		"cards_played": cards_played,
+	}
+
+func _handle_info(_rng: RandomNumberGenerator) -> void:
+	if CombatManager.player_hp < CombatManager.player_max_hp:
+		CombatManager.player_hp = mini(CombatManager.player_hp + 3, CombatManager.player_max_hp)
+
+func _pick_event_for_sim(rng: RandomNumberGenerator) -> EventData:
+	var forced_id: StringName = QuestManager.get_pending_payload(GameManager.current_act)
+	if forced_id != &"":
+		var forced: EventData = EventManager.get_event(forced_id)
+		if forced != null:
+			return forced
+	var available: Array[EventData] = EventManager.get_available_events(
+		GameManager.current_character.id, KarmaManager.karma, GameManager.current_act)
+	if available.is_empty():
+		return null
+	return available[rng.randi() % available.size()]
+
+func _pick_choice_by_strategy(choices: Array[EventChoiceData], strategy: String, rng: RandomNumberGenerator) -> EventChoiceData:
+	if choices.size() == 1:
+		return choices[0]
+	var best_choice: EventChoiceData = choices[0]
+	var best_score: int = _choice_score(best_choice)
+	for i in range(1, choices.size()):
+		var choice: EventChoiceData = choices[i]
+		var score: int = _choice_score(choice)
+		if strategy == "reckless":
+			if score < best_score:
+				best_choice = choice
+				best_score = score
+		elif score > best_score:
+			best_choice = choice
+			best_score = score
+	if strategy == "reckless" and rng.randf() < 0.25:
+		return choices[rng.randi() % choices.size()]
+	return best_choice
+
+func _choice_score(choice: EventChoiceData) -> int:
+	var score: int = 0
+	score += choice.fuel_change * 2
+	score += choice.scrap_change * 3
+	score += choice.medicine_change * 8
+	score += choice.hp_change * 2
+	score += choice.karma_change
+	score += choice.bike_durability_change * 3
+	if choice.item_reward_id != &"":
+		score += 10 * maxi(1, choice.item_reward_count)
+	for card_id: StringName in choice.deck_card_ids:
+		var card: CardData = CardDatabase.get_card(card_id)
+		if card != null and card.is_unplayable:
+			score -= 18
+		else:
+			score += 8
+	if choice.triggers_combat:
+		score -= 12
+	if choice.companion_id != &"":
+		score += 12
+	if choice.starts_quest != &"":
+		score += 5
+	return score
+
+func _apply_choice(choice: EventChoiceData) -> void:
+	if choice.fuel_change > 0:
+		ResourceManager.add_fuel(choice.fuel_change)
+	elif choice.fuel_change < 0:
+		ResourceManager.consume_fuel(-choice.fuel_change)
+	if choice.scrap_change > 0:
+		ResourceManager.add_scrap(choice.scrap_change)
+	elif choice.scrap_change < 0:
+		ResourceManager.consume_scrap(-choice.scrap_change)
+	if choice.medicine_change > 0:
+		ResourceManager.add_medicine(choice.medicine_change)
+	elif choice.medicine_change < 0:
+		ResourceManager.use_medicine()
+	if choice.bike_durability_change > 0:
+		ResourceManager.repair_bike(choice.bike_durability_change)
+	elif choice.bike_durability_change < 0:
+		ResourceManager.damage_bike(-choice.bike_durability_change)
+	for card_id: StringName in choice.deck_card_ids:
+		var _added_card: bool = DeckManager.add_card_id_to_deck(card_id)
+	if choice.item_reward_id != &"":
+		ItemDatabase.add_to_inventory(choice.item_reward_id, maxi(1, choice.item_reward_count))
+	if choice.karma_change != 0:
+		KarmaManager.add_karma(choice.karma_change)
+	if choice.hp_change != 0:
+		CombatManager.player_hp = clampi(
+			CombatManager.player_hp + choice.hp_change, 0, CombatManager.player_max_hp)
+	if choice.sets_flag != &"":
+		GameManager.event_flags[choice.sets_flag] = true
+	if choice.starts_quest != &"":
+		QuestManager.record_outcome(choice.starts_quest, choice.quest_outcome)
+	if choice.faith_change != 0:
+		GameManager.add_faith(choice.faith_change)
+	if choice.heat_change != 0:
+		CombatManager.player_heat = clampi(
+			CombatManager.player_heat + choice.heat_change, 0, CombatManager.HEAT_MAX)
+	if choice.euphoria_change != 0:
+		CombatManager.player_euphoria = clampi(
+			CombatManager.player_euphoria + choice.euphoria_change, 0, CombatManager.EUPHORIA_MAX)
+	if choice.companion_id != &"":
+		var comp: CompanionData = CompanionDatabase.get_companion(choice.companion_id)
+		if comp != null:
+			GameManager.recruit_companion(comp)
+
+func _check_choice_requirement(req: String) -> bool:
+	if req == "":
+		return true
+	if req.begins_with("medicine>="):
+		return ResourceManager.medicine >= int(req.split(">=")[1])
+	if req.begins_with("fuel>="):
+		return ResourceManager.fuel >= int(req.split(">=")[1])
+	if req.begins_with("scrap>="):
+		return ResourceManager.scrap >= int(req.split(">=")[1])
+	if req.begins_with("hp>="):
+		return CombatManager.player_hp >= int(req.split(">=")[1])
+	if req.begins_with("karma>="):
+		return KarmaManager.karma >= int(req.split(">=")[1])
+	if req.begins_with("character=="):
+		return GameManager.current_character.id == StringName(req.split("==")[1])
+	if req.begins_with("flag=="):
+		return bool(GameManager.event_flags.get(StringName(req.split("==")[1]), false))
+	if req.begins_with("flag!="):
+		return not bool(GameManager.event_flags.get(StringName(req.split("!=")[1]), false))
+	if req.begins_with("companion=="):
+		if GameManager.current_companion == null:
+			return false
+		return GameManager.current_companion.id == StringName(req.split("==")[1])
+	if req == "no_companion":
+		return GameManager.current_companion == null
+	if req.begins_with("faith>="):
+		return GameManager.faith >= int(req.split(">=")[1])
+	if req.begins_with("faith<="):
+		return GameManager.faith <= int(req.split("<=")[1])
+	if req.begins_with("heat>="):
+		return CombatManager.player_heat >= int(req.split(">=")[1])
+	if req.begins_with("euphoria>="):
+		return CombatManager.player_euphoria >= int(req.split(">=")[1])
+	return false
+
+func _enemies_from_ids(enemy_ids: Array[StringName], rng: RandomNumberGenerator) -> Array[EnemyData]:
+	var enemies: Array[EnemyData] = []
+	for eid: StringName in enemy_ids:
+		var ed: EnemyData = EnemyDatabase.get_enemy(eid)
+		if ed != null:
+			enemies.append(ed)
+	if enemies.is_empty():
+		var pool: Array[EnemyData] = EnemyDatabase.get_enemies_for_act(GameManager.current_act)
+		if pool.is_empty():
+			pool = EnemyDatabase.get_enemies_for_act(1)
+		if not pool.is_empty():
+			enemies.append(pool[rng.randi() % pool.size()])
+	return enemies
+
+func _apply_post_combat_items(node_type: MapGenerator.NodeType, enemies: Array[EnemyData], rng: RandomNumberGenerator) -> void:
+	var has_machine: bool = false
+	for enemy: EnemyData in enemies:
+		if enemy.category == EnemyData.Category.MACHINE:
+			has_machine = true
+			break
+	if has_machine:
+		ResourceManager.add_scrap(rng.randi_range(3, 6))
+	var elite_reward: bool = node_type == MapGenerator.NodeType.ELITE or node_type == MapGenerator.NodeType.BOSS
+	if elite_reward and rng.randf() < 0.5:
+		var relics: Array[ItemData] = ItemDatabase.get_items_by_type(ItemData.ItemType.RELIC)
+		if not relics.is_empty():
+			ItemDatabase.add_to_inventory(relics[rng.randi() % relics.size()].id)
+	elif rng.randf() < 0.25:
+		var consumables: Array[ItemData] = ItemDatabase.get_items_by_type(ItemData.ItemType.CONSUMABLE)
+		if not consumables.is_empty():
+			ItemDatabase.add_to_inventory(consumables[rng.randi() % consumables.size()].id)
+
+func _generate_report(character: CharacterData, results: Array[Dictionary], audit: RefCounted, strategy: String) -> String:
 	var lines: Array[String] = []
 	lines.append("# 擬似テストプレイ レポート")
 	lines.append("")
 	lines.append("- キャラクター: %s (%s)" % [character.display_name, character.id])
 	lines.append("- ラン数: %d" % results.size())
+	lines.append("- 戦略: %s" % strategy)
 	lines.append("- 日時: %s" % Time.get_datetime_string_from_system())
 	lines.append("")
 

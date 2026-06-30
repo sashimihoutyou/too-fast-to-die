@@ -104,10 +104,15 @@ func notify_event_resolved(event_id: StringName) -> void:
 		_armed.remove_at(i)
 
 # ボス戦の修飾（HP倍率・追加ザコ数・追加ザコid）を返す。
-func get_boss_modifier(act: int) -> Dictionary:
+func get_boss_modifier(act: int, boss_id: StringName = &"") -> Dictionary:
 	for quest_id: StringName in _state:
 		var def: QuestData = _defs.get(quest_id, null)
-		if def == null or def.required_act != act or def.boss_mods.is_empty():
+		if def == null or def.boss_mods.is_empty():
+			continue
+		if def.boss_target != &"":
+			if boss_id == &"" or def.boss_target != boss_id:
+				continue
+		elif def.required_act != act:
 			continue
 		var key: String = _effective_outcome(quest_id)
 		var mod: Dictionary = def.boss_mods.get(key, {})

@@ -119,6 +119,14 @@ func _apply_choice(choice: EventChoiceData) -> void:
 		ResourceManager.add_medicine(choice.medicine_change)
 	elif choice.medicine_change < 0:
 		ResourceManager.use_medicine()
+	if choice.bike_durability_change > 0:
+		ResourceManager.repair_bike(choice.bike_durability_change)
+	elif choice.bike_durability_change < 0:
+		ResourceManager.damage_bike(-choice.bike_durability_change)
+	for card_id: StringName in choice.deck_card_ids:
+		var _added_card: bool = DeckManager.add_card_id_to_deck(card_id)
+	if choice.item_reward_id != &"":
+		ItemDatabase.add_to_inventory(choice.item_reward_id, maxi(1, choice.item_reward_count))
 	if choice.karma_change != 0:
 		KarmaManager.add_karma(choice.karma_change)
 	if choice.hp_change != 0:

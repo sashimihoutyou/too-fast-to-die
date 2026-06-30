@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_cover"]
+script = ExtResource("2")
+label = "布で吸気口を覆う"
+requirement = "scrap>=1"
+result_text = "布と金網で吸気口を塞ぎ、風が過ぎるまで身を低くする。舌に残る苦味は消えないが、最悪は避けた。"
+scrap_change = -1
+bike_durability_change = -1
+
+[sub_resource type="Resource" id="choice_push"]
+script = ExtResource("2")
+label = "風を突っ切る"
+result_text = "緑がかった砂が頬を叩く。呼吸のたびに喉が焼け、次の戦いまで体の奥にざらつきが残った。"
+deck_card_ids = [&"con01"]
+
+[sub_resource type="Resource" id="choice_medicine"]
+script = ExtResource("2")
+label = "医薬品で喉と目を守る"
+requirement = "medicine>=1"
+result_text = "薬液で布を湿らせ、口元に押し当てる。風はひどい臭いを残して通り過ぎた。"
+medicine_change = -1
+
+[resource]
+script = ExtResource("1")
+id = &"contaminated_wind"
+title = "汚染の風"
+body_text = "風向きが変わった。砂の色がわずかに緑を帯び、遠くの鉄塔がぼやけて見える。ガイガー管の針が細かく震え、口の中に古い電池のような味が広がった。"
+choices = [SubResource("choice_cover"), SubResource("choice_push"), SubResource("choice_medicine")]

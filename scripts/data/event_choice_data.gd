@@ -8,6 +8,13 @@ class_name EventChoiceData extends Resource
 @export var hp_change: int = 0
 @export var scrap_change: int = 0
 @export var medicine_change: int = 0
+## バイク耐久変化。正で修理、負で損傷。
+@export var bike_durability_change: int = 0
+## 選択後にデッキへ追加するカードID。汚染カードなどのイベント報酬/ペナルティ用。
+@export var deck_card_ids: Array[StringName] = []
+## 選択後にインベントリへ追加するアイテムID。
+@export var item_reward_id: StringName = &""
+@export var item_reward_count: int = 1
 @export var triggers_combat: bool = false
 ## サブストーリー連携（QuestManager で消費）。
 @export var starts_quest: StringName = &""

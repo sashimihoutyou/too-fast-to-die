@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_fight"]
+script = ExtResource("2")
+label = "追い払う"
+result_text = "砂を蹴って影が飛び出す。牙が見えた瞬間には、もう武器を抜いていた。"
+triggers_combat = true
+combat_enemy_ids = [&"wild_dog_pack"]
+
+[sub_resource type="Resource" id="choice_feed"]
+script = ExtResource("2")
+label = "燃料を撒いて遠ざける"
+requirement = "fuel>=2"
+result_text = "油の匂いに獣が鼻をひくつかせる。火を点けるまでもなく、群れは距離を取った。"
+fuel_change = -2
+
+[sub_resource type="Resource" id="choice_run"]
+script = ExtResource("2")
+label = "速度で振り切る"
+result_text = "獣の足音がしばらく並走した。最後に車体へ爪が当たり、金属板が嫌な音を立てる。"
+bike_durability_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"wild_beast"
+title = "野生の獣"
+body_text = "枯れた料金所を抜けたところで、低い唸り声がした。コンクリートの影から、痩せた獣の目がいくつも光っている。風は止まり、腐った肉の匂いだけが残った。"
+required_act = 1
+choices = [SubResource("choice_fight"), SubResource("choice_feed"), SubResource("choice_run")]

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_cruise"]
+script = ExtResource("2")
+label = "追い風に乗って進む"
+result_text = "エンジン音が軽い。風は背中から吹き、砂は路肩へ流れていく。燃料計の針は、思ったほど落ちなかった。"
+fuel_change = 2
+
+[sub_resource type="Resource" id="choice_maintain"]
+script = ExtResource("2")
+label = "日陰で整備する"
+result_text = "珍しく手元がよく見える。砂を払い、緩んだ箇所を締め直すと、車体の軋みが少し収まった。"
+bike_durability_change = 2
+
+[sub_resource type="Resource" id="choice_breathe"]
+script = ExtResource("2")
+label = "少しだけ休む"
+result_text = "熱はまだある。それでも今日は、空の色が少しだけ薄い。呼吸が深く入り、体の重さが抜けた。"
+hp_change = 5
+
+[resource]
+script = ExtResource("1")
+id = &"fair_weather"
+title = "好天"
+body_text = "雲が薄く、風は背中から吹いている。遠くの道路標識まで歪まずに見えた。荒野がこんな顔をする日は少ない。"
+choices = [SubResource("choice_cruise"), SubResource("choice_maintain"), SubResource("choice_breathe")]

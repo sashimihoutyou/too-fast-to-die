@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_detour"]
+script = ExtResource("2")
+label = "煙の方へ寄る"
+requirement = "fuel>=1"
+result_text = "燃え残った荷台の影に、まだ使える燃料缶が転がっていた。煙は救難信号ではない。ただの焼け跡だ。"
+fuel_change = 2
+scrap_change = 1
+
+[sub_resource type="Resource" id="choice_watch"]
+script = ExtResource("2")
+label = "遠目に様子を見る"
+result_text = "双眼鏡のレンズ越しに、二つの影が焼け跡を漁っているのが見えた。近づかない判断にも価値はある。"
+
+[sub_resource type="Resource" id="choice_rush"]
+script = ExtResource("2")
+label = "急いで通り抜ける"
+result_text = "煙を避けて速度を上げる。燃料は食ったが、待ち伏せに付き合うより安い。"
+fuel_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"distant_smoke"
+title = "遠くの煙"
+body_text = "地平線の低い場所から、細い煙が上がっている。風は弱く、焦げたゴムの匂いだけが先に届く。事故か、襲撃の跡か、まだ誰かが火を焚いているのか。"
+choices = [SubResource("choice_detour"), SubResource("choice_watch"), SubResource("choice_rush")]

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_repair"]
+script = ExtResource("2")
+label = "スクラップで応急修理する"
+requirement = "scrap>=2"
+result_text = "焼けたボルトを締め直し、割れたホースを金属片で押さえる。エンジン音はまだ荒いが、走れる音に戻った。"
+scrap_change = -2
+bike_durability_change = 2
+
+[sub_resource type="Resource" id="choice_ignore"]
+script = ExtResource("2")
+label = "音を無視して走る"
+result_text = "異音はしばらく続き、やがて低い呻きに変わった。速度は落ちない。落ちない代わりに、車体が熱を持つ。"
+bike_durability_change = -3
+
+[sub_resource type="Resource" id="choice_slow"]
+script = ExtResource("2")
+label = "速度を落として様子を見る"
+result_text = "日陰を探して停め、冷えるまで待つ。時間と燃料は失ったが、故障は広がらなかった。"
+fuel_change = -1
+
+[resource]
+script = ExtResource("1")
+id = &"engine_knock"
+title = "エンジン異音"
+body_text = "エンジンの奥から、乾いた金属音が混じり始めた。砂の熱で空気が揺れ、オイルの焦げた匂いが足元にまとわりつく。無視できる音ではない。"
+choices = [SubResource("choice_repair"), SubResource("choice_ignore"), SubResource("choice_slow")]

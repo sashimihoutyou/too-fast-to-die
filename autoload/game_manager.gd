@@ -315,11 +315,25 @@ func _tick_pursuit() -> void:
 		pursuit_level = clampi(pursuit_level - 40, 0, 100)
 
 func advance_act() -> void:
+	if current_act < MAX_ACT:
+		CombatManager.player_hp = CombatManager.player_max_hp
+		CombatManager.player_hp_changed.emit(CombatManager.player_hp, CombatManager.player_max_hp)
+		_upgrade_random_card_after_boss()
 	current_act += 1
 	current_node_index = -1
 	map_nodes.clear()
 	map_current_row = -1
 	map_current_node_id = ""
+
+func _upgrade_random_card_after_boss() -> void:
+	var upgradeable: Array[CardData] = []
+	for card: CardData in DeckManager.master_deck:
+		if not card.upgraded:
+			upgradeable.append(card)
+	if upgradeable.is_empty():
+		return
+	var card: CardData = upgradeable[randi() % upgradeable.size()]
+	card.upgraded = true
 
 func end_run(result: StringName) -> void:
 	MetaProgression.add_distance(distance_km)

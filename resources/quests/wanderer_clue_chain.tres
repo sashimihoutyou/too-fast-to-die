@@ -12,8 +12,10 @@ node_limit = 8
 objective_match = &"chainlink"
 objective_count = 2
 payload_event = &"wanderer_clue"
+payload_outcomes = [&"hunt"]
 payload_min_gap = 2
 boss_target = &"chainlink_informant"
+boss_add_enemy = &"chainlink_enforcer"
 boss_mods = {
 "hunt": { "hp_scale": 0.7, "adds": 0 },
 "ignore": { "hp_scale": 1.0, "adds": 1 },

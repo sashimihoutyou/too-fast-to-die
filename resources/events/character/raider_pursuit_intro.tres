@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_hunt"]
+script = ExtResource("2")
+label = "斥候を追って潰す"
+result_text = "タイヤ痕はまだ新しい。砂を蹴って追いつくと、コカトリスの斥候が無線機に手を伸ばした。先に撃つ。"
+karma_change = -1
+triggers_combat = true
+starts_quest = &"raider_pursuit"
+quest_outcome = &"hunt"
+combat_enemy_ids = [&"cockatrice_scout"]
+
+[sub_resource type="Resource" id="choice_hide"]
+script = ExtResource("2")
+label = "バイクの痕跡を消す"
+result_text = "古い布でタイヤ痕を払い、排気の匂いが残る砂を掘り返す。時間は食ったが、追っ手の鼻は少し鈍る。"
+fuel_change = -2
+starts_quest = &"raider_pursuit"
+quest_outcome = &"lapse"
+
+[sub_resource type="Resource" id="choice_ignore"]
+script = ExtResource("2")
+label = "振り返らずに走る"
+result_text = "追われるのは慣れている。慣れていることが腹立たしかった。背後のエンジン音は、しばらく消えなかった。"
+heat_change = 8
+starts_quest = &"raider_pursuit"
+quest_outcome = &"ignore"
+
+[resource]
+script = ExtResource("1")
+id = &"raider_pursuit_intro"
+title = "黒い羽根の轍"
+body_text = "夕方の路肩に、黒い羽根を刻んだ薬莢が落ちている。砂はまだ温かく、細いタイヤ痕がこちらの轍を横切っていた。コカトリスの斥候だ。ヴェスパの古い名前を知っている連中は、執念深い。"
+required_character = &"ex_raider"
+required_act = 2
+choices = [SubResource("choice_hunt"), SubResource("choice_hide"), SubResource("choice_ignore")]

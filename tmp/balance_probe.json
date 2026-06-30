@@ -1,0 +1,178 @@
+{
+  "audit_errors": 0,
+  "audit_warnings": 0,
+  "character_id": "ex_raider",
+  "character_name": "元レイダー（ワスプ）",
+  "clear_count": 0,
+  "clear_rate": 0.0,
+  "run_count": 1,
+  "runs": [
+    {
+      "battle_logs": [
+        {
+          "act": 1,
+          "hp_after": 55,
+          "hp_before": 70,
+          "turns": 4,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 1,
+          "hp_after": 69,
+          "hp_before": 70,
+          "turns": 2,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 1,
+          "hp_after": 58,
+          "hp_before": 69,
+          "turns": 4,
+          "type": "エリート",
+          "won": true
+        },
+        {
+          "act": 1,
+          "hp_after": 66,
+          "hp_before": 70,
+          "turns": 3,
+          "type": "エリート",
+          "won": true
+        },
+        {
+          "act": 1,
+          "hp_after": 59,
+          "hp_before": 66,
+          "turns": 3,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 1,
+          "hp_after": 45,
+          "hp_before": 70,
+          "turns": 7,
+          "type": "ボス",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 70,
+          "hp_before": 70,
+          "turns": 3,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 70,
+          "hp_before": 70,
+          "turns": 1,
+          "type": "イベント戦闘",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 56,
+          "hp_before": 70,
+          "turns": 4,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 40,
+          "hp_before": 56,
+          "turns": 4,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 19,
+          "hp_before": 40,
+          "turns": 4,
+          "type": "エリート",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 19,
+          "hp_before": 22,
+          "turns": 2,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 2,
+          "hp_after": 6,
+          "hp_before": 47,
+          "turns": 8,
+          "type": "ボス",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 70,
+          "hp_before": 70,
+          "turns": 3,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 27,
+          "hp_before": 70,
+          "turns": 6,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 30,
+          "hp_before": 30,
+          "turns": 4,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 38,
+          "hp_before": 58,
+          "turns": 4,
+          "type": "戦闘",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 11,
+          "hp_before": 38,
+          "turns": 4,
+          "type": "エリート",
+          "won": true
+        },
+        {
+          "act": 3,
+          "hp_after": 0,
+          "hp_before": 39,
+          "turns": 4,
+          "type": "ボス",
+          "won": false
+        }
+      ],
+      "battles_fought": 19,
+      "cleared": false,
+      "final_hp": 0,
+      "fuel_remaining": 20,
+      "max_hp": 70,
+      "reached_act": 3,
+      "run_index": 0,
+      "seed": 132725975,
+      "total_cards_played": 212,
+      "total_damage_taken": 287,
+      "total_turns": 74
+    }
+  ]
+}

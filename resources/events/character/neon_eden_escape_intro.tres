@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_hunt"]
+script = ExtResource("2")
+label = "追っ手の先回りをする"
+result_text = "ホタルは古い看板の影で足を止めた。甘い化学臭が風に混じる。逃げ道ではなく、狩り場を選ぶ。"
+triggers_combat = true
+starts_quest = &"neon_eden_escape"
+quest_outcome = &"hunt"
+combat_enemy_ids = [&"neon_eden_guard"]
+
+[sub_resource type="Resource" id="choice_mask"]
+script = ExtResource("2")
+label = "ネオンの匂いで釣る"
+requirement = "medicine>=1"
+result_text = "薬瓶の中身を少しだけ布に染み込ませ、道端に捨てる。追っ手は餌に食いつく。指先の震えは、まだ止まらない。"
+medicine_change = -1
+euphoria_change = 10
+starts_quest = &"neon_eden_escape"
+quest_outcome = &"hunt"
+
+[sub_resource type="Resource" id="choice_ignore"]
+script = ExtResource("2")
+label = "光の届かない道へ逃げる"
+result_text = "ネオンサインの残骸が背後で小さくなっていく。光が消えるほど、胸の奥の空腹だけが大きくなる。"
+fuel_change = -3
+starts_quest = &"neon_eden_escape"
+quest_outcome = &"ignore"
+
+[resource]
+script = ExtResource("1")
+id = &"neon_eden_escape_intro"
+title = "青白い招待状"
+body_text = "割れた広告板が夜の砂地に青白く瞬いている。古いニューエデンのロゴ、その下にホタルの源氏名が傷だらけの文字で彫られていた。甘いネオンの匂いと安い香水の残り香が、風に薄く伸びる。"
+required_character = &"hedonist"
+required_act = 4
+choices = [SubResource("choice_hunt"), SubResource("choice_mask"), SubResource("choice_ignore")]

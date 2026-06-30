@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_help"]
+script = ExtResource("2")
+label = "医薬品を使って助ける"
+requirement = "medicine>=1"
+result_text = "旅人は水を飲む力も残っていなかった。薬が効くまで待つと、かすれた声で安全な道を教えた。"
+medicine_change = -1
+karma_change = 3
+fuel_change = 2
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "そのまま通り過ぎる"
+result_text = "乾いた唇が何かを言おうと動いた。エンジン音がそれを飲み込む。背中に砂が当たり続けた。"
+
+[sub_resource type="Resource" id="choice_rob"]
+script = ExtResource("2")
+label = "荷物だけ回収する"
+result_text = "ポケットには燃料タグが二枚残っていた。旅人は目を開けていたが、こちらを見ているのかは分からなかった。"
+fuel_change = 2
+karma_change = -5
+
+[resource]
+script = ExtResource("1")
+id = &"fallen_traveler"
+title = "行き倒れの旅人"
+body_text = "古い案内標識の根元に、旅人が倒れている。唇は割れ、手には空の水筒。周囲には足跡がない。太陽だけが容赦なく背中を焼いている。"
+choices = [SubResource("choice_help"), SubResource("choice_leave"), SubResource("choice_rob")]

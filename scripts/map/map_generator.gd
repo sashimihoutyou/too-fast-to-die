@@ -7,7 +7,7 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 	rng.seed = seed_val if seed_val != 0 else randi()
 
 	var nodes: Array[Dictionary] = []
-	var rows := 12
+	var rows := 10
 	var cols := 3
 
 	for row in rows:
@@ -30,7 +30,7 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 			})
 
 	_ensure_node_type_guarantees(nodes, rows, rng)
-	_build_connections(nodes, rows)
+	_build_connections(nodes, rows, rng)
 	_assign_positions(nodes, rows, cols)
 	_assign_fuel_rewards(nodes, rng)
 	return nodes
@@ -44,21 +44,34 @@ static func _pick_node_type(row: int, total_rows: int, rng: RandomNumberGenerato
 		return NodeType.COMBAT
 
 	var roll := rng.randf()
-	if row == total_rows - 3 or row == 5:
-		if roll < 0.6:
+	if row == total_rows - 3:
+		if roll < 0.45:
 			return NodeType.ELITE
-		else:
+		elif roll < 0.75:
 			return NodeType.COMBAT
+		elif roll < 0.88:
+			return NodeType.REST
+		else:
+			return NodeType.INFO
+	if row == 5:
+		if roll < 0.4:
+			return NodeType.ELITE
+		elif roll < 0.7:
+			return NodeType.COMBAT
+		elif roll < 0.85:
+			return NodeType.EVENT
+		else:
+			return NodeType.REST
 
-	if roll < 0.35:
+	if roll < 0.3:
 		return NodeType.COMBAT
 	elif roll < 0.55:
 		return NodeType.EVENT
-	elif roll < 0.68:
+	elif roll < 0.67:
 		return NodeType.SHOP
-	elif roll < 0.78:
+	elif roll < 0.8:
 		return NodeType.REST
-	elif roll < 0.88:
+	elif roll < 0.9:
 		return NodeType.INFO
 	else:
 		return NodeType.ELITE
@@ -100,30 +113,32 @@ static func _ensure_node_type_guarantees(nodes: Array[Dictionary], total_rows: i
 					needed -= 1
 					break
 
-static func _build_connections(nodes: Array[Dictionary], total_rows: int) -> void:
+static func _build_connections(nodes: Array[Dictionary], total_rows: int, rng: RandomNumberGenerator) -> void:
 	for row in total_rows - 1:
 		var current_row_nodes := _get_nodes_at_row(nodes, row)
 		var next_row_nodes := _get_nodes_at_row(nodes, row + 1)
 		if current_row_nodes.is_empty() or next_row_nodes.is_empty():
 			continue
-		for node in current_row_nodes:
-			var target_idx := randi() % next_row_nodes.size()
-			var target_node_id := _node_id(next_row_nodes[target_idx])
+		for node: Dictionary in current_row_nodes:
+			var target_idx := rng.randi() % next_row_nodes.size()
+			var target_node: Dictionary = next_row_nodes[target_idx]
+			var target_node_id := _node_id(target_node)
 			if target_node_id not in node["connections"]:
 				node["connections"].append(target_node_id)
-			if next_row_nodes.size() > 1 and randf() > 0.5:
+			if next_row_nodes.size() > 1 and rng.randf() > 0.5:
 				var alt_idx := (target_idx + 1) % next_row_nodes.size()
-				var alt_id := _node_id(next_row_nodes[alt_idx])
+				var alt_node: Dictionary = next_row_nodes[alt_idx]
+				var alt_id := _node_id(alt_node)
 				if alt_id not in node["connections"]:
 					node["connections"].append(alt_id)
-		for next_node in next_row_nodes:
+		for next_node: Dictionary in next_row_nodes:
 			var has_incoming := false
-			for node in current_row_nodes:
+			for node: Dictionary in current_row_nodes:
 				if _node_id(next_node) in node["connections"]:
 					has_incoming = true
 					break
 			if not has_incoming:
-				var source := current_row_nodes[randi() % current_row_nodes.size()]
+				var source: Dictionary = current_row_nodes[rng.randi() % current_row_nodes.size()]
 				source["connections"].append(_node_id(next_node))
 
 static func _assign_positions(nodes: Array[Dictionary], total_rows: int, cols: int) -> void:

@@ -846,11 +846,16 @@ func _get_enemy_intent(enemy: Dictionary) -> Dictionary:
 
 func _get_scaled_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 	var act := clampi(data.act, 1, GameManager.MAX_ACT)
-	var atk := 5 + act * 3
+	var atk := 4 + act * 2
 	var blk := 3 + act * 2
 	if data.is_elite:
 		atk = int(atk * 1.4)
 		blk = int(blk * 1.4)
+	var alive_count: int = _alive_enemy_count()
+	if alive_count >= 3:
+		atk = maxi(1, int(float(atk) * 0.65))
+	elif alive_count >= 2:
+		atk = maxi(1, int(float(atk) * 0.8))
 
 	match data.category:
 		EnemyData.Category.BEAST:
@@ -873,19 +878,26 @@ func _get_scaled_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 			else:
 				return {"type": "attack", "value": atk, "label": "攻撃"}
 
+func _alive_enemy_count() -> int:
+	var count: int = 0
+	for enemy: Dictionary in enemies:
+		if bool(enemy.get("alive", false)):
+			count += 1
+	return count
+
 func _get_boss_intent(data: EnemyData, tc: int, hp_pct: float) -> Dictionary:
 	var act := clampi(data.act, 1, GameManager.MAX_ACT)
-	var atk := 8 + act * 4
+	var atk := 6 + act * 2
 	if hp_pct <= 0.5:
 		if tc % 3 == 2:
-			return {"type": "attack", "value": maxi(1, int(atk * 0.9)), "hits": 2, "label": "猛襲（二連）"}
+			return {"type": "attack", "value": maxi(1, int(atk * 0.75)), "hits": 2, "label": "猛襲（二連）"}
 		else:
-			return {"type": "attack", "value": int(atk * 1.4), "label": "激昂の一撃"}
+			return {"type": "attack", "value": int(atk * 1.25), "label": "激昂の一撃"}
 	else:
 		if tc % 4 == 3:
-			return {"type": "attack", "value": int(atk * 1.6), "label": "渾身の一撃"}
+			return {"type": "attack", "value": int(atk * 1.4), "label": "渾身の一撃"}
 		elif tc % 4 == 1:
-			return {"type": "defend", "value": 8 + act * 3, "label": "防御態勢"}
+			return {"type": "defend", "value": 6 + act * 2, "label": "防御態勢"}
 		else:
 			return {"type": "attack", "value": atk, "label": "攻撃"}
 

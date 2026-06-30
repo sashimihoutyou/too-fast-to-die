@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_hunt"]
+script = ExtResource("2")
+label = "配送タグの足跡を追う"
+result_text = "タグの番号と地図の古い施設名を照らし合わせる。チェインリンクは、まだ同じ癖で荷を動かしている。"
+starts_quest = &"wanderer_clue_chain"
+quest_outcome = &"hunt"
+
+[sub_resource type="Resource" id="choice_buy"]
+script = ExtResource("2")
+label = "記録係から帳簿を買う"
+requirement = "fuel>=3"
+result_text = "記録係は燃料缶を抱えると、破れた帳簿を差し出した。紙の端に、見覚えのある姓が残っている。"
+fuel_change = -3
+starts_quest = &"wanderer_clue_chain"
+quest_outcome = &"hunt"
+
+[sub_resource type="Resource" id="choice_ignore"]
+script = ExtResource("2")
+label = "タグを砂に埋め戻す"
+result_text = "今の荷を追えば、別の誰かを見捨てることになる。ウェズリーはタグを砂に戻し、手袋についた血を払った。"
+starts_quest = &"wanderer_clue_chain"
+quest_outcome = &"ignore"
+
+[resource]
+script = ExtResource("1")
+id = &"wanderer_clue_intro"
+title = "乾いた配送タグ"
+body_text = "焼けた料金所の影に、チェインリンクの輸送タグが引っかかっていた。血は乾いて黒くなり、金属の縁には爪でこじ開けた跡がある。風が吹くたび、タグは標識に当たって小さく鳴った。"
+required_character = &"wanderer"
+required_act = 3
+choices = [SubResource("choice_hunt"), SubResource("choice_buy"), SubResource("choice_ignore")]

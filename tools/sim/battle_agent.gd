@@ -4,13 +4,17 @@ extends RefCounted
 # 呼び出し側から参照を注入する。
 var CombatManager
 var DeckManager
+var ItemDatabase
 
 var log_entries: Array[Dictionary] = []
 var _rng: RandomNumberGenerator
+var _strategy: String = "smart"
 
-func _init(combat_mgr, deck_mgr, rng: RandomNumberGenerator = null) -> void:
+func _init(combat_mgr, deck_mgr, rng: RandomNumberGenerator = null, strategy: String = "smart", item_db = null) -> void:
 	CombatManager = combat_mgr
 	DeckManager = deck_mgr
+	ItemDatabase = item_db
+	_strategy = strategy
 	if rng != null:
 		_rng = rng
 	else:
@@ -38,16 +42,18 @@ func fight(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> Dictiona
 
 func _play_turn() -> void:
 	var played_count: int = 0
+	_maybe_use_consumable()
 
 	# バフフェーズ: 手札にバフカードと対応する攻撃カードがあればバフを先に使う
-	var buff_cards := _get_buff_cards()
-	for buff_card: CardData in buff_cards:
-		if not CombatManager.can_play_card(buff_card):
-			continue
-		if _has_matching_attack(buff_card):
-			CombatManager.play_card(buff_card, _pick_target(buff_card))
-			_log_play(buff_card, -1)
-			played_count += 1
+	if _strategy != "reckless":
+		var buff_cards := _get_buff_cards()
+		for buff_card: CardData in buff_cards:
+			if not CombatManager.can_play_card(buff_card):
+				continue
+			if _has_matching_attack(buff_card):
+				CombatManager.play_card(buff_card, _pick_target(buff_card))
+				_log_play(buff_card, -1)
+				played_count += 1
 
 	# 攻撃/防御フェーズ
 	var safety_limit := 30
@@ -63,6 +69,19 @@ func _play_turn() -> void:
 
 	_log_turn_summary(played_count)
 
+func _maybe_use_consumable() -> void:
+	if _strategy != "smart" or ItemDatabase == null:
+		return
+	var hp_pct: float = float(CombatManager.player_hp) / float(CombatManager.player_max_hp)
+	if hp_pct <= 0.45 and ItemDatabase.get_inventory_count(&"stim_shot") > 0:
+		if ItemDatabase.use_consumable(&"stim_shot"):
+			_log_item(&"stim_shot")
+			return
+	var incoming: int = _estimate_incoming_damage()
+	if incoming > CombatManager.player_block + 8 and ItemDatabase.get_inventory_count(&"flash_bomb") > 0:
+		if ItemDatabase.use_consumable(&"flash_bomb"):
+			_log_item(&"flash_bomb")
+
 func _pick_best_card() -> CardData:
 	var playable: Array[CardData] = []
 	for card: CardData in DeckManager.hand:
@@ -70,26 +89,17 @@ func _pick_best_card() -> CardData:
 			playable.append(card)
 	if playable.is_empty():
 		return null
+	if _strategy == "reckless":
+		return _pick_reckless_card(playable)
 
 	# 全敵が次ターンに与えるダメージ合計を見積もる
-	var incoming_damage := _estimate_incoming_damage()
+	var incoming_damage: int = _estimate_incoming_damage()
 	var effective_hp: int = CombatManager.player_hp + CombatManager.player_block
-
-	# HPが危険水準ならブロックカードを優先
-	if incoming_damage > 0 and float(effective_hp) / float(CombatManager.player_max_hp) < 0.4:
-		var best_block: CardData = null
-		var best_block_val: int = 0
-		for card: CardData in playable:
-			var blk := card.get_effective_block()
-			if blk > best_block_val:
-				best_block = card
-				best_block_val = blk
-		if best_block != null:
-			return best_block
 
 	# 倒せる敵がいるならそのカードを優先
 	var best_kill: CardData = null
 	var best_kill_target: int = -1
+	var best_kill_prevented: int = -1
 	for card: CardData in playable:
 		if card.get_effective_damage() <= 0 and not card.is_aoe:
 			continue
@@ -99,11 +109,27 @@ func _pick_best_card() -> CardData:
 			var dmg: int = CombatManager.preview_damage(card, i)
 			var ehp: int = CombatManager.enemies[i]["hp"] + int(CombatManager.enemies[i]["block"])
 			if dmg >= ehp:
-				if best_kill == null or ehp < (CombatManager.enemies[best_kill_target]["hp"] + int(CombatManager.enemies[best_kill_target]["block"])):
+				var prevented: int = _estimate_enemy_incoming(i)
+				if best_kill == null or prevented > best_kill_prevented:
 					best_kill = card
 					best_kill_target = i
+					best_kill_prevented = prevented
 	if best_kill != null:
 		return best_kill
+
+	# 上手いプレイは敵意図を見て、被弾が出るなら早めにブロックを切る。
+	if incoming_damage > CombatManager.player_block:
+		var best_block: CardData = null
+		var best_block_val: int = 0
+		for card: CardData in playable:
+			var blk := card.get_effective_block()
+			if blk > best_block_val:
+				best_block = card
+				best_block_val = blk
+		if best_block != null:
+			var hp_pct: float = float(effective_hp) / float(CombatManager.player_max_hp)
+			if hp_pct < 0.85 or incoming_damage - CombatManager.player_block >= 4:
+				return best_block
 
 	# 最大ダメージを出せるカード
 	var best_dmg_card: CardData = null
@@ -138,6 +164,29 @@ func _pick_best_card() -> CardData:
 
 	# 残りの何でも
 	return playable[0]
+
+func _pick_reckless_card(playable: Array[CardData]) -> CardData:
+	var best_dmg_card: CardData = null
+	var best_dmg_val: int = 0
+	for card: CardData in playable:
+		var max_dmg: int = 0
+		for i in CombatManager.enemies.size():
+			if CombatManager.enemies[i]["alive"]:
+				var d: int = CombatManager.preview_damage(card, i)
+				if d > max_dmg:
+					max_dmg = d
+		if max_dmg > best_dmg_val:
+			best_dmg_card = card
+			best_dmg_val = max_dmg
+	if best_dmg_card != null:
+		return best_dmg_card
+	for card: CardData in playable:
+		if card.draw_count > 0 or card.bonus_ap > 0:
+			return card
+	for card: CardData in playable:
+		if card.get_effective_block() > 0:
+			return card
+	return playable[_rng.randi() % playable.size()]
 
 func _pick_target(card: CardData) -> int:
 	if card.is_aoe:
@@ -209,19 +258,24 @@ func _has_matching_attack(buff_card: CardData) -> bool:
 
 func _estimate_incoming_damage() -> int:
 	var total: int = 0
-	for enemy: Dictionary in CombatManager.enemies:
-		if not enemy["alive"]:
+	for i in CombatManager.enemies.size():
+		if not CombatManager.enemies[i]["alive"]:
 			continue
-		var intent: Dictionary = enemy["intent"]
-		var intent_type: String = intent.get("type", "")
-		match intent_type:
-			"attack":
-				var dmg: int = int(intent.get("value", 0))
-				var hits: int = int(intent.get("hits", 1))
-				total += dmg * hits
-			"attack_defend":
-				total += int(intent.get("attack", 0))
+		total += _estimate_enemy_incoming(i)
 	return total
+
+func _estimate_enemy_incoming(idx: int) -> int:
+	var enemy: Dictionary = CombatManager.enemies[idx]
+	var intent: Dictionary = enemy["intent"]
+	var intent_type: String = intent.get("type", "")
+	match intent_type:
+		"attack":
+			var dmg: int = int(intent.get("value", 0))
+			var hits: int = int(intent.get("hits", 1))
+			return dmg * hits
+		"attack_defend":
+			return int(intent.get("attack", 0))
+	return 0
 
 func _log_play(card: CardData, target: int) -> void:
 	log_entries.append({
@@ -231,6 +285,14 @@ func _log_play(card: CardData, target: int) -> void:
 		"card_name": card.display_name,
 		"target": target,
 		"ap_after": CombatManager.ap,
+	})
+
+func _log_item(item_id: StringName) -> void:
+	log_entries.append({
+		"turn": CombatManager.turn_number,
+		"action": "item",
+		"item_id": item_id,
+		"player_hp": CombatManager.player_hp,
 	})
 
 func _log_turn_summary(cards_played: int) -> void:

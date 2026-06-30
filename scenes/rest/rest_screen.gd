@@ -8,12 +8,12 @@ func _ready() -> void:
 
 func _update_display() -> void:
 	$HPLabel.text = "現在HP: %d/%d" % [CombatManager.player_hp, CombatManager.player_max_hp]
-	var heal := CombatManager.player_max_hp * 30 / 100
+	var heal := CombatManager.player_max_hp * 50 / 100
 	$RestButton.text = "休息 (HP %d 回復)" % heal
 	$UpgradeButton.disabled = _get_upgradeable_cards().is_empty()
 
 func _on_rest() -> void:
-	var heal := CombatManager.player_max_hp * 30 / 100
+	var heal := CombatManager.player_max_hp * 50 / 100
 	CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
 	_return_to_map()
 
