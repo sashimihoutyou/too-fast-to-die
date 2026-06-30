@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "工具箱ごと乗せる"
+result_text = "ガスは工具箱を荷台に固定し、黙ってチェーンの弛みを見た。「走る前に直す。祈るより早い」"
+companion_id = &"gus"
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "修理だけ頼む"
+result_text = "ガスは一言も礼を求めず、ボルトを締め直した。古い油の匂いだけが手袋に残った。"
+scrap_change = -1
+bike_durability_change = 4
+
+[resource]
+script = ExtResource("1")
+id = &"unique_gus"
+title = "放浪整備士"
+body_text = "廃ガソリンスタンドの影で、老人がエンジンを分解している。工具の置き方だけが異様に整っていた。乾いた風が吹くたび、金属粉と古い油の匂いが舞う。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

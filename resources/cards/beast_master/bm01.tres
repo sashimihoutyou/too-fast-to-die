@@ -6,10 +6,9 @@
 script = ExtResource("1")
 id = &"bm01"
 display_name = "屈服の鞭"
-description = "4ダメ（ブロック無視）。獣系にとどめで獣カード確定入手"
+description = "3ダメ（ブロック無視）。獣系にとどめで獣カード確定入手"
 ap_cost = 1
 tags = [0, 5]
 restriction = 4
-is_starter = true
-base_damage = 4
-upgraded_damage = 6
+base_damage = 3
+upgraded_damage = 5

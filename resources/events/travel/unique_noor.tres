@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "後ろに乗せる"
+result_text = "ヌールは小さな金属片を胸に押し当て、後部座席に座った。「速くなくても、火は消えません」"
+companion_id = &"noor"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "祈りだけ聞いて去る"
+result_text = "ヌールは砂の上に膝をつき、排気の匂いの中で短く祈った。バイクを出しても、その声はしばらく耳に残った。"
+
+[resource]
+script = ExtResource("1")
+id = &"unique_noor"
+title = "巡礼少女"
+body_text = "焼けた標識の根元に、少女が座っている。袖は油で黒ずみ、膝には古いスパークプラグが並べられていた。砂混じりの風の中、彼女はエンジン音に耳を澄ませている。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

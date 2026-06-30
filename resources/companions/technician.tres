@@ -12,3 +12,4 @@ passive_description = "バイク耐久の戦闘消耗無効"
 risk_description = "追手あり（追加エンカウント）"
 departure_reward_description = "上位バイクパーツ"
 deck_card_ids = [&"cc_technician_patch"]
+pursuit_gain_per_node = 20

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"milo"
+display_name = "マイロ"
+companion_type = 0
+is_unique = true
+dedicated_character_id = &"ex_raider"
+non_dedicated_duration_nodes = 5
+duration_nodes = -1
+passive_description = "追跡度の上昇を抑える"
+risk_description = "鈍い。物語上の危うさはあるが直接リソースは削らない"
+departure_reward_description = "アンコモンカード"
+deck_card_ids = [&"cc_fighter_cover"]
+pursuit_gain_per_node = -3

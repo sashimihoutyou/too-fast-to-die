@@ -12,3 +12,6 @@ passive_description = ""
 risk_description = "死亡時カルマ-10"
 departure_reward_description = "カルマ+15"
 deck_card_ids = [&"cc_refugee_prayer"]
+required_karma_min = -19
+max_hp = 8
+death_karma_penalty = -10

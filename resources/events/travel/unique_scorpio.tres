@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "契約する"
+result_text = "スコピオは頬の刺青を指でなぞり、後ろに乗った。「道中の敵は減らす。面倒も少し減る」"
+companion_id = &"scorpio"
+karma_change = -1
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "取引しない"
+result_text = "スコピオは肩をすくめた。銃声は止んでいる。風だけが、焼けた車の窓を鳴らした。"
+
+[resource]
+script = ExtResource("1")
+id = &"unique_scorpio"
+title = "サソリの刺青"
+body_text = "横転した装甲車のそばに男が立っている。左頬の刺青は砂で半分隠れていた。足元にはまだ温かい薬莢が散っている。"
+required_act = 3
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

@@ -5,15 +5,15 @@
 [resource]
 script = ExtResource("1")
 id = &"eu04"
-display_name = "ネオンショット"
-description = "4ダメージ×2。ゲージ+5"
-ap_cost = 1
-tags = [1, 5]
+display_name = "誘蛾灯"
+description = "全敵に魅了1+脆弱2。ゲージ+10"
+ap_cost = 2
+tags = [5]
 rarity = 0
 restriction = 6
-base_damage = 4
-upgraded_damage = 6
-hit_count = 2
-requires_target = true
-status_effect = &"euphoria"
-status_stacks = 5
+is_aoe = true
+status_effect = &"charm"
+status_stacks = 1
+secondary_status_effect = &"vulnerable"
+secondary_status_stacks = 2
+euphoria_gain = 10

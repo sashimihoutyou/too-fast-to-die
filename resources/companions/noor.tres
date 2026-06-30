@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"noor"
+display_name = "ヌール"
+companion_type = 3
+is_unique = true
+dedicated_character_id = &"cultist"
+duration_nodes = 5
+passive_description = "V8系施設で追加選択肢が出る。離脱時にオアシス情報を得る"
+risk_description = "直接戦闘能力はない"
+departure_reward_description = "オアシス情報"

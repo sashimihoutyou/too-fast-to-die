@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"st_eu01"
-display_name = "ジュリエットの一閃"
+display_name = "唇の刃"
 description = "4ダメージ。ゲージ+5"
 ap_cost = 1
 tags = [0, 5]

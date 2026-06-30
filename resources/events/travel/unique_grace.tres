@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "隣に座らせる"
+result_text = "グレイスは微笑んだ。笑顔だけが先に出て、声が少し遅れた。「ご迷惑でなければ」"
+companion_id = &"grace"
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "食料を渡す"
+result_text = "グレイスは両手で食料を受け取った。礼は丁寧すぎて、風の音より軽かった。"
+fuel_change = -1
+karma_change = 1
+
+[resource]
+script = ExtResource("1")
+id = &"unique_grace"
+title = "きれいな笑顔"
+body_text = "検問跡の陰に、細い女が立っている。首元の布が風でめくれ、古い首輪の跡が見えた。彼女はすぐに布を戻し、何事もなかった顔で笑った。"
+required_act = 3
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

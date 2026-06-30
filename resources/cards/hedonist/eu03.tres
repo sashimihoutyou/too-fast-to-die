@@ -5,14 +5,12 @@
 [resource]
 script = ExtResource("1")
 id = &"eu03"
-display_name = "甘い吐息"
-description = "魅了1付与+2ブロック。ゲージ+5"
-ap_cost = 1
+display_name = "蛍光注射"
+description = "ゲージ+25。消耗"
+ap_cost = 0
 tags = [5]
 rarity = 0
 restriction = 6
-base_block = 2
-upgraded_block = 4
-requires_target = true
-status_effect = &"charm"
-status_stacks = 1
+is_exhaustible = true
+status_effect = &"euphoria"
+status_stacks = 25

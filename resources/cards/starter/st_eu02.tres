@@ -5,13 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = &"st_eu02"
-display_name = "快楽の代償"
-description = "ゲージ+15。HP-3"
+display_name = "誘いの視線"
+description = "魅了1付与。ゲージ+5"
 ap_cost = 1
 tags = [5]
 rarity = 0
 restriction = 6
 is_starter = true
-self_damage = 3
-status_effect = &"euphoria"
-status_stacks = 15
+requires_target = true
+status_effect = &"charm"
+status_stacks = 1
+euphoria_gain = 5

@@ -11,3 +11,4 @@ ap_cost = 1
 tags = [5]
 rarity = 1
 restriction = 3
+requires_target = true

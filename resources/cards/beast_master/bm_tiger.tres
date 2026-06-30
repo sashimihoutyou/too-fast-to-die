@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bm_tiger"
+display_name = "虎"
+description = "相棒セット。5ダメージ/ターン、ガード2。戦闘開始時セット済み"
+ap_cost = 3
+tags = [5]
+rarity = 0
+restriction = 4
+is_starter = true

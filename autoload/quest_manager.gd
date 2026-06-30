@@ -157,12 +157,10 @@ func _pc_can_read() -> bool:
 	var cid: StringName = GameManager.current_character.id
 	if cid == &"beast_master" or cid == &"wanderer":
 		return true
-	if GameManager.current_companion == null:
-		return false
-	return GameManager.current_companion.companion_type in [
-		CompanionData.CompanionType.DOG,
-		CompanionData.CompanionType.INFORMANT,
-	]
+	return (
+		GameManager.has_companion_type(CompanionData.CompanionType.DOG)
+		or GameManager.has_companion_type(CompanionData.CompanionType.INFORMANT)
+	)
 
 func _load_defs(path: String) -> void:
 	var dir := DirAccess.open(path)

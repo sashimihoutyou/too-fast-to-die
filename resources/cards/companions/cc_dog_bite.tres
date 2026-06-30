@@ -5,13 +5,14 @@
 [resource]
 script = ExtResource("1")
 id = &"cc_dog_bite"
-display_name = "噛みつき"
-description = "4ダメージ。出血2付与"
-ap_cost = 1
-tags = [0]
+display_name = "威嚇"
+description = "敵1体に弱体1。戦闘中1回"
+ap_cost = 0
+tags = [4]
 rarity = 1
 is_starter = true
-base_damage = 4
-status_effect = &"bleed"
-status_stacks = 2
-flavor_text = "言葉を持たない忠誠が、喉元へ跳ぶ。"
+is_exhaustible = true
+requires_target = true
+status_effect = &"weaken"
+status_stacks = 1
+flavor_text = "言葉を持たない忠誠が、敵の足を止める。"

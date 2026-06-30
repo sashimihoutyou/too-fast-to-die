@@ -52,6 +52,11 @@ func _build_choices() -> void:
 				btn.visible = false
 			else:
 				btn.text += " (激情が高すぎる)"
+		if choice.companion_id != &"":
+			var companion: CompanionData = CompanionDatabase.get_companion(choice.companion_id)
+			if companion == null or not GameManager.can_recruit_companion(companion):
+				btn.disabled = true
+				btn.text += " (同行不可)"
 		$ChoiceContainer.add_child(btn)
 
 func _check_requirement(req: String) -> bool:
@@ -74,11 +79,9 @@ func _check_requirement(req: String) -> bool:
 	if req.begins_with("flag!="):
 		return not bool(GameManager.event_flags.get(StringName(req.split("!=")[1]), false))
 	if req.begins_with("companion=="):
-		if GameManager.current_companion == null:
-			return false
-		return GameManager.current_companion.id == StringName(req.split("==")[1])
+		return GameManager.is_companion_active(StringName(req.split("==")[1]))
 	if req == "no_companion":
-		return GameManager.current_companion == null
+		return not GameManager.has_any_companion()
 	if req.begins_with("faith>="):
 		return GameManager.faith >= int(req.split(">=")[1])
 	if req.begins_with("faith<="):

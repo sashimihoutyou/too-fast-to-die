@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"colt"
+display_name = "コルト"
+companion_type = 0
+is_unique = true
+dedicated_character_id = &"hedonist"
+non_dedicated_duration_nodes = 5
+duration_nodes = -1
+passive_description = "ノード移動ごとにエクスタシー+6"
+risk_description = "非専用PCでは5ノードで離脱"
+departure_reward_description = "アンコモンカード"
+deck_card_ids = [&"cc_fighter_cover"]
+euphoria_per_node = 6

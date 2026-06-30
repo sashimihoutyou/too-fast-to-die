@@ -6,12 +6,12 @@
 script = ExtResource("1")
 id = &"cc_fighter_cover"
 display_name = "援護射撃"
-description = "5ダメージ。弱体1付与"
-ap_cost = 1
+description = "6ダメージ。戦闘中1回"
+ap_cost = 0
 tags = [1]
 rarity = 1
 is_starter = true
-base_damage = 5
-status_effect = &"weaken"
-status_stacks = 1
+is_exhaustible = true
+base_damage = 6
+requires_target = true
 flavor_text = "背中の銃声が、まだ生きている道を作る。"

@@ -76,7 +76,7 @@ static func _ex_raider_monologue() -> String:
 
 
 static func _wanderer_monologue() -> String:
-	var has_dog: bool = GameManager.current_companion != null and GameManager.current_companion.companion_type == CompanionData.CompanionType.DOG
+	var has_dog: bool = GameManager.has_companion_type(CompanionData.CompanionType.DOG)
 	var lines: Array[String] = []
 	if has_dog:
 		lines = [

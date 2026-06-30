@@ -12,4 +12,3 @@ tags = [4]
 restriction = 4
 is_starter = true
 is_exhaustible = true
-upgraded_block = 3

@@ -11,4 +11,4 @@ duration_nodes = 3
 passive_description = ""
 risk_description = ""
 departure_reward_description = "次の情報ノードで信頼度+1段階"
-deck_card_ids = [&"cc_informant_tip"]
+deck_card_ids = []

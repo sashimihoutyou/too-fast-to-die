@@ -404,18 +404,30 @@ func _update_hud() -> void:
 	$HUD/DistanceLabel.text = "走行: %dkm" % GameManager.distance_km
 	$HUD/ActLabel.text = "区間%d" % GameManager.current_act
 	$HUD/QuestLabel.text = QuestManager.get_hud_summary()
-	if GameManager.current_companion != null:
-		var comp := GameManager.current_companion
-		var remaining_text := "%dノード" % GameManager.companion_nodes_remaining if comp.duration_nodes >= 0 else "無期限"
-		$HUD/CompanionLabel.text = "同行者: %s (%s)" % [comp.display_name, remaining_text]
-		$HUD/CompanionLabel.tooltip_text = "%s\nパッシブ: %s\nリスク: %s\n離脱報酬: %s" % [comp.display_name, comp.passive_description, comp.risk_description, comp.departure_reward_description]
-		if comp.companion_type == CompanionData.CompanionType.TRAITOR and GameManager.companion_nodes_remaining <= 1:
-			$HUD/CompanionLabel.text += "  荷物を見ている"
-			$HUD/CompanionLabel.tooltip_text += "\n予兆: こちらの荷物に目が行き過ぎている。"
-	else:
+	var companion_texts: Array[String] = []
+	var companion_tooltips: Array[String] = []
+	for slot: int in range(2):
+		var comp: CompanionData = GameManager.get_companion_in_slot(slot)
+		if comp == null:
+			continue
+		var remaining_text: String = GameManager.get_companion_remaining_display(slot)
+		var label_text: String = "%s(%s)" % [comp.display_name, remaining_text]
+		var tooltip_text: String = "%s\nパッシブ: %s\nリスク: %s\n離脱報酬: %s" % [comp.display_name, comp.passive_description, comp.risk_description, comp.departure_reward_description]
+		if comp.max_hp > 0:
+			label_text += " HP:%d/%d" % [GameManager.get_companion_hp(slot), comp.max_hp]
+			tooltip_text += "\nHP: %d/%d" % [GameManager.get_companion_hp(slot), comp.max_hp]
+		if comp.companion_type == CompanionData.CompanionType.TRAITOR and GameManager.get_companion_nodes_remaining(slot) <= 1:
+			label_text += " 荷物を見ている"
+			tooltip_text += "\n予兆: こちらの荷物に目が行き過ぎている。"
+		companion_texts.append(label_text)
+		companion_tooltips.append(tooltip_text)
+	if companion_texts.is_empty():
 		$HUD/CompanionLabel.text = "同行者: なし"
 		$HUD/CompanionLabel.tooltip_text = ""
-	if GameManager.current_character != null and GameManager.current_character.unique_system == &"heat":
+	else:
+		$HUD/CompanionLabel.text = "同行者: %s" % " / ".join(companion_texts)
+		$HUD/CompanionLabel.tooltip_text = "\n\n".join(companion_tooltips)
+	if GameManager.pursuit_level > 0 or (GameManager.current_character != null and GameManager.current_character.unique_system == &"heat"):
 		$HUD/CompanionLabel.text += "  追跡: %d%%" % GameManager.pursuit_level
 	if GameManager.is_cultist():
 		$HUD/CompanionLabel.text += "  信仰: %s" % GameManager.get_faith_display()
@@ -536,7 +548,7 @@ func _get_current_map_node() -> Dictionary:
 	return _find_node_by_id(GameManager.map_current_node_id)
 
 func _get_travel_cost(from_node: Dictionary, to_node: Dictionary) -> int:
-	return MapGenerator.calculate_travel_cost(from_node, to_node, GameManager.current_companion != null)
+	return MapGenerator.calculate_travel_cost(from_node, to_node, GameManager.has_any_companion()) + GameManager.get_companion_extra_travel_cost()
 
 func _get_node_button_text(node_type: MapGenerator.NodeType, fuel_reward: int) -> String:
 	var icon := MapGenerator.get_node_type_icon(node_type)

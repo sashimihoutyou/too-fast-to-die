@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "乗れと言う"
+result_text = "男は軽く笑い、長い脚を折って後ろに乗った。「助かる。歩くの、嫌いじゃないけどさ」"
+companion_id = &"milo"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "水だけ渡す"
+result_text = "男は水筒を受け取り、親指で帽子のつばを上げた。「ありがと。どっかで返すよ」"
+karma_change = 1
+
+[resource]
+script = ExtResource("1")
+id = &"unique_milo"
+title = "ヒョロヒョロ男"
+body_text = "長身の男が料金所の屋根に座っている。銃は古い。靴はもっと古い。砂を蹴って降りてくる動きだけは、妙に荒野慣れしていた。"
+required_act = 3
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

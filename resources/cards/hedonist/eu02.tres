@@ -5,14 +5,13 @@
 [resource]
 script = ExtResource("1")
 id = &"eu02"
-display_name = "ネオンキス"
-description = "5ダメージ。ゲージ+10"
+display_name = "甘い息"
+description = "魅了2付与。ゲージ+5"
 ap_cost = 1
 tags = [5]
 rarity = 0
 restriction = 6
-base_damage = 5
-upgraded_damage = 7
 requires_target = true
-status_effect = &"euphoria"
-status_stacks = 10
+status_effect = &"charm"
+status_stacks = 2
+euphoria_gain = 5

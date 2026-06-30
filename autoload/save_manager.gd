@@ -16,6 +16,9 @@ func save_run() -> void:
 	var companion_id: String = ""
 	if GameManager.current_companion != null:
 		companion_id = GameManager.current_companion.id
+	var secondary_companion_id: String = ""
+	if GameManager.secondary_companion != null:
+		secondary_companion_id = GameManager.secondary_companion.id
 
 	var equipped: Dictionary = {}
 	for slot_key: Variant in ResourceManager.equipped_parts:
@@ -36,8 +39,15 @@ func save_run() -> void:
 		"oasis_info": GameManager.oasis_info,
 		"companion_id": companion_id,
 		"companion_nodes_remaining": GameManager.companion_nodes_remaining,
+		"companion_hp": GameManager.companion_hp,
+		"companion_is_settled": GameManager.companion_is_settled,
+		"secondary_companion_id": secondary_companion_id,
+		"secondary_companion_nodes_remaining": GameManager.secondary_companion_nodes_remaining,
+		"secondary_companion_hp": GameManager.secondary_companion_hp,
+		"secondary_companion_is_settled": GameManager.secondary_companion_is_settled,
 		"player_hp": CombatManager.player_hp,
 		"player_max_hp": CombatManager.player_max_hp,
+		"player_euphoria": CombatManager.player_euphoria,
 		"fuel": ResourceManager.fuel,
 		"tank_capacity": ResourceManager.tank_capacity,
 		"scrap": ResourceManager.scrap,
@@ -82,6 +92,11 @@ func load_run() -> bool:
 	GameManager.faith = int(data.get("faith", 80))
 	GameManager.oasis_info = data.get("oasis_info", {})
 	GameManager.companion_nodes_remaining = int(data.get("companion_nodes_remaining", 0))
+	GameManager.companion_hp = int(data.get("companion_hp", 0))
+	GameManager.companion_is_settled = bool(data.get("companion_is_settled", false))
+	GameManager.secondary_companion_nodes_remaining = int(data.get("secondary_companion_nodes_remaining", 0))
+	GameManager.secondary_companion_hp = int(data.get("secondary_companion_hp", 0))
+	GameManager.secondary_companion_is_settled = bool(data.get("secondary_companion_is_settled", false))
 	GameManager.boss_cleared = false
 	GameManager.pending_result = &"defeat"
 	GameManager.pursuit_triggered = false
@@ -89,11 +104,25 @@ func load_run() -> bool:
 	var comp_id: String = data.get("companion_id", "")
 	if comp_id != "":
 		GameManager.current_companion = CompanionDatabase.get_companion(StringName(comp_id))
+		if GameManager.current_companion != null and GameManager.companion_hp <= 0:
+			GameManager.companion_hp = GameManager.current_companion.max_hp
 	else:
 		GameManager.current_companion = null
+		GameManager.companion_hp = 0
+		GameManager.companion_is_settled = false
+	var secondary_comp_id: String = data.get("secondary_companion_id", "")
+	if secondary_comp_id != "":
+		GameManager.secondary_companion = CompanionDatabase.get_companion(StringName(secondary_comp_id))
+		if GameManager.secondary_companion != null and GameManager.secondary_companion_hp <= 0:
+			GameManager.secondary_companion_hp = GameManager.secondary_companion.max_hp
+	else:
+		GameManager.secondary_companion = null
+		GameManager.secondary_companion_hp = 0
+		GameManager.secondary_companion_is_settled = false
 
 	CombatManager.player_hp = int(data.get("player_hp", character.max_hp))
 	CombatManager.player_max_hp = int(data.get("player_max_hp", character.max_hp))
+	CombatManager.player_euphoria = int(data.get("player_euphoria", 50 if character.unique_system == &"euphoria" else 0))
 
 	ResourceManager.fuel = int(data.get("fuel", 20))
 	ResourceManager.tank_capacity = int(data.get("tank_capacity", 30))

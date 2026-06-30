@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bm_armadillo"
+display_name = "アーマージロ"
+description = "相棒セット。HP25、0ダメージ/ターン、ガード8。ミーシャへの被ダメージ75%を肩代わり"
+ap_cost = 2
+tags = [5]
+rarity = 1
+restriction = 4

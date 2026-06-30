@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"gus"
+display_name = "ガス"
+companion_type = 1
+is_unique = true
+dedicated_character_id = &"cultist"
+duration_nodes = 6
+passive_description = "戦闘中のバイク耐久消耗を無効化"
+risk_description = "追手が増える"
+departure_reward_description = "上位バイクパーツ"
+deck_card_ids = [&"cc_technician_patch"]
+pursuit_gain_per_node = 3

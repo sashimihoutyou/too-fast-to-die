@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"bm10"
 display_name = "獣の盾"
-description = "獣1体に8ブロック"
+description = "全相棒のガード+8（このターン）"
 ap_cost = 1
 tags = [5]
 rarity = 1

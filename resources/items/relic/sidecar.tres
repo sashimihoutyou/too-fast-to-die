@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"sidecar"
+display_name = "サイドカー"
+description = "同行者を2人まで連れられる。2人同行中は移動コスト+1"
+item_type = 1
+rarity = 2
+trigger = 1
+special_effect = &"companion_slot_plus"
+effect_value = 1

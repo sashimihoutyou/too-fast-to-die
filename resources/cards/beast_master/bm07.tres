@@ -5,10 +5,9 @@
 [resource]
 script = ExtResource("1")
 id = &"bm07"
-display_name = "共鳴の鞭"
-description = "5ダメ。場に獣がいれば+5"
+display_name = "共鳴の牙"
+description = "相棒の攻撃力合計ぶんのダメージ"
 ap_cost = 1
 tags = [5]
 restriction = 4
-base_damage = 5
-upgraded_damage = 7
+requires_target = true

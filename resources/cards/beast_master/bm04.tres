@@ -5,9 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = &"bm04"
-display_name = "ワイルドハウル"
-description = "全獣の攻撃力+3（このターン）"
-ap_cost = 1
+display_name = "一斉攻撃"
+description = "全相棒が即座に追加攻撃。消耗"
+ap_cost = 2
 tags = [5]
 rarity = 1
 restriction = 4
+is_exhaustible = true

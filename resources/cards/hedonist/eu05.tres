@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1")
 id = &"eu05"
-display_name = "ロミオ乱射"
-description = "3ダメージ×4回。ゲージ+10"
+display_name = "ネオン・ラッシュ"
+description = "3ダメージ×4回。ゲージ+15"
 ap_cost = 2
 tags = [1, 5]
 rarity = 1
@@ -16,4 +16,4 @@ upgraded_damage = 4
 hit_count = 4
 requires_target = true
 status_effect = &"euphoria"
-status_stacks = 10
+status_stacks = 15

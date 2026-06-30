@@ -15,6 +15,8 @@ func _update_display() -> void:
 func _on_rest() -> void:
 	var heal := CombatManager.player_max_hp * 50 / 100
 	CombatManager.player_hp = mini(CombatManager.player_hp + heal, CombatManager.player_max_hp)
+	if GameManager.is_companion_active(&"penny"):
+		CombatManager.recover_tiger_after_rest()
 	_return_to_map()
 
 func _on_upgrade() -> void:

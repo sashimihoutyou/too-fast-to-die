@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "世界を見せる"
+result_text = "コルトは荷台に飛び乗り、すぐに笑った。「すげえ。本当にどこまでも道がある」"
+companion_id = &"colt"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "村へ戻れと言う"
+result_text = "コルトは唇を尖らせたが、最後には頷いた。砂の上の足跡だけが、しばらく迷っていた。"
+
+[resource]
+script = ExtResource("1")
+id = &"unique_colt"
+title = "村を出た少年"
+body_text = "給水塔の影で、少年が荷物を抱えて立っている。靴は新しい。目もまだ新しい。熱い風を吸い込み、彼は道の先ばかり見ていた。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

@@ -5,9 +5,10 @@
 [resource]
 script = ExtResource("1")
 id = &"bm06"
-display_name = "エイペックスプレデター"
-description = "場の全獣が2回攻撃"
-ap_cost = 2
+display_name = "群れの咆哮"
+description = "手札か山札の動物の攻撃力を全相棒に加算し、即時攻撃。ガードをブロックに加える。次ターン相棒を捨札へ"
+ap_cost = 0
 tags = [5]
 rarity = 2
 restriction = 4
+is_exhaustible = true

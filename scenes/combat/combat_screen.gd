@@ -6,6 +6,7 @@ var target_buttons: Array[Button] = []
 var hp_labels: Array[Label] = []
 var hp_bars: Array[ProgressBar] = []
 var block_labels: Array[Label] = []
+var weakness_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
 var status_labels: Array[Label] = []
 var item_buttons: Array[Button] = []
@@ -238,7 +239,8 @@ func _beast_summary() -> String:
 			var max_hp: int = int(beast.get("max_hp", 0))
 			var attack: int = int(beast.get("attack", 0))
 			var guard: int = int(beast.get("guard", 0)) + int(beast.get("guard_bonus", 0))
-			parts.append("%s HP%d/%d 攻%d 軽%d" % [beast_name, hp, max_hp, attack, maxi(0, guard)])
+			var turns_alive: int = int(beast.get("turns_alive", 0))
+			parts.append("%s HP%d/%d 攻%d 軽%d 生存%d" % [beast_name, hp, max_hp, attack, maxi(0, guard), turns_alive])
 	return "、".join(parts) if not parts.is_empty() else "なし"
 
 func _status_detail_lines(status: Dictionary) -> Array[String]:
@@ -616,8 +618,9 @@ func _on_beast_changed() -> void:
 			var name_str: String = String(beast.get("name", "獣"))
 			var bhp: int = int(beast.get("hp", 0))
 			var bmax: int = int(beast.get("max_hp", 0))
-			parts.append("%s(%d/%d)" % [name_str, bhp, bmax])
-	_beast_label.text = "相棒 %d/%d" % [alive_count, CombatManager.BEAST_MAX]
+			var turns_alive: int = int(beast.get("turns_alive", 0))
+			parts.append("%s(%d/%d:%dt)" % [name_str, bhp, bmax, turns_alive])
+	_beast_label.text = "相棒 %d/%d  %s" % [alive_count, CombatManager.get_beast_max_slots(), " ".join(parts)]
 	_update_portrait_state()
 
 func _setup_signals() -> void:
@@ -668,6 +671,7 @@ func _build_enemy_display() -> void:
 	hp_labels.clear()
 	hp_bars.clear()
 	block_labels.clear()
+	weakness_labels.clear()
 	intent_labels.clear()
 	status_labels.clear()
 
@@ -720,13 +724,13 @@ func _build_enemy_display() -> void:
 		hp_bar.custom_minimum_size = Vector2(0, 14)
 		vbox.add_child(hp_bar)
 
-		if not data.weaknesses.is_empty():
-			var weakness_label := Label.new()
-			weakness_label.text = "弱点: %s" % _tags_to_text(data.weaknesses)
-			weakness_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			weakness_label.add_theme_font_size_override("font_size", 12)
-			weakness_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
-			vbox.add_child(weakness_label)
+		var weakness_label := Label.new()
+		weakness_label.name = "WeaknessLabel"
+		weakness_label.text = _format_weakness_label(i)
+		weakness_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		weakness_label.add_theme_font_size_override("font_size", 12)
+		weakness_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+		vbox.add_child(weakness_label)
 
 		var block_label := Label.new()
 		block_label.name = "BlockLabel"
@@ -772,6 +776,7 @@ func _build_enemy_display() -> void:
 		hp_labels.append(hp_label)
 		hp_bars.append(hp_bar)
 		block_labels.append(block_label)
+		weakness_labels.append(weakness_label)
 		intent_labels.append(intent_label)
 		status_labels.append(status_label)
 
@@ -1315,32 +1320,16 @@ func _on_enemy_block_changed(idx: int, block: int) -> void:
 
 func _on_enemy_intent_updated(idx: int, intent: Dictionary) -> void:
 	if idx < intent_labels.size():
-		var label: Label = intent_labels[idx]
-		var intent_type: String = intent.get("type", "")
-		var intent_label_text: String = intent.get("label", "")
-		var val: int = intent.get("value", 0)
-		var hits: int = intent.get("hits", 1)
-		match intent_type:
-			"attack":
-				if hits > 1:
-					label.text = "⚔ %s (%d×%d)" % [intent_label_text, val, hits]
-				else:
-					label.text = "⚔ %s (%d)" % [intent_label_text, val]
-				label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
-			"defend":
-				label.text = "🛡 %s (%d)" % [intent_label_text, val]
-				label.add_theme_color_override("font_color", Color(0.3, 0.6, 0.9))
-			"attack_defend":
-				var atk_val: int = intent.get("attack", 0)
-				var blk_val: int = intent.get("block", 0)
-				label.text = "⚔🛡 %s (%d/%d)" % [intent_label_text, atk_val, blk_val]
-				label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
-			_:
-				label.text = "? %s" % intent_label_text
+		_update_enemy_intent_label(idx, intent)
 
 func _on_enemy_status_changed(idx: int, status: Dictionary) -> void:
 	if idx < status_labels.size():
 		status_labels[idx].text = _format_status(status)
+	if idx < weakness_labels.size():
+		weakness_labels[idx].text = _format_weakness_label(idx)
+	if idx < intent_labels.size():
+		var intent: Dictionary = CombatManager.enemies[idx].get("intent", {})
+		_update_enemy_intent_label(idx, intent)
 	if idx < enemy_panels.size() and _tooltip_pending_source == enemy_panels[idx] and _tooltip_panel != null and _tooltip_panel.visible:
 		_request_tooltip(_enemy_tooltip_title(idx), _enemy_tooltip_body(idx), enemy_panels[idx])
 
@@ -1395,6 +1384,8 @@ func _update_buff_display() -> void:
 	var mp: int = int(buffs.get("melee_power", 0))
 	var rd: int = int(buffs.get("ranged_double", 0))
 	var pd: int = int(buffs.get("partner_defense", 0))
+	var cg: int = int(buffs.get("companion_guard", 0))
+	var hf: int = int(buffs.get("herd_fatigue", 0))
 	if ult > 0:
 		parts.append("フルスロットル(%dt)" % ult)
 	if oc > 0:
@@ -1405,6 +1396,10 @@ func _update_buff_display() -> void:
 		parts.append("射×2(%d)" % rd)
 	if pd > 0:
 		parts.append("防御指示")
+	if cg > 0:
+		parts.append("かばう(%d)" % cg)
+	if hf > 0:
+		parts.append("群れ疲労")
 	$PlayerHUD/BuffLabel.text = " ".join(parts)
 
 func _targets_enemy_status(card: CardData) -> bool:
@@ -1417,6 +1412,66 @@ func _targets_enemy_status(card: CardData) -> bool:
 	if card.status_effect == &"investigate":
 		return true
 	return CombatManager._map_status(card.status_effect) != &""
+
+func _update_enemy_intent_label(idx: int, intent: Dictionary) -> void:
+	if idx < 0 or idx >= intent_labels.size():
+		return
+	var label: Label = intent_labels[idx]
+	if _uses_investigation_reveal() and not _is_enemy_intent_revealed(idx):
+		label.text = "意図: ???"
+		label.add_theme_color_override("font_color", Color(0.55, 0.55, 0.55))
+		return
+	var intent_type: String = intent.get("type", "")
+	var intent_label_text: String = intent.get("label", "")
+	var val: int = intent.get("value", 0)
+	var hits: int = intent.get("hits", 1)
+	match intent_type:
+		"attack":
+			if hits > 1:
+				label.text = "⚔ %s (%d×%d)" % [intent_label_text, val, hits]
+			else:
+				label.text = "⚔ %s (%d)" % [intent_label_text, val]
+			label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+		"defend":
+			label.text = "🛡 %s (%d)" % [intent_label_text, val]
+			label.add_theme_color_override("font_color", Color(0.3, 0.6, 0.9))
+		"attack_defend":
+			var atk_val: int = intent.get("attack", 0)
+			var blk_val: int = intent.get("block", 0)
+			label.text = "⚔🛡 %s (%d/%d)" % [intent_label_text, atk_val, blk_val]
+			label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
+		_:
+			label.text = "? %s" % intent_label_text
+
+func _format_weakness_label(idx: int) -> String:
+	if idx < 0 or idx >= CombatManager.enemies.size():
+		return ""
+	var enemy: Dictionary = CombatManager.enemies[idx]
+	var data: EnemyData = enemy["data"]
+	if data.weaknesses.is_empty():
+		return "弱点: なし" if _is_enemy_weakness_revealed(idx) else "弱点: ???"
+	if _uses_investigation_reveal() and not _is_enemy_weakness_revealed(idx):
+		return "弱点: ???"
+	return "弱点: %s" % _tags_to_text(data.weaknesses)
+
+func _uses_investigation_reveal() -> bool:
+	return GameManager.current_character != null and GameManager.current_character.unique_system == &"investigation"
+
+func _is_enemy_weakness_revealed(idx: int) -> bool:
+	if not _uses_investigation_reveal():
+		return true
+	return _enemy_investigation_stack(idx) >= 2 or CombatManager._is_missing_link_target(idx)
+
+func _is_enemy_intent_revealed(idx: int) -> bool:
+	if not _uses_investigation_reveal():
+		return true
+	return _enemy_investigation_stack(idx) >= 1 or CombatManager._is_missing_link_target(idx)
+
+func _enemy_investigation_stack(idx: int) -> int:
+	if idx < 0 or idx >= CombatManager.enemies.size():
+		return 0
+	var status: Dictionary = CombatManager.enemies[idx]["status"]
+	return int(status.get("investigation", 0))
 
 func _format_status(status: Dictionary) -> String:
 	if status.is_empty():

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"bm11"
 display_name = "防御指示"
-description = "このターン被ダメージを相棒が引き受ける。相棒の軽減+2"
+description = "このターン被ダメージを相棒が引き受ける。相棒のガード2倍"
 ap_cost = 1
 tags = [5]
 restriction = 4

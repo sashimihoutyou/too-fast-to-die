@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "後ろに乗せる"
+result_text = "ルビーは薄く笑い、空のネオン容器を捨てた。「いいよ。どうせここにいても乾くだけ」"
+companion_id = &"ruby"
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "ネオンの噂だけ聞く"
+result_text = "ルビーは指先で古い注射痕を掻き、ニューエデンの裏道を二つ教えた。声は乾いていた。"
+
+[resource]
+script = ExtResource("1")
+id = &"unique_ruby"
+title = "色落ちした赤髪"
+body_text = "壊れた看板の下に、赤髪の女が座っている。髪の色は雨ざらしで橙に抜け、手首には細い傷が重なっていた。甘い化学臭が、砂の匂いに混じる。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

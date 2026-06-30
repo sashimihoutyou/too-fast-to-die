@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "荷台を空ける"
+result_text = "ペニーは袋を抱えて乗り込んだ。「ありがと。名前は？　あ、バイクの名前。つけてないの？」"
+companion_id = &"penny"
+karma_change = 1
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "集落の方角を教える"
+result_text = "ペニーは何度も頷き、砂に方角を描き写した。足元の小石にも、彼女は名前をつけていた。"
+karma_change = 1
+
+[resource]
+script = ExtResource("1")
+id = &"unique_penny"
+title = "家畜小屋の匂い"
+body_text = "枯れた用水路のそばで、少女が山羊をなだめている。山羊はいない。残っているのは首輪と、干し草の匂いだけだ。少女はそれでも、誰かに話しかけるように手を動かしていた。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

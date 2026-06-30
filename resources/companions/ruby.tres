@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ruby"
+display_name = "ルビー"
+companion_type = 3
+is_unique = true
+dedicated_character_id = &"hedonist"
+duration_nodes = 4
+passive_description = "ネオン絡みの情報に強い。離脱時にオアシス情報を得る"
+risk_description = "直接戦闘能力はない"
+departure_reward_description = "オアシス情報"
+euphoria_per_node = 3

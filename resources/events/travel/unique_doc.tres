@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "充電ケーブルを繋ぐ"
+result_text = "ドクの胸部ランプが弱く点いた。「巡回診療を再開します。患者さん、走行中の転倒に注意してください」"
+companion_id = &"doc"
+karma_change = 2
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "応急処置だけ受ける"
+result_text = "ドクは古い包帯を巻き、壊れたスピーカーから短い待合室音楽を流した。音はすぐ砂に消えた。"
+hp_change = 8
+
+[resource]
+script = ExtResource("1")
+id = &"unique_doc"
+title = "巡回診療機"
+body_text = "道路脇の救急箱の前に、人型の機械が膝をついている。白い外装は錆び、赤十字はほとんど剥げていた。胸の奥で、古いファンが苦しそうに回っている。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"wa08"
 display_name = "追跡者の目"
-description = "捨札から1枚を手札に加える"
+description = "調査1消費。捨札から1枚を手札に加える"
 ap_cost = 1
 tags = [5]
 restriction = 3

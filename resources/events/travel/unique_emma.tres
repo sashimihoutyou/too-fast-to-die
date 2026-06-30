@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="choice_join"]
+script = ExtResource("2")
+label = "地図を見せる"
+result_text = "エマは地図の端を指で押さえた。「この線、まだ使える。誰も信じてないから、逆に安全」"
+companion_id = &"emma"
+
+[sub_resource type="Resource" id="choice_leave"]
+script = ExtResource("2")
+label = "情報だけ買う"
+result_text = "エマは燃料缶を受け取り、古い道路番号を三つ教えた。数字は錆びた標識より信用できた。"
+fuel_change = -2
+
+[resource]
+script = ExtResource("1")
+id = &"unique_emma"
+title = "交易路の娘"
+body_text = "乾いた橋の下で、若い女が荷札を並べている。風に乗って麦殻と排気の匂いが混じった。彼女は通る車輪の跡だけを見て、行き先を当ててみせた。"
+required_act = 2
+choices = [SubResource("choice_join"), SubResource("choice_leave")]

@@ -14,7 +14,7 @@ func _ready() -> void:
 	_update_fuel_display()
 
 func _get_discount() -> float:
-	if GameManager.current_companion != null and GameManager.current_companion.companion_type == CompanionData.CompanionType.MERCHANT:
+	if GameManager.has_companion_type(CompanionData.CompanionType.MERCHANT):
 		return 0.9
 	return 1.0
 

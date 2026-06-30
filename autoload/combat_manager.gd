@@ -71,13 +71,16 @@ const LOVE_SLAVE_CHARM_THRESHOLD := 3
 
 # ミーシャ固有「相棒スロット」
 var player_beasts: Array[Dictionary] = []
-const BEAST_MAX := 1
+const BEAST_BASE_MAX := 1
+const BEAST_ABSOLUTE_MAX := 3
+var _tiger_down_next_combat: bool = false
 
 var enemies: Array[Dictionary] = []
 var player_buffs: Dictionary = {}
+var _quickdraw_added_this_turn: Dictionary = {}
 
 func _new_buffs_dict() -> Dictionary:
-	return {"melee_power": 0, "ranged_double": 0, "overcharge": 0, "ultimate": 0, "partner_defense": 0}
+	return {"melee_power": 0, "ranged_double": 0, "overcharge": 0, "ultimate": 0, "partner_defense": 0, "companion_guard": 0, "herd_fatigue": 0}
 
 func reset_player_for_new_run() -> void:
 	player_max_hp = GameManager.current_character.max_hp
@@ -89,7 +92,9 @@ func reset_player_for_new_run() -> void:
 	player_investigation = INVESTIGATION_MAX
 	player_euphoria = 50 if _is_hedonist() else 0
 	player_beasts.clear()
+	_tiger_down_next_combat = false
 	player_buffs = _new_buffs_dict()
+	_quickdraw_added_this_turn.clear()
 	_free_bike_fuel_turns = 0
 	_engine_brake_used_this_turn = false
 	_regular_draw_done = false
@@ -98,6 +103,7 @@ func reset_player_for_new_run() -> void:
 	_overdose_pending = false
 	_overdose_resolved_this_combat = false
 	_love_slave_used_this_combat = false
+	_quickdraw_added_this_turn.clear()
 
 func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
 	state = CombatState.INIT
@@ -144,10 +150,11 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 			"intent": {},
 			"turn_counter": 0,
 			"status": _new_status_dict(),
+			"beast_card_granted": false,
 		})
 	if _is_beast_master():
 		player_beasts.clear()
-		add_beast("虎", 20, 5, 2)
+		_add_tiger_at_combat_start()
 	_apply_relic_triggers(ItemData.TriggerTiming.ON_COMBAT_START)
 	DeckManager.start_combat()
 	begin_turn()
@@ -155,6 +162,9 @@ func start_combat(enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> v
 func begin_turn() -> void:
 	turn_number += 1
 	state = CombatState.PLAYER_TURN
+	_quickdraw_added_this_turn.clear()
+	_apply_herd_fatigue_start_of_turn()
+	_advance_beast_survival_turns()
 	ap = max_ap
 	ap_cost_reduction = 0
 	player_block = 0
@@ -260,8 +270,7 @@ func preview_damage(card: CardData, idx: int) -> int:
 	elif card.id == &"co10" and player_aura >= 80:
 		base *= 3
 	elif card.id == &"bm07" and not player_beasts.is_empty():
-		var bonus: int = 7 if card.upgraded else 5
-		base += bonus
+		base = _get_total_beast_attack()
 	elif card.id == &"st_we02":
 		if DeckManager.master_deck.size() <= 15:
 			var bonus: int = 3 if card.upgraded else 2
@@ -298,6 +307,22 @@ func can_play_card(card: CardData) -> bool:
 	if card.id == &"wa06" and not _has_missing_link_target():
 		return false
 	if card.status_effect == &"investigate" and player_investigation <= 0:
+		return false
+	if _is_beast_card_id(card.id) and not _can_set_beast_from_card(card.id):
+		return false
+	if _requires_alive_beast(card.id) and _alive_beast_count() <= 0:
+		return false
+	if card.id == &"bm03" and not _has_wounded_beast():
+		return false
+	if card.id == &"bm05" and not _has_animal_card_to_whistle():
+		return false
+	if card.id == &"bm06" and not _can_use_herd_roar():
+		return false
+	if card.id == &"wa05" and not _has_exhaustable_hand_card(card.id):
+		return false
+	if card.id == &"wa08" and player_investigation <= 0:
+		return false
+	if card.id == &"wa08" and DeckManager.discard_pile.is_empty():
 		return false
 	if _climax_active:
 		return true
@@ -497,6 +522,32 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 			_add_enemy_status(target_idx, &"guard_break", 2)
 		return
 
+	# --- ミーシャ 爆竹 ---
+	if card.id == &"st_bm01":
+		if randf() < 0.5:
+			for i: int in range(enemies.size()):
+				if bool(enemies[i]["alive"]):
+					_add_enemy_status(i, &"stun", 1)
+		return
+
+	# --- ミーシャ 動物カード ---
+	if _is_beast_card_id(card.id):
+		_set_beast_from_card(card.id)
+		return
+
+	# --- ミーシャ 屈服の鞭 ---
+	if card.id == &"bm01":
+		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
+			var target_data: EnemyData = enemies[target_idx]["data"]
+			var whip_damage: int = _apply_player_attack_mods(card.get_effective_damage(), card.tags)
+			if _climax_active:
+				whip_damage *= 2
+			_damage_enemy_ignore_block(target_idx, whip_damage, card.tags)
+			if int(enemies[target_idx]["hp"]) <= 0 and target_data.category == EnemyData.Category.BEAST:
+				_grant_beast_card_from_enemy(target_data)
+				enemies[target_idx]["beast_card_granted"] = true
+		return
+
 	# --- ロミオとジュリエット（享楽者最強技）---
 	if card.id == &"eu_new1":
 		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
@@ -516,6 +567,16 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 			_add_euphoria(card.status_stacks)
 		return
 
+	# --- 同行者カード ---
+	if card.id == &"cc_refugee_prayer":
+		if GameManager.has_companion_type(CompanionData.CompanionType.REFUGEE):
+			player_buffs["companion_guard"] = maxi(int(player_buffs.get("companion_guard", 0)), 8)
+			player_buffs_changed.emit(player_buffs)
+		return
+	if card.id == &"cc_technician_patch":
+		ResourceManager.repair_bike(3)
+		return
+
 	# --- ミーシャ 相棒カード ---
 	if card.id == &"bm02":
 		_partner_attack_instruction()
@@ -524,22 +585,49 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		player_buffs["partner_defense"] = 1
 		for beast: Dictionary in player_beasts:
 			if bool(beast.get("alive", false)):
-				beast["guard_bonus"] = 2
+				beast["guard_bonus"] = int(beast.get("guard", 0))
 		player_buffs_changed.emit(player_buffs)
 		beast_changed.emit()
 		return
-	if card.id == &"bm03":
-		_heal_beasts(8 if card.upgraded else 5)
-		return
-	if card.id == &"bm04":
-		_buff_beasts_attack(4 if card.upgraded else 3)
+	if card.id == &"bm05":
+		_whistle_animal_card()
 		return
 	if card.id == &"bm06":
-		_beast_auto_attack()
-		_beast_auto_attack()
+		_activate_herd_roar()
+		return
+	if card.id == &"bm03":
+		_heal_most_wounded_beast(11 if card.upgraded else 8)
+		return
+	if card.id == &"bm04":
+		_beasts_attack_once()
+		return
+	if card.id == &"bm07":
+		if target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
+			var fang_damage: int = _apply_player_attack_mods(_get_total_beast_attack(), card.tags)
+			if _climax_active:
+				fang_damage *= 2
+			_damage_enemy(target_idx, fang_damage, card.tags)
+		return
+	if card.id == &"bm08":
+		var shelter_block: int = card.get_effective_block()
+		player_block += shelter_block
+		player_block_changed.emit(player_block)
+		_add_beast_guard_bonus(shelter_block)
 		return
 	if card.id == &"bm09":
 		_summon_random_beast()
+		return
+	if card.id == &"bm10":
+		_add_beast_guard_bonus(8 if not card.upgraded else 12)
+		return
+
+	# --- ウェズリー 手札/捨札操作 ---
+	if card.id == &"wa05":
+		_apply_recycler(card, target_idx)
+		return
+	if card.id == &"wa08":
+		_add_investigation(-1)
+		DeckManager.move_random_discard_card_to_hand()
 		return
 
 	var dmg := card.get_effective_damage()
@@ -573,10 +661,6 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	# 放浪者 サバイバルナイフ: デッキ15枚以下で+2(+3)
 	if card.id == &"st_we02" and DeckManager.master_deck.size() <= 15:
 		dmg += 3 if card.upgraded else 2
-
-	# 放浪者 共鳴の鞭: 場に獣がいれば+5(+7)
-	if card.id == &"bm07" and not player_beasts.is_empty():
-		dmg += 7 if card.upgraded else 5
 
 	# 放浪者 ワンマンアーミー: 同行者なしで全攻撃+4(+6)
 	if card.id == &"wa09" and _is_lone_wolf():
@@ -633,21 +717,7 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		if _is_player_effect(card.status_effect):
 			_apply_player_effect(card.status_effect, card.status_stacks)
 		elif card.status_effect == &"charm":
-			# 魅了は享楽者固有デバフ（status dictに直接入れる）
-			if card.is_aoe:
-				for i in enemies.size():
-					if enemies[i]["alive"]:
-						_add_enemy_status(i, &"charm", card.status_stacks)
-			elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
-				_add_enemy_status(target_idx, &"charm", card.status_stacks)
-			# 魅了カードもユーフォリアゲージを増やす（eu01, eu03, eu07, eu08のゲージ+分）
-			if _is_hedonist():
-				var eu_gain: int = 5
-				if card.id == &"eu07":
-					eu_gain = 10
-				elif card.id == &"eu08":
-					eu_gain = 15
-				_add_euphoria(eu_gain)
+			_apply_enemy_card_status(card, target_idx, &"charm", card.status_stacks)
 			_maybe_add_love_slave_card()
 		elif card.status_effect == &"investigate":
 			if target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
@@ -656,12 +726,15 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 		else:
 			var mapped := _map_status(card.status_effect)
 			if mapped != &"":
-				if card.is_aoe:
-					for i in enemies.size():
-						if enemies[i]["alive"]:
-							_add_enemy_status(i, mapped, card.status_stacks)
-				elif target_idx >= 0 and target_idx < enemies.size() and enemies[target_idx]["alive"]:
-					_add_enemy_status(target_idx, mapped, card.status_stacks)
+				_apply_enemy_card_status(card, target_idx, mapped, card.status_stacks)
+
+	if card.secondary_status_effect != &"" and card.secondary_status_stacks != 0:
+		var secondary_mapped := _map_status(card.secondary_status_effect)
+		if secondary_mapped != &"":
+			_apply_enemy_card_status(card, target_idx, secondary_mapped, card.secondary_status_stacks)
+
+	if card.euphoria_gain != 0 and _is_hedonist():
+		_add_euphoria(card.euphoria_gain)
 
 	if _is_cultist() and _gear_enabled() and GameManager.get_faith_band() == &"zealot" and CardData.Tag.BIKE in card.tags:
 		_add_gear(1)
@@ -688,6 +761,13 @@ func _apply_card_effects(card: CardData, target_idx: int) -> void:
 	# 血の記憶: このカードで敵を撃破したらヒート-10
 	if card.id == &"er07" and killed_with_card:
 		_add_heat(-10)
+
+	if card.id == &"wa01" or card.id == &"wa07":
+		_maybe_add_quickdraw_followup(card.id)
+	if card.id == &"wa03":
+		DeckManager.move_random_discard_card_to_draw_top()
+	if card.id == &"wa10":
+		DeckManager.duplicate_card_to_discard(card)
 
 func is_weak_against(idx: int, tags: Array[CardData.Tag]) -> bool:
 	if idx < 0 or idx >= enemies.size():
@@ -722,6 +802,22 @@ func _damage_enemy(idx: int, amount: int, source_tags: Array[CardData.Tag] = [])
 		enemy["hp"] = maxi(0, enemy["hp"] - remaining)
 		enemy_hp_changed.emit(idx, enemy["hp"], enemy["max_hp"])
 
+func _damage_enemy_ignore_block(idx: int, amount: int, source_tags: Array[CardData.Tag] = []) -> void:
+	if idx < 0 or idx >= enemies.size():
+		return
+	var enemy: Dictionary = enemies[idx]
+	if not bool(enemy["alive"]):
+		return
+	var remaining: int = amount
+	if is_weak_against(idx, source_tags):
+		remaining = int(remaining * 1.5)
+	var enemy_status: Dictionary = enemy["status"]
+	if int(enemy_status.get("vulnerable", 0)) > 0:
+		remaining = int(remaining * 1.5)
+	if remaining > 0:
+		enemy["hp"] = maxi(0, int(enemy["hp"]) - remaining)
+		enemy_hp_changed.emit(idx, enemy["hp"], enemy["max_hp"])
+
 func _damage_player(amount: int, from_enemy: bool = false) -> void:
 	var remaining := amount
 	if from_enemy and int(player_status.get("vulnerable", 0)) > 0:
@@ -740,6 +836,14 @@ func _damage_player(amount: int, from_enemy: bool = false) -> void:
 	if remaining > 0:
 		if from_enemy and _is_beast_master():
 			remaining = _redirect_damage_to_partners(remaining)
+		if from_enemy and remaining > 0:
+			var companion_guard: int = int(player_buffs.get("companion_guard", 0))
+			if companion_guard > 0 and GameManager.has_any_companion():
+				var redirected: int = mini(remaining, companion_guard)
+				remaining -= redirected
+				player_buffs["companion_guard"] = companion_guard - redirected
+				player_buffs_changed.emit(player_buffs)
+				GameManager.damage_current_companion(redirected)
 		player_hp = maxi(0, player_hp - remaining)
 		player_hp_changed.emit(player_hp, player_max_hp)
 	if from_enemy and blocked > 0 and _is_heat_character():
@@ -756,6 +860,10 @@ func _check_enemies_alive() -> void:
 			enemies[i]["alive"] = false
 			var defeated_data: EnemyData = enemies[i]["data"]
 			QuestManager.on_enemy_defeated(defeated_data)
+			if _is_beast_master() and defeated_data.category == EnemyData.Category.BEAST and not bool(enemies[i].get("beast_card_granted", false)):
+				if randf() < 0.3:
+					_grant_beast_card_from_enemy(defeated_data)
+					enemies[i]["beast_card_granted"] = true
 			if _is_heat_character():
 				_add_heat(10)
 			enemy_defeated.emit(i)
@@ -995,6 +1103,14 @@ func _add_enemy_status(idx: int, status: StringName, stacks: int) -> void:
 	s[status] = int(s.get(status, 0)) + stacks
 	enemy_status_changed.emit(idx, s)
 
+func _apply_enemy_card_status(card: CardData, target_idx: int, status: StringName, stacks: int) -> void:
+	if card.is_aoe:
+		for i: int in range(enemies.size()):
+			if bool(enemies[i]["alive"]):
+				_add_enemy_status(i, status, stacks)
+	elif target_idx >= 0 and target_idx < enemies.size() and bool(enemies[target_idx]["alive"]):
+		_add_enemy_status(target_idx, status, stacks)
+
 func _maybe_add_love_slave_card() -> void:
 	if not _is_hedonist():
 		return
@@ -1181,9 +1297,7 @@ func _activate_ultimate() -> void:
 
 # ===== 調査ゲージ =====
 func _tick_investigation_start_of_turn() -> void:
-	if GameManager.current_companion == null:
-		return
-	if GameManager.current_companion.companion_type == CompanionData.CompanionType.DOG:
+	if not GameManager.has_human_companion():
 		return
 	_add_investigation(-1)
 	if player_investigation <= 0:
@@ -1226,6 +1340,33 @@ func _is_missing_link_target(idx: int) -> bool:
 	var target_status: Dictionary = enemies[idx]["status"]
 	return int(target_status.get("investigation", 0)) >= 3 or total >= 5
 
+func _maybe_add_quickdraw_followup(card_id: StringName) -> void:
+	if bool(_quickdraw_added_this_turn.get(card_id, false)):
+		return
+	_quickdraw_added_this_turn[card_id] = true
+	DeckManager.add_temporary_card_to_hand(card_id)
+
+func _has_exhaustable_hand_card(excluding_card_id: StringName) -> bool:
+	for card: CardData in DeckManager.hand:
+		if card.id != excluding_card_id:
+			return true
+	return false
+
+func _apply_recycler(card: CardData, target_idx: int) -> void:
+	if target_idx < 0 or target_idx >= enemies.size():
+		return
+	if not bool(enemies[target_idx]["alive"]):
+		return
+	var excluded: Array[StringName] = [card.id]
+	var exhausted: CardData = DeckManager.exhaust_random_card_from_hand_excluding(excluded)
+	if exhausted == null:
+		return
+	var exhaust_count: int = DeckManager.exhaust_pile.size()
+	var recycle_damage: int = _apply_player_attack_mods(exhaust_count * 8, card.tags)
+	if _climax_active:
+		recycle_damage *= 2
+	_damage_enemy(target_idx, recycle_damage, card.tags)
+
 # ===== エクスタシー =====
 func _add_euphoria(amount: int) -> void:
 	if amount > 0 and player_euphoria >= 95 and player_euphoria < EUPHORIA_MAX:
@@ -1263,29 +1404,48 @@ func _beast_auto_attack() -> void:
 	for beast: Dictionary in player_beasts:
 		if not bool(beast.get("alive", false)):
 			continue
-		var atk: int = int(beast.get("attack", 3))
-		for i in enemies.size():
-			if bool(enemies[i]["alive"]):
-				_damage_enemy(i, atk)
-				break
+		var atk: int = _get_effective_beast_attack(beast)
+		var target_idx: int = _pick_beast_target(beast)
+		if target_idx >= 0:
+			_damage_enemy(target_idx, atk)
 	beast_changed.emit()
 
 func add_beast(beast_name: String, hp: int, atk: int, guard: int = 0) -> void:
-	if player_beasts.size() >= BEAST_MAX:
+	if _alive_beast_count() >= get_beast_max_slots():
 		return
-	player_beasts.append({"name": beast_name, "hp": hp, "max_hp": hp, "attack": atk, "guard": guard, "guard_bonus": 0, "alive": true})
+	player_beasts.append({
+		"name": beast_name,
+		"hp": hp,
+		"max_hp": hp,
+		"attack": atk,
+		"guard": guard,
+		"guard_bonus": 0,
+		"temp_attack_bonus": 0,
+		"alive": true,
+		"source_card_id": &"",
+		"random_target": false,
+		"tank_share": 0,
+		"turns_alive": 0,
+	})
 	beast_changed.emit()
+
+func get_beast_max_slots() -> int:
+	var slots: int = BEAST_BASE_MAX
+	if ItemDatabase.has_relic(&"broken_collar"):
+		slots += 1
+	if ItemDatabase.has_relic(&"pack_proof"):
+		slots += 1
+	return mini(slots, BEAST_ABSOLUTE_MAX)
 
 func _partner_attack_instruction() -> void:
 	for beast: Dictionary in player_beasts:
 		if not bool(beast.get("alive", false)):
 			continue
-		var atk: int = int(beast.get("attack", 0)) * 2
+		var atk: int = _get_effective_beast_attack(beast) * 2
 		beast["guard_bonus"] = -int(beast.get("guard", 0))
-		for i: int in range(enemies.size()):
-			if bool(enemies[i]["alive"]):
-				_damage_enemy(i, atk)
-				break
+		var target_idx: int = _pick_beast_target(beast)
+		if target_idx >= 0:
+			_damage_enemy(target_idx, atk)
 	beast_changed.emit()
 
 func _heal_beasts(amount: int) -> void:
@@ -1296,23 +1456,47 @@ func _heal_beasts(amount: int) -> void:
 		beast["hp"] = mini(max_hp, int(beast.get("hp", 0)) + amount)
 	beast_changed.emit()
 
-func _buff_beasts_attack(amount: int) -> void:
+func _heal_most_wounded_beast(amount: int) -> void:
+	var target_idx: int = -1
+	var worst_missing_hp: int = 0
+	for i: int in range(player_beasts.size()):
+		var beast: Dictionary = player_beasts[i]
+		if not bool(beast.get("alive", false)):
+			continue
+		var max_hp: int = int(beast.get("max_hp", 0))
+		var hp: int = int(beast.get("hp", 0))
+		var missing_hp: int = max_hp - hp
+		if missing_hp > worst_missing_hp:
+			worst_missing_hp = missing_hp
+			target_idx = i
+	if target_idx < 0:
+		return
+	var target: Dictionary = player_beasts[target_idx]
+	var target_max_hp: int = int(target.get("max_hp", 0))
+	target["hp"] = mini(target_max_hp, int(target.get("hp", 0)) + amount)
+	beast_changed.emit()
+
+func _has_wounded_beast() -> bool:
 	for beast: Dictionary in player_beasts:
 		if not bool(beast.get("alive", false)):
 			continue
-		beast["attack"] = int(beast.get("attack", 0)) + amount
+		if int(beast.get("hp", 0)) < int(beast.get("max_hp", 0)):
+			return true
+	return false
+
+func _buff_beasts_attack_this_turn(amount: int) -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		beast["temp_attack_bonus"] = int(beast.get("temp_attack_bonus", 0)) + amount
 	beast_changed.emit()
 
 func _summon_random_beast() -> void:
-	var candidates: Array[Dictionary] = [
-		{"name": "デビルフ", "hp": 8, "attack": 8, "guard": 0},
-		{"name": "変異グリズリー", "hp": 30, "attack": 4, "guard": 5},
-		{"name": "汚染イーグル", "hp": 6, "attack": 3, "guard": 0},
-	]
-	var pick: Dictionary = candidates[randi() % candidates.size()]
-	if player_beasts.size() >= BEAST_MAX:
-		player_beasts.clear()
-	add_beast(String(pick.get("name", "獣")), int(pick.get("hp", 6)), int(pick.get("attack", 3)), int(pick.get("guard", 0)))
+	var candidates: Array[StringName] = [&"bm_devilf", &"bm_grizzly", &"bm_eagle", &"bm_armadillo"]
+	candidates.shuffle()
+	for card_id: StringName in candidates:
+		if _set_beast_from_card(card_id):
+			return
 
 func damage_beast(idx: int, amount: int) -> void:
 	if idx < 0 or idx >= player_beasts.size():
@@ -1323,7 +1507,12 @@ func damage_beast(idx: int, amount: int) -> void:
 	beast["hp"] = maxi(0, int(beast.get("hp", 0)) - amount)
 	if int(beast.get("hp", 0)) <= 0:
 		beast["alive"] = false
+		if beast.get("source_card_id", &"") == &"bm_tiger":
+			_tiger_down_next_combat = true
 	beast_changed.emit()
+
+func recover_tiger_after_rest() -> void:
+	_tiger_down_next_combat = false
 
 func _redirect_damage_to_partners(amount: int) -> int:
 	var alive_indices: Array[int] = []
@@ -1338,6 +1527,13 @@ func _redirect_damage_to_partners(amount: int) -> int:
 		for idx: int in alive_indices:
 			_damage_partner_with_guard(idx, each_damage)
 		return 0
+	for idx: int in alive_indices:
+		var tank_beast: Dictionary = player_beasts[idx]
+		var tank_share: int = int(tank_beast.get("tank_share", 0))
+		if tank_share > 0:
+			var tank_damage: int = int(ceil(float(amount) * float(tank_share) / 100.0))
+			_damage_partner_with_guard(idx, tank_damage)
+			return maxi(0, amount - tank_damage)
 	var share_count: int = alive_indices.size() + 1
 	var player_share: int = int(ceil(float(amount) / float(share_count)))
 	var beast_share: int = int(floor(float(amount) / float(share_count)))
@@ -1354,6 +1550,252 @@ func _damage_partner_with_guard(idx: int, amount: int) -> void:
 	beast["hp"] = maxi(0, int(beast.get("hp", 0)) - final_damage)
 	if int(beast.get("hp", 0)) <= 0:
 		beast["alive"] = false
+		if beast.get("source_card_id", &"") == &"bm_tiger":
+			_tiger_down_next_combat = true
+	beast_changed.emit()
+
+func _add_tiger_at_combat_start() -> void:
+	var tiger_hp: int = 10 if _tiger_down_next_combat else 20
+	_tiger_down_next_combat = false
+	_set_beast_from_stats(&"bm_tiger", "虎", tiger_hp, 20, 5, 2, false, 0)
+
+func _set_beast_from_card(card_id: StringName) -> bool:
+	var stats: Dictionary = _beast_stats_for_card(card_id)
+	if stats.is_empty():
+		return false
+	var set_ok: bool = _set_beast_from_stats(
+		card_id,
+		String(stats.get("name", "獣")),
+		int(stats.get("hp", 1)),
+		int(stats.get("max_hp", stats.get("hp", 1))),
+		int(stats.get("attack", 0)),
+		int(stats.get("guard", 0)),
+		bool(stats.get("random_target", false)),
+		int(stats.get("tank_share", 0))
+	)
+	if set_ok and bool(stats.get("quick_attack", false)):
+		_beast_source_attack_once(card_id)
+	return set_ok
+
+func _set_beast_from_stats(card_id: StringName, beast_name: String, hp: int, max_hp: int, atk: int, guard: int, random_target: bool, tank_share: int) -> bool:
+	_remove_dead_beast_source(card_id)
+	if _has_beast_source(card_id):
+		return false
+	if _alive_beast_count() >= get_beast_max_slots():
+		return false
+	player_beasts.append({
+		"name": beast_name,
+		"hp": hp,
+		"max_hp": max_hp,
+		"attack": atk,
+		"guard": guard,
+		"guard_bonus": 0,
+		"temp_attack_bonus": 0,
+		"alive": true,
+		"source_card_id": card_id,
+		"random_target": random_target,
+		"tank_share": tank_share,
+		"turns_alive": 0,
+	})
+	beast_changed.emit()
+	return true
+
+func _is_beast_card_id(card_id: StringName) -> bool:
+	return card_id in _animal_card_ids()
+
+func _animal_card_ids() -> Array[StringName]:
+	return [&"bm_tiger", &"bm_devilf", &"bm_grizzly", &"bm_eagle", &"bm_armadillo"]
+
+func _beast_stats_for_card(card_id: StringName) -> Dictionary:
+	match card_id:
+		&"bm_tiger":
+			return {"name": "虎", "hp": 20, "max_hp": 20, "attack": 5, "guard": 2}
+		&"bm_devilf":
+			return {"name": "デビルフ", "hp": 8, "max_hp": 8, "attack": 8, "guard": 0, "quick_attack": true}
+		&"bm_grizzly":
+			return {"name": "変異グリズリー", "hp": 30, "max_hp": 30, "attack": 4, "guard": 5}
+		&"bm_eagle":
+			return {"name": "汚染イーグル", "hp": 6, "max_hp": 6, "attack": 3, "guard": 0, "random_target": true}
+		&"bm_armadillo":
+			return {"name": "アーマージロ", "hp": 25, "max_hp": 25, "attack": 0, "guard": 8, "tank_share": 75}
+	return {}
+
+func _can_set_beast_from_card(card_id: StringName) -> bool:
+	if not _is_beast_card_id(card_id):
+		return false
+	_remove_dead_beast_source(card_id)
+	if _has_beast_source(card_id):
+		return false
+	return _alive_beast_count() < get_beast_max_slots()
+
+func _alive_beast_count() -> int:
+	var count: int = 0
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)):
+			count += 1
+	return count
+
+func _has_beast_source(card_id: StringName) -> bool:
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)) and beast.get("source_card_id", &"") == card_id:
+			return true
+	return false
+
+func _remove_dead_beast_source(card_id: StringName) -> void:
+	for i: int in range(player_beasts.size() - 1, -1, -1):
+		var beast: Dictionary = player_beasts[i]
+		if not bool(beast.get("alive", false)) and beast.get("source_card_id", &"") == card_id:
+			player_beasts.remove_at(i)
+
+func _get_effective_beast_attack(beast: Dictionary) -> int:
+	return maxi(0, int(beast.get("attack", 0)) + int(beast.get("temp_attack_bonus", 0)))
+
+func _get_total_beast_attack() -> int:
+	var total: int = 0
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)):
+			total += _get_effective_beast_attack(beast)
+	return total
+
+func _beasts_attack_once() -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		var target_idx: int = _pick_beast_target(beast)
+		if target_idx >= 0:
+			_damage_enemy(target_idx, _get_effective_beast_attack(beast))
+	beast_changed.emit()
+
+func _beast_source_attack_once(card_id: StringName) -> void:
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		if beast.get("source_card_id", &"") != card_id:
+			continue
+		var target_idx: int = _pick_beast_target(beast)
+		if target_idx >= 0:
+			_damage_enemy(target_idx, _get_effective_beast_attack(beast))
+		return
+
+func _requires_alive_beast(card_id: StringName) -> bool:
+	return (
+		card_id == &"bm02"
+		or card_id == &"bm03"
+		or card_id == &"bm04"
+		or card_id == &"bm07"
+		or card_id == &"bm10"
+		or card_id == &"bm11"
+	)
+
+func _pick_beast_target(beast: Dictionary) -> int:
+	var alive_indices: Array[int] = []
+	for i: int in range(enemies.size()):
+		if bool(enemies[i]["alive"]):
+			alive_indices.append(i)
+	if alive_indices.is_empty():
+		return -1
+	if bool(beast.get("random_target", false)):
+		return alive_indices[randi() % alive_indices.size()]
+	return alive_indices[0]
+
+func _add_beast_guard_bonus(amount: int) -> void:
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)):
+			beast["guard_bonus"] = int(beast.get("guard_bonus", 0)) + amount
+	beast_changed.emit()
+
+func _has_animal_card_to_whistle() -> bool:
+	var animal_ids: Array[StringName] = _animal_card_ids()
+	for card: CardData in DeckManager.discard_pile:
+		if card.id in animal_ids:
+			return true
+	for card: CardData in DeckManager.draw_pile:
+		if card.id in animal_ids:
+			return true
+	return false
+
+func _whistle_animal_card() -> void:
+	var animal_ids: Array[StringName] = _animal_card_ids()
+	if DeckManager.move_random_card_id_from_discard_to_hand(animal_ids):
+		return
+	DeckManager.move_random_card_id_from_draw_to_hand(animal_ids)
+
+func _grant_beast_card_from_enemy(enemy_data: EnemyData) -> void:
+	var card_id: StringName = &"bm_devilf"
+	match enemy_data.category:
+		EnemyData.Category.BEAST:
+			var enemy_id: String = String(enemy_data.id)
+			if enemy_id.contains("grizzly"):
+				card_id = &"bm_grizzly"
+			elif enemy_id.contains("eagle"):
+				card_id = &"bm_eagle"
+			elif enemy_id.contains("armadillo"):
+				card_id = &"bm_armadillo"
+			else:
+				card_id = &"bm_devilf"
+		_:
+			return
+	var _added: bool = DeckManager.add_card_id_to_discard(card_id)
+
+func _can_use_herd_roar() -> bool:
+	if not _has_mature_beast():
+		return false
+	for card: CardData in DeckManager.hand:
+		if card.id in _animal_card_ids():
+			return true
+	for card: CardData in DeckManager.draw_pile:
+		if card.id in _animal_card_ids():
+			return true
+	for card: CardData in DeckManager.discard_pile:
+		if card.id in _animal_card_ids():
+			return true
+	return false
+
+func _activate_herd_roar() -> void:
+	var animal_ids: Array[StringName] = _animal_card_ids()
+	var _moved: Array[CardData] = DeckManager.move_all_card_ids_from_draw_and_discard_to_hand(animal_ids)
+	var attack_bonus: int = 0
+	var guard_bonus: int = 0
+	for card: CardData in DeckManager.hand:
+		var stats: Dictionary = _beast_stats_for_card(card.id)
+		if stats.is_empty():
+			continue
+		attack_bonus += int(stats.get("attack", 0))
+		guard_bonus += int(stats.get("guard", 0))
+	if guard_bonus > 0:
+		player_block += guard_bonus
+		player_block_changed.emit(player_block)
+	for beast: Dictionary in player_beasts:
+		if not bool(beast.get("alive", false)):
+			continue
+		beast["temp_attack_bonus"] = int(beast.get("temp_attack_bonus", 0)) + attack_bonus
+		var target_idx: int = _pick_beast_target(beast)
+		if target_idx >= 0:
+			_damage_enemy(target_idx, _get_effective_beast_attack(beast))
+	player_buffs["herd_fatigue"] = 1
+	player_buffs_changed.emit(player_buffs)
+	beast_changed.emit()
+
+func _has_mature_beast() -> bool:
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)) and int(beast.get("turns_alive", 0)) >= 3:
+			return true
+	return false
+
+func _advance_beast_survival_turns() -> void:
+	if not _is_beast_master():
+		return
+	for beast: Dictionary in player_beasts:
+		if bool(beast.get("alive", false)):
+			beast["turns_alive"] = int(beast.get("turns_alive", 0)) + 1
+	beast_changed.emit()
+
+func _apply_herd_fatigue_start_of_turn() -> void:
+	if int(player_buffs.get("herd_fatigue", 0)) <= 0:
+		return
+	player_buffs["herd_fatigue"] = 0
+	player_beasts.clear()
+	player_buffs_changed.emit(player_buffs)
 	beast_changed.emit()
 
 func _tick_player_buffs() -> void:
@@ -1378,9 +1820,15 @@ func _clear_partner_turn_state() -> void:
 	if int(player_buffs.get("partner_defense", 0)) > 0:
 		player_buffs["partner_defense"] = 0
 		buffs_changed = true
+	if int(player_buffs.get("companion_guard", 0)) > 0:
+		player_buffs["companion_guard"] = 0
+		buffs_changed = true
 	for beast: Dictionary in player_beasts:
 		if int(beast.get("guard_bonus", 0)) != 0:
 			beast["guard_bonus"] = 0
+			beasts_changed = true
+		if int(beast.get("temp_attack_bonus", 0)) != 0:
+			beast["temp_attack_bonus"] = 0
 			beasts_changed = true
 	if buffs_changed:
 		player_buffs_changed.emit(player_buffs)
@@ -1421,12 +1869,10 @@ func _is_hedonist() -> bool:
 func _is_lone_wolf() -> bool:
 	if not _is_wanderer():
 		return false
-	return GameManager.current_companion == null
+	return not GameManager.has_human_companion()
 
 func _has_companion(comp_type: CompanionData.CompanionType) -> bool:
-	if GameManager.current_companion == null:
-		return false
-	return GameManager.current_companion.companion_type == comp_type
+	return GameManager.has_companion_type(comp_type)
 
 func _is_player_effect(effect: StringName) -> bool:
 	match effect:

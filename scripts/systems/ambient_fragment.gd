@@ -26,7 +26,7 @@ static func pick(node_type: MapGenerator.NodeType) -> Dictionary:
 	var show_chance: float = LOW_SHOW_CHANCE
 	if GameManager.recent_companion_event != &"":
 		show_chance = TRANSIENT_SHOW_CHANCE
-	elif GameManager.current_companion != null:
+	elif GameManager.has_any_companion():
 		show_chance = COMPANION_SHOW_CHANCE
 	if randf() > show_chance:
 		return {}
@@ -78,15 +78,17 @@ static func _matches(fragment: Dictionary, node_type: MapGenerator.NodeType) -> 
 	if character_id != &"" and character_id != current_character_id:
 		return false
 
-	if bool(fragment.get("requires_companion", false)) and GameManager.current_companion == null:
+	if bool(fragment.get("requires_companion", false)) and not GameManager.has_any_companion():
 		return false
 
 	var companion_type: int = int(fragment.get("companion_type", NO_COMPANION_TYPE))
 	if companion_type != NO_COMPANION_TYPE:
 		var current_type: int = NO_COMPANION_TYPE
-		if GameManager.current_companion != null:
-			current_type = int(GameManager.current_companion.companion_type)
-		elif GameManager.recent_companion_event != &"":
+		for companion: CompanionData in GameManager.get_active_companions():
+			if int(companion.companion_type) == companion_type:
+				current_type = companion_type
+				break
+		if current_type == NO_COMPANION_TYPE and GameManager.recent_companion_event != &"":
 			current_type = int(GameManager.recent_companion_type)
 		if current_type != companion_type:
 			return false
@@ -94,8 +96,8 @@ static func _matches(fragment: Dictionary, node_type: MapGenerator.NodeType) -> 
 	var companion_id: StringName = fragment.get("companion_id", &"")
 	if companion_id != &"":
 		var current_companion_id: StringName = &""
-		if GameManager.current_companion != null:
-			current_companion_id = GameManager.current_companion.id
+		if GameManager.is_companion_active(companion_id):
+			current_companion_id = companion_id
 		elif GameManager.recent_companion_event != &"":
 			current_companion_id = GameManager.recent_companion_id
 		if current_companion_id != companion_id:

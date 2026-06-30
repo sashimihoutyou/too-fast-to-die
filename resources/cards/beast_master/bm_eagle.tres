@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bm_eagle"
+display_name = "汚染イーグル"
+description = "相棒セット。ランダム敵に3ダメージ/ターン、ガード0"
+ap_cost = 2
+tags = [5]
+rarity = 1
+restriction = 4

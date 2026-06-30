@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CompanionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/companion_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"grace"
+display_name = "グレイス"
+companion_type = 4
+is_unique = true
+dedicated_character_id = &"beast_master"
+duration_nodes = 4
+passive_description = "集落での反応が柔らかくなる。戦闘では守る対象"
+risk_description = "死亡時カルマ低下"
+departure_reward_description = "カルマ+15"
+deck_card_ids = [&"cc_refugee_prayer"]
+max_hp = 12
+death_karma_penalty = -20

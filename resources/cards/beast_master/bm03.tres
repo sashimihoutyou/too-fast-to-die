@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1")
 id = &"bm03"
-display_name = "野獣の絆"
-description = "場の獣1体のHP5回復"
+display_name = "癒しの手"
+description = "最も傷ついた相棒1体のHP8回復"
 ap_cost = 1
 tags = [5]
 restriction = 4

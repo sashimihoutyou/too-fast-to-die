@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"bm08"
 display_name = "シェルター"
-description = "自分4ブロック+獣1体に4ブロック"
+description = "自分4ブロック+全相棒のガード+4（このターン）"
 ap_cost = 1
 tags = [5]
 restriction = 4

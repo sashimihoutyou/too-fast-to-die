@@ -104,6 +104,14 @@ func add_temporary_card_to_hand(card_id: StringName) -> bool:
 	cards_drawn.emit(drawn)
 	return true
 
+func add_card_to_hand(card: CardData) -> void:
+	if card == null:
+		return
+	hand.append(card)
+	var drawn: Array[CardData] = []
+	drawn.append(card)
+	cards_drawn.emit(drawn)
+
 func is_temporary_card(card: CardData) -> bool:
 	return card != null and _temporary_instance_ids.has(card.instance_id)
 
@@ -116,6 +124,13 @@ func has_card_id_in_hand(card_id: StringName) -> bool:
 func add_card_to_deck(card: CardData) -> void:
 	var copy := card.duplicate_card()
 	master_deck.append(copy)
+
+func add_card_id_to_discard(card_id: StringName) -> bool:
+	var card: CardData = CardDatabase.get_card(card_id)
+	if card == null:
+		return false
+	discard_pile.append(card.duplicate_card())
+	return true
 
 func add_card_id_to_deck(card_id: StringName) -> bool:
 	var card: CardData = CardDatabase.get_card(card_id)
@@ -141,6 +156,92 @@ func _remove_card_by_id_from_array(cards: Array[CardData], card_id: StringName) 
 		if card.id == card_id:
 			cards.remove_at(i)
 			return
+
+func move_random_discard_card_to_hand() -> bool:
+	if discard_pile.is_empty():
+		return false
+	var idx: int = randi() % discard_pile.size()
+	var card: CardData = discard_pile[idx]
+	discard_pile.remove_at(idx)
+	add_card_to_hand(card)
+	return true
+
+func move_random_discard_card_to_draw_top() -> bool:
+	if discard_pile.is_empty():
+		return false
+	var idx: int = randi() % discard_pile.size()
+	var card: CardData = discard_pile[idx]
+	discard_pile.remove_at(idx)
+	draw_pile.append(card)
+	return true
+
+func move_random_card_id_from_discard_to_hand(card_ids: Array[StringName]) -> bool:
+	var indices: Array[int] = _find_card_indices_by_ids(discard_pile, card_ids)
+	if indices.is_empty():
+		return false
+	var idx: int = indices[randi() % indices.size()]
+	var card: CardData = discard_pile[idx]
+	discard_pile.remove_at(idx)
+	add_card_to_hand(card)
+	return true
+
+func move_random_card_id_from_draw_to_hand(card_ids: Array[StringName]) -> bool:
+	var indices: Array[int] = _find_card_indices_by_ids(draw_pile, card_ids)
+	if indices.is_empty():
+		return false
+	var idx: int = indices[randi() % indices.size()]
+	var card: CardData = draw_pile[idx]
+	draw_pile.remove_at(idx)
+	add_card_to_hand(card)
+	return true
+
+func move_all_card_ids_from_draw_and_discard_to_hand(card_ids: Array[StringName]) -> Array[CardData]:
+	var moved: Array[CardData] = []
+	_move_all_card_ids_from_array_to_hand(draw_pile, card_ids, moved)
+	_move_all_card_ids_from_array_to_hand(discard_pile, card_ids, moved)
+	if not moved.is_empty():
+		for card: CardData in moved:
+			hand.append(card)
+		cards_drawn.emit(moved)
+	return moved
+
+func exhaust_random_card_from_hand_excluding(excluded_ids: Array[StringName]) -> CardData:
+	var candidates: Array[int] = []
+	for i: int in range(hand.size()):
+		var card: CardData = hand[i]
+		if not (card.id in excluded_ids):
+			candidates.append(i)
+	if candidates.is_empty():
+		return null
+	var idx: int = candidates[randi() % candidates.size()]
+	var card: CardData = hand[idx]
+	hand.remove_at(idx)
+	if is_temporary_card(card):
+		_temporary_instance_ids.erase(card.instance_id)
+	else:
+		exhaust_pile.append(card)
+	card_exhausted.emit(card)
+	return card
+
+func duplicate_card_to_discard(card: CardData) -> void:
+	if card == null:
+		return
+	discard_pile.append(card.duplicate_card())
+
+func _find_card_indices_by_ids(cards: Array[CardData], card_ids: Array[StringName]) -> Array[int]:
+	var result: Array[int] = []
+	for i: int in range(cards.size()):
+		var card: CardData = cards[i]
+		if card.id in card_ids:
+			result.append(i)
+	return result
+
+func _move_all_card_ids_from_array_to_hand(source: Array[CardData], card_ids: Array[StringName], moved: Array[CardData]) -> void:
+	for i: int in range(source.size() - 1, -1, -1):
+		var card: CardData = source[i]
+		if card.id in card_ids:
+			source.remove_at(i)
+			moved.append(card)
 
 func get_deck_count() -> int:
 	return draw_pile.size()
