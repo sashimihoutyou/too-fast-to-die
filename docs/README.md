@@ -19,8 +19,8 @@ This directory contains the current source-of-truth design documents.
 ## Scenario and Event Drafts
 
 - `substory-devilf-pack.md`: Devilf pack substory design and implementation template
-- `vespa_heat_event.md`: Wasp heat event draft
-- `vespa_poisoned.md`: Wasp poisoned event draft
+- `vespa_heat_event.md`: Hornet heat event draft
+- `vespa_poisoned.md`: Hornet poisoned event draft
 
 ## Tool Design
 
@@ -47,8 +47,8 @@ Current resolutions:
 
 - Working title: `Too Fast to Die: Road to Oasis`
 - Current timeline: 32 years after the collapse
-- Playable roster: 5 PCs (`アータル`, `ワスプ`, `ウェズリー`, `ミーシャ`, `ホタル`)
-- Old names are retired in current docs and UI text: `アタルパ` → `アータル`, `ヴェスパ` → `ワスプ`
+- Playable roster: 5 PCs (`アータル`, `ホーネット`, `ウェズリー`, `ミーシャ`, `ホタル`)
+- Old names are retired in current docs and UI text: `アタルパ` → `アータル`, `ヴェスパ` → `ホーネット`
 - `覇者` is no longer a playable character; keep him as a future unique companion/NPC reference only.
 - The hitchhiker is currently defined as a unique companion slot.
 - Luto is tied to the Conqueror/NPC material, not the current playable roster.

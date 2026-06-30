@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"ex_raider"
-display_name = "元レイダー（ワスプ）"
+display_name = "元レイダー（ホーネット）"
 max_hp = 70
 starter_deck_ids = [&"st_ve01", &"st_ve01", &"st_ve01", &"defend", &"defend", &"st_ve02", &"st_intimidate", &"er01", &"er02", &"er11"]
 unique_system = &"heat"
