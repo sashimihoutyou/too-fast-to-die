@@ -1,7 +1,7 @@
 class_name AmbientFragment extends RefCounted
 
 const NO_COMPANION_TYPE: int = -1
-const LOW_SHOW_CHANCE: float = 0.38
+const LOW_SHOW_CHANCE: float = 0.5
 const COMPANION_SHOW_CHANCE: float = 0.68
 const TRANSIENT_SHOW_CHANCE: float = 1.0
 
@@ -267,6 +267,24 @@ static func _get_pool() -> Array[Dictionary]:
 			"tags": [&"road", &"faith"],
 		},
 		{
+			"id": &"beast_master_reads_the_wind",
+			"title": "風上の匂い",
+			"body": "虎が急に足を止め、鼻先を風上に向けた。\nミーシャも同じ方向に顔を向ける。人の匂い、火薬の匂い、恐怖の匂い——どれでもない。ただの獣の縄張りだ。\n虎が歩き出す。ミーシャは黙ってついていった。",
+			"character_id": &"beast_master",
+			"priority": 30,
+			"weight": 2,
+			"tags": [&"road", &"beast_master", &"tiger"],
+		},
+		{
+			"id": &"beast_master_stranger_scent",
+			"title": "すれ違う匂い",
+			"body": "対向の旅人とすれ違う。\nミーシャは目を合わせず、匂いだけを読んだ。汗と油と、微かな恐怖。危険はない。それでも肩の力は抜けなかった。\n人間を読む癖は、獣を読む癖より先に消えない。",
+			"character_id": &"beast_master",
+			"priority": 30,
+			"weight": 2,
+			"tags": [&"road", &"beast_master", &"human"],
+		},
+		{
 			"id": &"fuel_low",
 			"title": "軽いタンク",
 			"body": "燃料タンクの中で、最後の液体が薄く鳴った。\n音は頼りない。だがゼロではない。\nゼロでないなら、まだ道は命令できる。",
@@ -319,6 +337,50 @@ static func _get_pool() -> Array[Dictionary]:
 			"priority": 20,
 			"weight": 3,
 			"tags": [&"road", &"info"],
+		},
+		{
+			"id": &"combat_carrion_birds",
+			"title": "旋回する影",
+			"body": "頭上を、黒い鳥の群れが低く旋回していた。\n餌の在り処を知っている飛び方だ。まだ死んでいないものにも、鳥は気が早い。\nエンジン音に驚いて散ったが、遠くへは行かなかった。",
+			"node_types": [MapGenerator.NodeType.COMBAT, MapGenerator.NodeType.ELITE],
+			"priority": 20,
+			"weight": 2,
+			"tags": [&"road", &"combat"],
+		},
+		{
+			"id": &"shop_haggling_echo",
+			"title": "値切る声",
+			"body": "遠くの露店から、値切る声と笑い声が同時に聞こえた。\n両方とも本気ではない。取引はいつも、少しの芝居で成り立っている。\n財布の中身を、もう一度数えておく。",
+			"node_types": [MapGenerator.NodeType.SHOP],
+			"priority": 20,
+			"weight": 2,
+			"tags": [&"road", &"shop"],
+		},
+		{
+			"id": &"rest_stars",
+			"title": "灯りのない空",
+			"body": "焚火を落とすと、星が一気に近づいた。\n旧世界の光害が消えた空だけは、崩壊前より豊かになったものの一つだと誰かが言っていた。\n見上げる者は少ない。それでも今夜は見上げた。",
+			"node_types": [MapGenerator.NodeType.REST],
+			"priority": 20,
+			"weight": 2,
+			"tags": [&"road", &"rest"],
+		},
+		{
+			"id": &"info_old_broadcast",
+			"title": "古い放送",
+			"body": "傍受した周波数に、崩壊前の音楽が一瞬だけ流れた。\n歌詞は聞き取れない。すぐに雑音に呑まれた。\nそれでも、誰かがまだ何かを送り続けている。",
+			"node_types": [MapGenerator.NodeType.INFO],
+			"priority": 20,
+			"weight": 2,
+			"tags": [&"road", &"info"],
+		},
+		{
+			"id": &"generic_footprints",
+			"title": "先行く足跡",
+			"body": "タイヤの跡に混じって、裸足の足跡が続いていた。\n大人にしては小さい。子供にしては歩幅が広い。\n途中で途切れていた。追う理由はなかった。",
+			"priority": 5,
+			"weight": 3,
+			"tags": [&"road", &"landmark"],
 		},
 		{
 			"id": &"act2_salt_flat",
