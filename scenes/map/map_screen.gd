@@ -22,7 +22,7 @@ func _ready() -> void:
 	$HUD/MedicineButton.pressed.connect(_use_medicine)
 	if _pending_act_intro:
 		_pending_act_intro = false
-		_show_notification_then("区間 %d に進んだ。\n新たな勢力圏が待つ――" % GameManager.current_act, Callable(self, "_show_pending_companion_notifications"))
+		_show_notification_then("区間 %d に進んだ。\n複数の旗が同じ道を奪い合っている――" % GameManager.current_act, Callable(self, "_show_pending_companion_notifications"))
 	else:
 		_show_pending_companion_notifications()
 
@@ -56,8 +56,9 @@ func _draw_map() -> void:
 	for node: Dictionary in map_nodes:
 		var btn := Button.new()
 		var node_type: MapGenerator.NodeType = node["type"]
+		var faction: int = int(node.get("faction", MapGenerator.Faction.NONE))
 		var fuel_reward: int = int(node.get("fuel_reward", 0))
-		btn.text = _get_node_button_text(node_type, fuel_reward)
+		btn.text = _get_node_button_text(node_type, fuel_reward, faction)
 		btn.tooltip_text = _get_node_tooltip(node, fuel_reward)
 		btn.custom_minimum_size = Vector2(50, 50)
 		btn.position = node["position"] - Vector2(25, 25)
@@ -73,6 +74,8 @@ func _draw_map() -> void:
 
 		if is_current:
 			_apply_border(style)
+		else:
+			_apply_faction_border(style, faction)
 
 		btn.add_theme_stylebox_override("normal", style)
 		var hover_style: StyleBoxFlat = style.duplicate()
@@ -550,14 +553,18 @@ func _get_current_map_node() -> Dictionary:
 func _get_travel_cost(from_node: Dictionary, to_node: Dictionary) -> int:
 	return MapGenerator.calculate_travel_cost(from_node, to_node, GameManager.has_any_companion()) + GameManager.get_companion_extra_travel_cost()
 
-func _get_node_button_text(node_type: MapGenerator.NodeType, fuel_reward: int) -> String:
+func _get_node_button_text(node_type: MapGenerator.NodeType, fuel_reward: int, faction: int) -> String:
 	var icon := MapGenerator.get_node_type_icon(node_type)
+	var faction_label := MapGenerator.get_faction_short_name(faction)
 	if fuel_reward > 0:
-		return "%s+%d\n%s" % [_get_travel_resource_icon(), fuel_reward, icon]
-	return icon
+		return "%s+%d\n%s" % [_get_travel_resource_icon(), fuel_reward, faction_label]
+	return "%s\n%s" % [icon, faction_label]
 
 func _get_node_tooltip(node: Dictionary, fuel_reward: int) -> String:
 	var parts: Array[String] = [MapGenerator.get_node_type_name(node["type"])]
+	var faction: int = int(node.get("faction", MapGenerator.Faction.NONE))
+	var site: int = int(node.get("site", MapGenerator.SiteType.WILDERNESS))
+	parts.append("%s / %s" % [MapGenerator.get_faction_name(faction), MapGenerator.get_site_name(site)])
 	var travel_cost := _get_travel_cost(_get_current_map_node(), node)
 	parts.append("%s消費: %d" % [_get_travel_resource_name(), travel_cost])
 	if fuel_reward > 0:
@@ -691,6 +698,13 @@ func _apply_border(style: StyleBoxFlat) -> void:
 	style.border_width_bottom = 3
 	style.border_width_left = 3
 	style.border_width_right = 3
+
+func _apply_faction_border(style: StyleBoxFlat, faction: int) -> void:
+	style.border_color = MapGenerator.get_faction_color(faction)
+	style.border_width_top = 2
+	style.border_width_bottom = 2
+	style.border_width_left = 2
+	style.border_width_right = 2
 
 func _node_id(node: Dictionary) -> String:
 	return "%d_%d" % [node["row"], node["col"]]

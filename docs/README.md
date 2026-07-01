@@ -10,6 +10,7 @@ This directory contains the current source-of-truth design documents.
 - `gdd-companions.md`: companion system, sidecar expansion, unique companion pool
 - `gdd-events.md`: travel events, cruel events, pleasure/addiction systems, event text rules
 - `gdd-narrative.md`: Oasis, ending structure, ambient road-movie fragments, pregnancy endings
+- `lore-rules.md`: required rules for creating enemies, settlements, NPCs, faction sites, and other lore
 - `character-visuals.md`: character visual design and image-generation prompts
 - `pc-profiles.md`: PC sexual attitude profiles and NPC definitions
 - `context-types.md`: scene/context taxonomy and text templates

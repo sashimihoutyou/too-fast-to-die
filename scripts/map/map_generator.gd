@@ -1,6 +1,8 @@
 class_name MapGenerator
 
 enum NodeType { COMBAT, EVENT, SHOP, REST, INFO, ELITE, BOSS }
+enum Faction { NONE, NEW_EDEN, LACEDAEMON, NOOSPHERE, V8_CULT, SANDVIPERS, CHAINLINK, DUST_RUNNER, INDEPENDENT, COCKATRICE }
+enum SiteType { WILDERNESS, SETTLEMENT, OUTPOST, CARAVAN, PITSTOP, HIDDEN_FACILITY, CHECKPOINT, RUIN, LAIR }
 
 static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
@@ -23,6 +25,8 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 				"row": row,
 				"col": col,
 				"type": node_type,
+				"faction": Faction.NONE,
+				"site": SiteType.WILDERNESS,
 				"connections": [],
 				"visited": false,
 				"fuel_reward": 0,
@@ -30,6 +34,7 @@ static func generate_act(act: int, seed_val: int = 0) -> Array[Dictionary]:
 			})
 
 	_ensure_node_type_guarantees(nodes, rows, rng)
+	_assign_faction_sites(nodes, rng, act)
 	_build_connections(nodes, rows, rng)
 	_assign_positions(nodes, rows, cols)
 	_assign_fuel_rewards(nodes, rng)
@@ -112,6 +117,230 @@ static func _ensure_node_type_guarantees(nodes: Array[Dictionary], total_rows: i
 					node["type"] = target_type
 					needed -= 1
 					break
+
+static func _assign_faction_sites(nodes: Array[Dictionary], rng: RandomNumberGenerator, act: int) -> void:
+	for node: Dictionary in nodes:
+		var node_type: NodeType = node["type"]
+		var faction: Faction = _pick_faction_for_node(node_type, rng, act)
+		node["faction"] = faction
+		node["site"] = _pick_site_for_node(node_type, faction, rng)
+
+static func _pick_faction_for_node(node_type: NodeType, rng: RandomNumberGenerator, act: int) -> Faction:
+	match node_type:
+		NodeType.BOSS:
+			return _get_boss_faction(act)
+		NodeType.REST, NodeType.SHOP, NodeType.INFO, NodeType.EVENT:
+			return _pick_weighted_faction(_get_act_civilian_faction_weights(act), rng)
+		NodeType.ELITE:
+			return _pick_weighted_faction(_get_act_hostile_faction_weights(act), rng)
+		NodeType.COMBAT:
+			return _pick_weighted_faction(_get_act_hostile_faction_weights(act), rng)
+	return Faction.NONE
+
+static func _pick_site_for_node(node_type: NodeType, faction: Faction, rng: RandomNumberGenerator) -> SiteType:
+	match node_type:
+		NodeType.BOSS, NodeType.ELITE:
+			return _hostile_site_for_faction(faction)
+		NodeType.COMBAT:
+			if rng.randf() < 0.25:
+				return _hostile_site_for_faction(faction)
+			return SiteType.WILDERNESS
+		NodeType.SHOP:
+			match faction:
+				Faction.DUST_RUNNER:
+					return SiteType.CARAVAN
+				Faction.LACEDAEMON:
+					return SiteType.OUTPOST
+				Faction.V8_CULT:
+					return SiteType.PITSTOP
+				Faction.NOOSPHERE:
+					return SiteType.HIDDEN_FACILITY
+				Faction.SANDVIPERS:
+					return SiteType.CHECKPOINT
+			return SiteType.SETTLEMENT
+		NodeType.REST:
+			if faction == Faction.V8_CULT:
+				return SiteType.PITSTOP
+			if faction == Faction.LACEDAEMON:
+				return SiteType.OUTPOST
+			return SiteType.SETTLEMENT
+		NodeType.INFO:
+			if faction == Faction.NOOSPHERE:
+				return SiteType.HIDDEN_FACILITY
+			if faction == Faction.DUST_RUNNER:
+				return SiteType.CARAVAN
+			return SiteType.SETTLEMENT
+		NodeType.EVENT:
+			if faction == Faction.SANDVIPERS:
+				return SiteType.CHECKPOINT
+			if faction == Faction.CHAINLINK:
+				return SiteType.CARAVAN
+			if faction == Faction.NOOSPHERE:
+				return SiteType.RUIN
+			return SiteType.SETTLEMENT
+	return SiteType.WILDERNESS
+
+static func _hostile_site_for_faction(faction: Faction) -> SiteType:
+	match faction:
+		Faction.LACEDAEMON:
+			return SiteType.OUTPOST
+		Faction.NOOSPHERE:
+			return SiteType.HIDDEN_FACILITY
+		Faction.V8_CULT:
+			return SiteType.PITSTOP
+		Faction.SANDVIPERS:
+			return SiteType.CHECKPOINT
+		Faction.CHAINLINK, Faction.DUST_RUNNER:
+			return SiteType.CARAVAN
+		Faction.COCKATRICE:
+			return SiteType.LAIR
+		Faction.NEW_EDEN, Faction.INDEPENDENT:
+			return SiteType.SETTLEMENT
+	return SiteType.WILDERNESS
+
+static func _get_boss_faction(act: int) -> Faction:
+	match act:
+		1:
+			return Faction.NONE
+		2:
+			return Faction.NONE
+		3:
+			return Faction.SANDVIPERS
+		4:
+			return Faction.LACEDAEMON
+		5:
+			return Faction.NOOSPHERE
+	return Faction.NONE
+
+static func _get_act_civilian_faction_weights(act: int) -> Array[Dictionary]:
+	match act:
+		1:
+			return [
+				{"faction": Faction.NEW_EDEN, "weight": 35.0},
+				{"faction": Faction.INDEPENDENT, "weight": 22.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 15.0},
+				{"faction": Faction.V8_CULT, "weight": 12.0},
+				{"faction": Faction.LACEDAEMON, "weight": 6.0},
+				{"faction": Faction.CHAINLINK, "weight": 5.0},
+				{"faction": Faction.COCKATRICE, "weight": 5.0},
+			]
+		2:
+			return [
+				{"faction": Faction.INDEPENDENT, "weight": 24.0},
+				{"faction": Faction.NEW_EDEN, "weight": 18.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 15.0},
+				{"faction": Faction.NOOSPHERE, "weight": 14.0},
+				{"faction": Faction.CHAINLINK, "weight": 10.0},
+				{"faction": Faction.COCKATRICE, "weight": 9.0},
+				{"faction": Faction.V8_CULT, "weight": 6.0},
+				{"faction": Faction.LACEDAEMON, "weight": 4.0},
+			]
+		3:
+			return [
+				{"faction": Faction.SANDVIPERS, "weight": 30.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 18.0},
+				{"faction": Faction.CHAINLINK, "weight": 15.0},
+				{"faction": Faction.INDEPENDENT, "weight": 12.0},
+				{"faction": Faction.LACEDAEMON, "weight": 10.0},
+				{"faction": Faction.V8_CULT, "weight": 8.0},
+				{"faction": Faction.NEW_EDEN, "weight": 7.0},
+			]
+		4:
+			return [
+				{"faction": Faction.LACEDAEMON, "weight": 32.0},
+				{"faction": Faction.CHAINLINK, "weight": 16.0},
+				{"faction": Faction.INDEPENDENT, "weight": 12.0},
+				{"faction": Faction.NOOSPHERE, "weight": 12.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 10.0},
+				{"faction": Faction.NEW_EDEN, "weight": 8.0},
+				{"faction": Faction.SANDVIPERS, "weight": 6.0},
+				{"faction": Faction.V8_CULT, "weight": 4.0},
+			]
+		5:
+			return [
+				{"faction": Faction.NOOSPHERE, "weight": 28.0},
+				{"faction": Faction.CHAINLINK, "weight": 14.0},
+				{"faction": Faction.INDEPENDENT, "weight": 14.0},
+				{"faction": Faction.NEW_EDEN, "weight": 12.0},
+				{"faction": Faction.LACEDAEMON, "weight": 10.0},
+				{"faction": Faction.V8_CULT, "weight": 10.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 8.0},
+				{"faction": Faction.SANDVIPERS, "weight": 4.0},
+			]
+	return [{"faction": Faction.INDEPENDENT, "weight": 1.0}]
+
+static func _get_act_hostile_faction_weights(act: int) -> Array[Dictionary]:
+	match act:
+		1:
+			return [
+				{"faction": Faction.NONE, "weight": 38.0},
+				{"faction": Faction.COCKATRICE, "weight": 20.0},
+				{"faction": Faction.NEW_EDEN, "weight": 14.0},
+				{"faction": Faction.INDEPENDENT, "weight": 12.0},
+				{"faction": Faction.CHAINLINK, "weight": 8.0},
+				{"faction": Faction.V8_CULT, "weight": 5.0},
+				{"faction": Faction.LACEDAEMON, "weight": 3.0},
+			]
+		2:
+			return [
+				{"faction": Faction.NONE, "weight": 28.0},
+				{"faction": Faction.COCKATRICE, "weight": 18.0},
+				{"faction": Faction.NOOSPHERE, "weight": 15.0},
+				{"faction": Faction.CHAINLINK, "weight": 12.0},
+				{"faction": Faction.INDEPENDENT, "weight": 10.0},
+				{"faction": Faction.NEW_EDEN, "weight": 9.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 5.0},
+				{"faction": Faction.V8_CULT, "weight": 3.0},
+			]
+		3:
+			return [
+				{"faction": Faction.SANDVIPERS, "weight": 35.0},
+				{"faction": Faction.CHAINLINK, "weight": 18.0},
+				{"faction": Faction.NONE, "weight": 16.0},
+				{"faction": Faction.LACEDAEMON, "weight": 10.0},
+				{"faction": Faction.DUST_RUNNER, "weight": 8.0},
+				{"faction": Faction.INDEPENDENT, "weight": 8.0},
+				{"faction": Faction.V8_CULT, "weight": 5.0},
+			]
+		4:
+			return [
+				{"faction": Faction.LACEDAEMON, "weight": 34.0},
+				{"faction": Faction.CHAINLINK, "weight": 18.0},
+				{"faction": Faction.NONE, "weight": 14.0},
+				{"faction": Faction.NOOSPHERE, "weight": 12.0},
+				{"faction": Faction.SANDVIPERS, "weight": 8.0},
+				{"faction": Faction.INDEPENDENT, "weight": 8.0},
+				{"faction": Faction.NEW_EDEN, "weight": 6.0},
+			]
+		5:
+			return [
+				{"faction": Faction.NOOSPHERE, "weight": 28.0},
+				{"faction": Faction.CHAINLINK, "weight": 18.0},
+				{"faction": Faction.NONE, "weight": 14.0},
+				{"faction": Faction.LACEDAEMON, "weight": 10.0},
+				{"faction": Faction.V8_CULT, "weight": 10.0},
+				{"faction": Faction.NEW_EDEN, "weight": 8.0},
+				{"faction": Faction.INDEPENDENT, "weight": 8.0},
+				{"faction": Faction.SANDVIPERS, "weight": 4.0},
+			]
+	return [{"faction": Faction.NONE, "weight": 1.0}]
+
+static func _pick_weighted_faction(weights: Array[Dictionary], rng: RandomNumberGenerator) -> Faction:
+	var total := 0.0
+	for entry: Dictionary in weights:
+		total += float(entry["weight"])
+	if total <= 0.0:
+		return Faction.NONE
+	var roll := rng.randf() * total
+	var acc := 0.0
+	for entry: Dictionary in weights:
+		acc += float(entry["weight"])
+		if roll <= acc:
+			var selected_faction: Faction = int(entry["faction"])
+			return selected_faction
+	var last_entry: Dictionary = weights.back()
+	var fallback_faction: Faction = int(last_entry["faction"])
+	return fallback_faction
 
 static func _build_connections(nodes: Array[Dictionary], total_rows: int, rng: RandomNumberGenerator) -> void:
 	for row in total_rows - 1:
@@ -217,3 +446,54 @@ static func get_node_type_color(t: NodeType) -> Color:
 		NodeType.ELITE: return Color(0.7, 0.3, 0.9)
 		NodeType.BOSS: return Color(0.9, 0.8, 0.2)
 	return Color.WHITE
+
+static func get_faction_name(faction: int) -> String:
+	match faction:
+		Faction.NEW_EDEN: return "ニューエデン"
+		Faction.LACEDAEMON: return "ラケダイモーン"
+		Faction.NOOSPHERE: return "ノウアスフィア"
+		Faction.V8_CULT: return "V8カルト"
+		Faction.SANDVIPERS: return "サンドバイパーズ"
+		Faction.CHAINLINK: return "チェインリンク"
+		Faction.DUST_RUNNER: return "ダストランナー"
+		Faction.INDEPENDENT: return "独立集落"
+		Faction.COCKATRICE: return "コカトリス"
+	return "無所属"
+
+static func get_faction_short_name(faction: int) -> String:
+	match faction:
+		Faction.NEW_EDEN: return "NE"
+		Faction.LACEDAEMON: return "LA"
+		Faction.NOOSPHERE: return "NS"
+		Faction.V8_CULT: return "V8"
+		Faction.SANDVIPERS: return "SV"
+		Faction.CHAINLINK: return "CL"
+		Faction.DUST_RUNNER: return "DR"
+		Faction.INDEPENDENT: return "IN"
+		Faction.COCKATRICE: return "CO"
+	return "--"
+
+static func get_faction_color(faction: int) -> Color:
+	match faction:
+		Faction.NEW_EDEN: return Color(0.25, 0.65, 0.95)
+		Faction.LACEDAEMON: return Color(0.75, 0.12, 0.12)
+		Faction.NOOSPHERE: return Color(0.35, 0.85, 0.8)
+		Faction.V8_CULT: return Color(1.0, 0.55, 0.08)
+		Faction.SANDVIPERS: return Color(0.82, 0.68, 0.28)
+		Faction.CHAINLINK: return Color(0.55, 0.55, 0.6)
+		Faction.DUST_RUNNER: return Color(0.45, 0.8, 0.35)
+		Faction.INDEPENDENT: return Color(0.86, 0.78, 0.56)
+		Faction.COCKATRICE: return Color(0.65, 0.28, 0.72)
+	return Color(0.6, 0.6, 0.6)
+
+static func get_site_name(site: int) -> String:
+	match site:
+		SiteType.SETTLEMENT: return "集落"
+		SiteType.OUTPOST: return "前哨基地"
+		SiteType.CARAVAN: return "キャラバン"
+		SiteType.PITSTOP: return "ピットイン"
+		SiteType.HIDDEN_FACILITY: return "隠し施設"
+		SiteType.CHECKPOINT: return "検問所"
+		SiteType.RUIN: return "旧世界遺構"
+		SiteType.LAIR: return "拠点"
+	return "荒野"
