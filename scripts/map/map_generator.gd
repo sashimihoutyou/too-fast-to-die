@@ -79,7 +79,7 @@ static func _pick_node_type(row: int, total_rows: int, rng: RandomNumberGenerato
 static func _ensure_node_type_guarantees(nodes: Array[Dictionary], total_rows: int, _rng: RandomNumberGenerator) -> void:
 	var guaranteed: Array[Dictionary] = [
 		{"type": NodeType.SHOP, "preferred_rows": [3, 4, 8], "min_count": 1},
-		{"type": NodeType.EVENT, "preferred_rows": [2, 3, 7, 8], "min_count": 2},
+		{"type": NodeType.EVENT, "preferred_rows": [2, 3, 6, 7, 8], "min_count": 3},
 		{"type": NodeType.INFO, "preferred_rows": [4, 6, 8], "min_count": 1},
 		{"type": NodeType.REST, "preferred_rows": [6, 7], "min_count": 1},
 	]
