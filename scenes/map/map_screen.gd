@@ -20,11 +20,14 @@ func _ready() -> void:
 	ResourceManager.bike_durability_changed.connect(_on_bike_durability_changed)
 	$HUD/DeckButton.pressed.connect(_show_deck_popup)
 	$HUD/MedicineButton.pressed.connect(_use_medicine)
+	$HUD/CompanionButton.pressed.connect(_show_dismiss_dialog)
 	if _pending_act_intro:
 		_pending_act_intro = false
-		_show_notification_then("区間 %d に進んだ。\n複数の旗が同じ道を奪い合っている――" % GameManager.current_act, Callable(self, "_show_pending_companion_notifications"))
+		_show_notification_then("区間 %d に進んだ。\n複数の旗が同じ道を奪い合っている――" % GameManager.current_act, func() -> void:
+			_show_pending_companion_notifications(Callable(self, "_show_pending_companion_prompts"))
+		)
 	else:
-		_show_pending_companion_notifications()
+		_show_pending_companion_notifications(Callable(self, "_show_pending_companion_prompts"))
 
 # ボス撃破後にこの画面へ戻った場合の処理。
 # 最終区間ならクリア画面へ、そうでなければ次の区間へ進める。
@@ -221,15 +224,17 @@ func _on_node_pressed(nid: String) -> void:
 
 	var proceed: Callable = Callable(self, "_process_node_type").bind(node_type)
 	_show_pending_companion_notifications(func() -> void:
-		if GameManager.pursuit_triggered:
-			GameManager.pursuit_triggered = false
-			AmbientFragment.consume_transient_context()
-			_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
-			return
-		if fuel_message != "":
-			_show_notification_then(fuel_message, Callable(self, "_maybe_show_ambient_fragment").bind(node_type, proceed))
-		else:
-			_maybe_show_ambient_fragment(node_type, proceed)
+		_show_pending_companion_prompts(func() -> void:
+			if GameManager.pursuit_triggered:
+				GameManager.pursuit_triggered = false
+				AmbientFragment.consume_transient_context()
+				_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
+				return
+			if fuel_message != "":
+				_show_notification_then(fuel_message, Callable(self, "_maybe_show_ambient_fragment").bind(node_type, proceed))
+			else:
+				_maybe_show_ambient_fragment(node_type, proceed)
+		)
 	)
 
 func _maybe_show_ambient_fragment(node_type: MapGenerator.NodeType, on_done: Callable) -> void:
@@ -415,7 +420,7 @@ func _update_hud() -> void:
 			continue
 		var remaining_text: String = GameManager.get_companion_remaining_display(slot)
 		var label_text: String = "%s(%s)" % [comp.display_name, remaining_text]
-		var tooltip_text: String = "%s\nパッシブ: %s\nリスク: %s\n離脱報酬: %s" % [comp.display_name, comp.passive_description, comp.risk_description, comp.departure_reward_description]
+		var tooltip_text: String = "%s\n希望: %s\nパッシブ: %s\nリスク: %s\n達成報酬: %s" % [comp.display_name, GameManager.get_companion_request_display(slot), comp.passive_description, comp.risk_description, comp.departure_reward_description]
 		if comp.max_hp > 0:
 			label_text += " HP:%d/%d" % [GameManager.get_companion_hp(slot), comp.max_hp]
 			tooltip_text += "\nHP: %d/%d" % [GameManager.get_companion_hp(slot), comp.max_hp]
@@ -430,6 +435,7 @@ func _update_hud() -> void:
 	else:
 		$HUD/CompanionLabel.text = "同行者: %s" % " / ".join(companion_texts)
 		$HUD/CompanionLabel.tooltip_text = "\n\n".join(companion_tooltips)
+	$HUD/CompanionButton.visible = GameManager.has_any_companion()
 	if GameManager.pursuit_level > 0 or (GameManager.current_character != null and GameManager.current_character.unique_system == &"heat"):
 		$HUD/CompanionLabel.text += "  追跡: %d%%" % GameManager.pursuit_level
 	if GameManager.is_cultist():
@@ -489,6 +495,178 @@ func _show_companion_notification_chain(messages: Array[String], index: int, on_
 		return
 	_show_notification_then(messages[index], func() -> void:
 		_show_companion_notification_chain(messages, index + 1, on_done)
+	)
+
+# 定着打診→絆イベントの順で保留中の同行者プロンプトを消費する。
+func _show_pending_companion_prompts(on_done: Callable = Callable()) -> void:
+	var offer_slot: int = GameManager.get_pending_offer_slot()
+	if offer_slot != -1:
+		_show_settle_offer(offer_slot, on_done)
+		return
+	var bond_slot: int = GameManager.pending_bond_slot
+	if bond_slot != -1 and GameManager.get_companion_in_slot(bond_slot) != null:
+		_show_bond_event(bond_slot, on_done)
+		return
+	if on_done.is_valid():
+		on_done.call()
+
+func _show_settle_offer(slot: int, on_done: Callable) -> void:
+	_show_choice_dialog(
+		GameManager.get_settle_offer_text(slot),
+		"",
+		[
+			{"label": "乗せていく", "cost": "", "disabled": false},
+			{"label": "ここで別れる", "cost": "", "disabled": false},
+		],
+		func(choice: int) -> void:
+			if choice == 0:
+				GameManager.accept_settle_offer(slot)
+			else:
+				GameManager.decline_settle_offer(slot)
+			_update_hud()
+			_show_pending_companion_notifications(func() -> void:
+				_show_pending_companion_prompts(on_done)
+			)
+	)
+
+func _show_bond_event(slot: int, on_done: Callable) -> void:
+	var can_pay: bool = ResourceManager.fuel >= GameManager.BOND_EVENT_FUEL_COST
+	_show_choice_dialog(
+		"",
+		GameManager.get_bond_event_text(slot),
+		[
+			{"label": "時間を割いて付き合う", "cost": "%s -%d" % [_get_travel_resource_name(), GameManager.BOND_EVENT_FUEL_COST], "disabled": not can_pay},
+			{"label": "先を急ぐ", "cost": "", "disabled": false},
+		],
+		func(choice: int) -> void:
+			GameManager.resolve_bond_event(slot, choice == 0)
+			_update_hud()
+			_show_pending_companion_notifications(func() -> void:
+				_show_pending_companion_prompts(on_done)
+			)
+	)
+
+# 汎用の選択ダイアログ。options は {label, cost, disabled} の配列。
+# コストは選択肢の文面に混ぜず、ボタン下の別ラベルとして表示する。
+func _show_choice_dialog(title_text: String, body_text: String, options: Array[Dictionary], on_pick: Callable) -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0.0, 0.0, 0.0, 0.6)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.custom_minimum_size = Vector2(560, 320)
+	panel.offset_left = -280
+	panel.offset_top = -160
+	panel.offset_right = 280
+	panel.offset_bottom = 160
+	overlay.add_child(panel)
+
+	var title := Label.new()
+	title.text = title_text
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_left = 24
+	title.offset_top = 18
+	title.offset_right = -24
+	title.offset_bottom = 78
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 19)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
+	panel.add_child(title)
+
+	var body := Label.new()
+	body.text = body_text
+	body.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	body.offset_left = 32
+	body.offset_top = 82
+	body.offset_right = -32
+	body.offset_bottom = 180
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	body.add_theme_font_size_override("font_size", 17)
+	panel.add_child(body)
+
+	var button_row := HBoxContainer.new()
+	button_row.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	button_row.offset_left = -250
+	button_row.offset_top = -110
+	button_row.offset_right = 250
+	button_row.offset_bottom = -20
+	button_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_row.add_theme_constant_override("separation", 24)
+	panel.add_child(button_row)
+
+	for i: int in options.size():
+		var option: Dictionary = options[i]
+		var column := VBoxContainer.new()
+		column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var btn := Button.new()
+		btn.text = String(option.get("label", ""))
+		btn.custom_minimum_size = Vector2(200, 46)
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.disabled = bool(option.get("disabled", false))
+		btn.pressed.connect(func() -> void:
+			overlay.queue_free()
+			on_pick.call(i)
+		)
+		column.add_child(btn)
+		var cost_text: String = String(option.get("cost", ""))
+		if not cost_text.is_empty():
+			var cost_label := Label.new()
+			cost_label.text = cost_text
+			cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			cost_label.add_theme_font_size_override("font_size", 13)
+			cost_label.add_theme_color_override("font_color", Color(0.75, 0.65, 0.5))
+			column.add_child(cost_label)
+		button_row.add_child(column)
+
+# 同行者を下ろすダイアログ。希望進行中の相手には警告を挟む。
+func _show_dismiss_dialog() -> void:
+	var options: Array[Dictionary] = []
+	var slots: Array[int] = []
+	for slot: int in range(2):
+		var comp: CompanionData = GameManager.get_companion_in_slot(slot)
+		if comp == null:
+			continue
+		options.append({
+			"label": "%sを下ろす" % comp.display_name,
+			"cost": GameManager.get_companion_remaining_display(slot),
+			"disabled": false,
+		})
+		slots.append(slot)
+	if slots.is_empty():
+		return
+	options.append({"label": "やめる", "cost": "", "disabled": false})
+	_show_choice_dialog("誰を下ろす？", "", options, func(choice: int) -> void:
+		if choice >= slots.size():
+			return
+		_confirm_dismiss(slots[choice])
+	)
+
+func _confirm_dismiss(slot: int) -> void:
+	var comp: CompanionData = GameManager.get_companion_in_slot(slot)
+	if comp == null:
+		return
+	var warning: String = ""
+	if GameManager.has_active_request(slot):
+		warning = "頼みはまだ果たしていない。ここで降ろせば、それは約束を破るということだ。"
+	_show_choice_dialog(
+		"%sを下ろす" % comp.display_name,
+		warning,
+		[
+			{"label": "下ろす", "cost": "", "disabled": false},
+			{"label": "やめる", "cost": "", "disabled": false},
+		],
+		func(choice: int) -> void:
+			if choice != 0:
+				return
+			GameManager.dismiss_companion_slot(slot)
+			_update_hud()
+			_show_pending_companion_notifications()
 	)
 
 func _show_ambient_fragment(fragment: Dictionary, on_close: Callable) -> void:
