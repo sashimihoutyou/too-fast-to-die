@@ -41,10 +41,14 @@ func save_run() -> void:
 		"companion_nodes_remaining": GameManager.companion_nodes_remaining,
 		"companion_hp": GameManager.companion_hp,
 		"companion_is_settled": GameManager.companion_is_settled,
+		"companion_bond": GameManager.companion_bond,
+		"companion_pending_offer": GameManager.companion_pending_offer,
 		"secondary_companion_id": secondary_companion_id,
 		"secondary_companion_nodes_remaining": GameManager.secondary_companion_nodes_remaining,
 		"secondary_companion_hp": GameManager.secondary_companion_hp,
 		"secondary_companion_is_settled": GameManager.secondary_companion_is_settled,
+		"secondary_companion_bond": GameManager.secondary_companion_bond,
+		"secondary_companion_pending_offer": GameManager.secondary_companion_pending_offer,
 		"player_hp": CombatManager.player_hp,
 		"player_max_hp": CombatManager.player_max_hp,
 		"player_euphoria": CombatManager.player_euphoria,
@@ -94,9 +98,14 @@ func load_run() -> bool:
 	GameManager.companion_nodes_remaining = int(data.get("companion_nodes_remaining", 0))
 	GameManager.companion_hp = int(data.get("companion_hp", 0))
 	GameManager.companion_is_settled = bool(data.get("companion_is_settled", false))
+	GameManager.companion_bond = int(data.get("companion_bond", 0))
+	GameManager.companion_pending_offer = bool(data.get("companion_pending_offer", false))
 	GameManager.secondary_companion_nodes_remaining = int(data.get("secondary_companion_nodes_remaining", 0))
 	GameManager.secondary_companion_hp = int(data.get("secondary_companion_hp", 0))
 	GameManager.secondary_companion_is_settled = bool(data.get("secondary_companion_is_settled", false))
+	GameManager.secondary_companion_bond = int(data.get("secondary_companion_bond", 0))
+	GameManager.secondary_companion_pending_offer = bool(data.get("secondary_companion_pending_offer", false))
+	GameManager.pending_bond_slot = -1
 	GameManager.boss_cleared = false
 	GameManager.pending_result = &"defeat"
 	GameManager.pursuit_triggered = false
@@ -165,6 +174,8 @@ func load_run() -> bool:
 			"row": int(nd.get("row", 0)),
 			"col": int(nd.get("col", 0)),
 			"type": int(nd.get("type", 0)),
+			"faction": int(nd.get("faction", 0)),
+			"site": int(nd.get("site", 0)),
 			"position": Vector2(float(nd.get("pos_x", 0)), float(nd.get("pos_y", 0))),
 			"connections": nd.get("connections", []),
 			"visited": nd.get("visited", false),
@@ -202,6 +213,8 @@ func _serialize_map_nodes() -> Array:
 			"row": node.get("row", 0),
 			"col": node.get("col", 0),
 			"type": node.get("type", 0),
+			"faction": int(node.get("faction", 0)),
+			"site": int(node.get("site", 0)),
 			"pos_x": pos.x,
 			"pos_y": pos.y,
 			"connections": node.get("connections", []),

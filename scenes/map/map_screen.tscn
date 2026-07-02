@@ -143,3 +143,13 @@ offset_right = 560.0
 offset_bottom = 76.0
 theme_override_font_sizes/font_size = 14
 text = "医薬品を使う"
+
+[node name="CompanionButton" type="Button" parent="HUD"]
+visible = false
+layout_mode = 1
+offset_left = 570.0
+offset_top = 52.0
+offset_right = 700.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 14
+text = "同行者を下ろす"
