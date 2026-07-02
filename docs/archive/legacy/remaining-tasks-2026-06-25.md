@@ -3,7 +3,7 @@
 最終更新: 2026-06-25  
 対象: GDD v2、実装仕様書、現行コード/リソースの差分
 
-> 旧 `作業予定.md` と旧 `docs/remaining_tasks.md` を統合した現行版。完了済み項目は削除し、未完了・要検証項目だけを残す。
+> 旧 `作業予定.md` と旧 `remaining_tasks.md` を統合した当時のタスク表。現行版は `docs/planning/remaining-tasks.md`。
 
 ## 凡例
 

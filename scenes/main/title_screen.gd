@@ -11,11 +11,11 @@ func _ready() -> void:
 
 func _on_continue() -> void:
 	if SaveManager.load_run():
-		get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")
+		GameManager.go_to_state(GameManager.GameState.MAP)
 
 func _on_new_game() -> void:
 	SaveManager.delete_save()
-	get_tree().change_scene_to_file("res://scenes/main/character_select.tscn")
+	GameManager.go_to_state(GameManager.GameState.CHARACTER_SELECT)
 
 func _on_quit() -> void:
 	get_tree().quit()

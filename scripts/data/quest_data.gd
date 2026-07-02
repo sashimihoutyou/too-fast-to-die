@@ -3,7 +3,7 @@ class_name QuestData extends Resource
 ## サブストーリー（クエスト）定義。
 ## アウトカム（hunt / poison / ignore / lapse 等）は成功/失敗の二値ではなく名前付きで、
 ## 各アウトカムが「報酬束＋遅延ペイロード最大1」を持つ。設計の全体像は
-## docs/substory-devilf-pack.md を参照。
+## docs/scenarios/substories/devilf-pack.md を参照。
 
 @export var id: StringName
 @export var title: String

@@ -11,3 +11,4 @@ starter_deck_ids = [&"bm_tiger", &"bm02", &"bm11", &"bm05", &"bm05", &"st_intimi
 unique_system = &"partner"
 unlock_condition = "初期解放"
 can_use_heavy_weapons = false
+final_boss_id = &"chainlink_executive"

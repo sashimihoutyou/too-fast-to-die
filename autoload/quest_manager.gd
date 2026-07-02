@@ -2,7 +2,7 @@ extends Node
 
 ## サブストーリー（クエスト）の実行時状態を一元管理する Autoload。
 ## 期限は GameManager.total_nodes_visited（単調増加）を基準にする。
-## 設計の全体像は docs/substory-devilf-pack.md を参照。
+## 設計の全体像は docs/scenarios/substories/devilf-pack.md を参照。
 
 var _defs: Dictionary = {}             # id(StringName) -> QuestData
 var _state: Dictionary = {}            # id(StringName) -> 実行時状態 Dictionary
@@ -14,6 +14,59 @@ func _ready() -> void:
 func reset() -> void:
 	_state.clear()
 	_armed.clear()
+
+func get_save_data() -> Dictionary:
+	var state_data: Dictionary = {}
+	for quest_id: StringName in _state:
+		var st: Dictionary = _state[quest_id]
+		state_data[str(quest_id)] = {
+			"outcome": str(st.get("outcome", "")),
+			"complete": bool(st.get("complete", false)),
+			"lapsed": bool(st.get("lapsed", false)),
+			"progress": int(st.get("progress", 0)),
+			"deadline": int(st.get("deadline", 0)),
+			"knew": bool(st.get("knew", false)),
+		}
+
+	var armed_data: Array[Dictionary] = []
+	for entry: Dictionary in _armed:
+		armed_data.append({
+			"quest_id": str(entry.get("quest_id", "")),
+			"event_id": str(entry.get("event_id", "")),
+			"act": int(entry.get("act", -1)),
+			"ready_at": int(entry.get("ready_at", 0)),
+		})
+
+	return {
+		"state": state_data,
+		"armed": armed_data,
+	}
+
+func load_save_data(data: Dictionary) -> void:
+	reset()
+	var state_data: Dictionary = data.get("state", {})
+	for quest_id_str: String in state_data:
+		var raw_state: Dictionary = state_data.get(quest_id_str, {})
+		_state[StringName(quest_id_str)] = {
+			"outcome": StringName(raw_state.get("outcome", "")),
+			"complete": bool(raw_state.get("complete", false)),
+			"lapsed": bool(raw_state.get("lapsed", false)),
+			"progress": int(raw_state.get("progress", 0)),
+			"deadline": int(raw_state.get("deadline", 0)),
+			"knew": bool(raw_state.get("knew", false)),
+		}
+
+	var armed_data: Array = data.get("armed", [])
+	for raw_entry: Variant in armed_data:
+		var entry: Dictionary = raw_entry as Dictionary
+		if entry.is_empty():
+			continue
+		_armed.append({
+			"quest_id": StringName(entry.get("quest_id", "")),
+			"event_id": StringName(entry.get("event_id", "")),
+			"act": int(entry.get("act", -1)),
+			"ready_at": int(entry.get("ready_at", 0)),
+		})
 
 func get_def(id: StringName) -> QuestData:
 	return _defs.get(id, null)

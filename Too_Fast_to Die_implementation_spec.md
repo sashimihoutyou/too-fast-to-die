@@ -2,7 +2,7 @@
 
 企画設計書 v2 を補完する実装レベルの仕様。PC / Godot 4.x / 個人開発を前提とする。
 
-> **現行PC再設計の優先:** プレイアブルキャラクター構成、旧名（アータル/ワスプ）、覇者PC枠、固有戦闘メカニクスは `docs/gdd-pc-redesign.md` と実装済み `.tres` / GDScript を優先する。この仕様書内の `acceleration`、`lone_wolf`、`beast`、`aura`、6PC前提の節は旧設計メモとして扱う。
+> **現行PC再設計の優先:** プレイアブルキャラクター構成、旧名（アータル/ワスプ）、覇者PC枠、固有戦闘メカニクスは `docs/design/gdd-pc-redesign.md` と実装済み `.tres` / GDScript を優先する。この仕様書内の `acceleration`、`lone_wolf`、`beast`、`aura`、6PC前提の節は旧設計メモとして扱う。
 
 ---
 

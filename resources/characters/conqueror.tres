@@ -13,3 +13,4 @@ unlock_condition = "いずれかのキャラで初回クリア"
 is_playable = false
 can_use_guns = false
 can_use_heavy_weapons = false
+final_boss_id = &"gatekeeper"

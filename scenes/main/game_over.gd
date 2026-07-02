@@ -1,7 +1,10 @@
 extends Control
 
+var _retry_character: CharacterData = null
+
 func _ready() -> void:
 	var result: StringName = GameManager.pending_result
+	_retry_character = GameManager.current_character
 	if result == &"victory":
 		$TitleLabel.text = "オアシスに到達した"
 		$TitleLabel.add_theme_color_override("font_color", Color(0.95, 0.85, 0.3))
@@ -15,7 +18,15 @@ func _ready() -> void:
 		$CompanionEpilogueLabel.text = "\n\n".join(epilogues)
 	GameManager.end_run(result)
 	$TotalDistanceLabel.text = "累積走行距離: %dkm" % MetaProgression.total_distance_km
+	$RetryButton.visible = _retry_character != null
+	$RetryButton.pressed.connect(_on_retry)
 	$ReturnButton.pressed.connect(_on_return)
 
+func _on_retry() -> void:
+	if _retry_character == null:
+		return
+	GameManager.start_run(_retry_character)
+	GameManager.go_to_state(GameManager.GameState.MAP)
+
 func _on_return() -> void:
-	get_tree().change_scene_to_file("res://scenes/main/title_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.TITLE)

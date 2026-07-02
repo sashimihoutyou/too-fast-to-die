@@ -4,12 +4,12 @@
 > 新勢力「聖なる姉妹たち」（§3-4）とオアシスの正体・侵入経路・隠しボス設定（§18）を追加（2026-07-01）。
 > 
 > **関連ドキュメント:**
-> - キャラクター設計 → `docs/gdd-characters.md`
-> - 同行者システム → `docs/gdd-companions.md`
-> - 物語・エンディング → `docs/gdd-narrative.md`
-> - イベント設計 → `docs/gdd-events.md`
-> - ビジュアル仕様 → `docs/character-visuals.md`
-> - 残りタスク → `docs/残りタスク.md`
+> - キャラクター設計 → `docs/design/gdd-characters.md`
+> - 同行者システム → `docs/design/gdd-companions.md`
+> - 物語・エンディング → `docs/design/gdd-narrative.md`
+> - イベント設計 → `docs/design/gdd-events.md`
+> - ビジュアル仕様 → `docs/art/character-visuals.md`
+> - 残りタスク → `docs/planning/remaining-tasks.md`
 
 ---
 

@@ -2,7 +2,7 @@
 
 この文書は、敵・集落・NPC・勢力拠点・イベント背景・アイテム由来などのロアを新規作成/改修する際の必読ルールである。
 
-ロア作成時は、まず本書を読み、必要に応じて `docs/gdd-core.md`、`docs/gdd-events.md`、`docs/gdd-narrative.md`、`docs/gdd-characters.md`、`docs/gdd-companions.md`、`docs/world-rules.md` を参照する。
+ロア作成時は、まず本書を読み、必要に応じて `docs/design/gdd-core.md`、`docs/design/gdd-events.md`、`docs/design/gdd-narrative.md`、`docs/design/gdd-characters.md`、`docs/design/gdd-companions.md`、`docs/lore/world-rules.md` を参照する。
 
 ---
 
@@ -87,7 +87,7 @@ NG：
 
 本作の性的要素は、ご褒美や挿入用の飾りではない。人口が減り、水と燃料が命綱になった世界で、身体・生殖・快楽・搾取・保護・取引が社会制度や生存戦略に組み込まれていることを示すために存在する。
 
-性的ロアを作成する時は、必ず `docs/world-rules.md`、`docs/context-types.md`、必要なら `docs/pc-profiles.md` を参照する。実際のシーン本文を書く場合は `.agents/skills/tftd-writing/SKILL.md` の濃淡コントロールと合意/非合意ルールに従う。
+性的ロアを作成する時は、必ず `docs/lore/world-rules.md`、`docs/writing/context-types.md`、必要なら `docs/writing/pc-profiles.md` を参照する。実際のシーン本文を書く場合は `.agents/skills/tftd-writing/SKILL.md` の濃淡コントロールと合意/非合意ルールに従う。
 
 ### 5-1. 性的ロアの核
 
@@ -121,7 +121,7 @@ NG：
 
 ### 5-3. 勢力別の性的ロア
 
-勢力ごとの性文化は `docs/world-rules.md` を正とする。ロア作成時の要点は以下。
+勢力ごとの性文化は `docs/lore/world-rules.md` を正とする。ロア作成時の要点は以下。
 
 | 勢力/場所 | ロア上の要点 |
 |---|---|
@@ -161,7 +161,7 @@ NG：
 - 介入する/しない/利用する/取引する選択肢があるか
 - カルマ、信仰度、ヒート、清明度、同行者反応に影響するか
 - 被害者/相手が後続イベントで再登場するか
-- その場の描写濃度は `docs/context-types.md` のどれに該当するか
+- その場の描写濃度は `docs/writing/context-types.md` のどれに該当するか
 - プレイヤー向けUIに未実装の性的制度や効果を書いていないか
 
 ---

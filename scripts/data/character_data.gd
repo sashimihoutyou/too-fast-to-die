@@ -11,3 +11,4 @@ class_name CharacterData extends Resource
 @export var can_use_guns: bool = true
 @export var can_use_heavy_weapons: bool = true
 @export var deck_limit: int = -1
+@export var final_boss_id: StringName = &""

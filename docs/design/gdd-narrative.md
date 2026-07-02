@@ -3,12 +3,12 @@
 > 元 GDD v2 から分割（2026-06-26）。三軸×四層エンディングフレームワーク導入（2026-06-30）。
 > 
 > **関連ドキュメント:**
-> - コアシステム → `docs/gdd-core.md`
-> - キャラクター設計 → `docs/gdd-characters.md`
-> - 同行者システム → `docs/gdd-companions.md`
-> - イベント設計 → `docs/gdd-events.md`
-> - PC性的態度・身体プロフィール → `docs/pc-profiles.md`
-> - シーン執筆ルール → `docs/context-types.md`
+> - コアシステム → `docs/design/gdd-core.md`
+> - キャラクター設計 → `docs/design/gdd-characters.md`
+> - 同行者システム → `docs/design/gdd-companions.md`
+> - イベント設計 → `docs/design/gdd-events.md`
+> - PC性的態度・身体プロフィール → `docs/writing/pc-profiles.md`
+> - シーン執筆ルール → `docs/writing/context-types.md`
 
 ---
 

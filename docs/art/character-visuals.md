@@ -3,9 +3,9 @@
 > 元 `character_design.md` から移動（2026-06-26）。
 > 
 > **関連ドキュメント:**
-> - キャラクター設計（ゲームプレイ・物語） → `docs/gdd-characters.md`
-> - 現行PC再設計 → `docs/gdd-pc-redesign.md`
-> - PC性的態度・身体プロフィール → `docs/pc-profiles.md`
+> - キャラクター設計（ゲームプレイ・物語） → `docs/design/gdd-characters.md`
+> - 現行PC再設計 → `docs/design/gdd-pc-redesign.md`
+> - PC性的態度・身体プロフィール → `docs/writing/pc-profiles.md`
 
 ---
 

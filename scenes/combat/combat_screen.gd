@@ -10,6 +10,7 @@ var weakness_labels: Array[Label] = []
 var intent_labels: Array[Label] = []
 var status_labels: Array[Label] = []
 var item_buttons: Array[Button] = []
+var reward_buttons: Array[Button] = []
 var selected_card: CardData = null
 var awaiting_reward: bool = false
 var _last_player_hp: int = 0
@@ -19,6 +20,7 @@ var _investigation_label: Label = null
 var _euphoria_label: Label = null
 var _beast_label: Label = null
 var _engine_brake_button: Button = null
+var _reward_skip_button: Button = null
 var _tooltip_panel: PanelContainer = null
 var _tooltip_title_label: Label = null
 var _tooltip_body_label: Label = null
@@ -33,6 +35,7 @@ func _ready() -> void:
 	_setup_tooltip_overlay()
 	_setup_player_portrait_hud()
 	_setup_signals()
+	_setup_static_controls()
 	_build_enemy_display()
 	_show_target_buttons(false)
 	_setup_heat_meter()
@@ -483,76 +486,47 @@ func _update_portrait_state() -> void:
 func _setup_heat_meter() -> void:
 	if GameManager.current_character.unique_system != &"heat":
 		return
-	_heat_label = Label.new()
-	_heat_label.offset_left = 235.0
-	_heat_label.offset_top = 218.0
-	_heat_label.offset_right = 340.0
-	_heat_label.offset_bottom = 252.0
+	_heat_label = $PlayerHUD/GaugeLabel
 	_heat_label.add_theme_font_size_override("font_size", 12)
 	_heat_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.1))
-	$PlayerHUD.add_child(_heat_label)
 	_on_heat_changed(CombatManager.player_heat, CombatManager.HEAT_MAX)
 
 func _setup_aura_meter() -> void:
 	if GameManager.current_character.unique_system != &"aura":
 		return
-	_aura_label = Label.new()
-	_aura_label.offset_left = 235.0
-	_aura_label.offset_top = 218.0
-	_aura_label.offset_right = 340.0
-	_aura_label.offset_bottom = 252.0
+	_aura_label = $PlayerHUD/GaugeLabel
 	_aura_label.add_theme_font_size_override("font_size", 12)
 	_aura_label.add_theme_color_override("font_color", Color(0.2, 0.6, 1.0))
-	$PlayerHUD.add_child(_aura_label)
 	_on_aura_changed(CombatManager.player_aura, CombatManager.AURA_MAX)
 
 func _setup_investigation_meter() -> void:
 	if GameManager.current_character.unique_system != &"investigation":
 		return
-	_investigation_label = Label.new()
-	_investigation_label.offset_left = 235.0
-	_investigation_label.offset_top = 218.0
-	_investigation_label.offset_right = 360.0
-	_investigation_label.offset_bottom = 252.0
+	_investigation_label = $PlayerHUD/GaugeLabel
 	_investigation_label.add_theme_font_size_override("font_size", 12)
 	_investigation_label.add_theme_color_override("font_color", Color(0.45, 0.75, 1.0))
-	$PlayerHUD.add_child(_investigation_label)
 	_on_investigation_changed(CombatManager.player_investigation, CombatManager.INVESTIGATION_MAX)
 
 func _setup_euphoria_meter() -> void:
 	if GameManager.current_character.unique_system != &"euphoria":
 		return
-	_euphoria_label = Label.new()
-	_euphoria_label.offset_left = 235.0
-	_euphoria_label.offset_top = 218.0
-	_euphoria_label.offset_right = 340.0
-	_euphoria_label.offset_bottom = 252.0
+	_euphoria_label = $PlayerHUD/GaugeLabel
 	_euphoria_label.add_theme_font_size_override("font_size", 12)
 	_euphoria_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.8))
-	$PlayerHUD.add_child(_euphoria_label)
 	_on_euphoria_changed(CombatManager.player_euphoria, CombatManager.EUPHORIA_MAX)
 
 func _setup_beast_display() -> void:
 	if GameManager.current_character.unique_system != &"partner":
 		return
-	_beast_label = Label.new()
-	_beast_label.offset_left = 235.0
-	_beast_label.offset_top = 218.0
-	_beast_label.offset_right = 340.0
-	_beast_label.offset_bottom = 252.0
+	_beast_label = $PlayerHUD/GaugeLabel
 	_beast_label.add_theme_font_size_override("font_size", 12)
 	_beast_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.3))
-	$PlayerHUD.add_child(_beast_label)
 	_on_beast_changed()
 
 func _on_heat_changed(value: int, max_value: int) -> void:
 	if _heat_label != null:
 		_heat_label.text = "ヒート %d/%d" % [value, max_value]
 	_update_portrait_state()
-	for btn: Button in [$Controls/EndTurnButton, $Controls/FleeButton, $Controls/RerollButton]:
-		btn.focus_mode = Control.FOCUS_NONE
-	$Controls/EndTurnButton.text = "ターン終了 (Space)"
-	$Controls/EndTurnButton.tooltip_text = "数字キー=カード, Space/Enter=ターン終了, Esc/右クリック=選択解除"
 
 func _on_aura_changed(value: int, max_value: int) -> void:
 	if _aura_label != null:
@@ -625,7 +599,6 @@ func _on_beast_changed() -> void:
 
 func _setup_signals() -> void:
 	CombatManager.turn_started.connect(_on_turn_started)
-	CombatManager.card_played.connect(_on_card_played)
 	CombatManager.enemy_defeated.connect(_on_enemy_defeated)
 	CombatManager.enemy_hp_changed.connect(_on_enemy_hp_changed)
 	CombatManager.enemy_block_changed.connect(_on_enemy_block_changed)
@@ -651,6 +624,12 @@ func _setup_signals() -> void:
 	$Controls/EndTurnButton.pressed.connect(_on_end_turn)
 	$Controls/FleeButton.pressed.connect(_on_flee)
 	$Controls/RerollButton.pressed.connect(_on_reroll)
+
+func _setup_static_controls() -> void:
+	for btn: Button in [$Controls/EndTurnButton, $Controls/FleeButton, $Controls/RerollButton]:
+		btn.focus_mode = Control.FOCUS_NONE
+	$Controls/EndTurnButton.text = "ターン終了 (Space)"
+	$Controls/EndTurnButton.tooltip_text = "数字キー=カード, Space/Enter=ターン終了, Esc/右クリック=選択解除"
 
 func _setup_engine_brake_button() -> void:
 	if GameManager.current_character.unique_system != &"gear":
@@ -1130,6 +1109,7 @@ func _restore_hand_modulate() -> void:
 # キーボード/右クリック操作（数字=カード選択、Space/Enter=ターン終了、Esc/右クリック=選択解除）
 func _unhandled_input(event: InputEvent) -> void:
 	if awaiting_reward:
+		_handle_reward_input(event)
 		return
 	if CombatManager.state != CombatManager.CombatState.PLAYER_TURN:
 		return
@@ -1150,6 +1130,23 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_end_turn()
 		elif key >= KEY_1 and key <= KEY_9:
 			_select_card_by_index(key - KEY_1)
+
+func _handle_reward_input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	var key := key_event.keycode
+	if key == KEY_ESCAPE or key == KEY_0:
+		if _reward_skip_button != null and is_instance_valid(_reward_skip_button):
+			_reward_skip_button.pressed.emit()
+	elif key >= KEY_1 and key <= KEY_9:
+		var idx: int = key - KEY_1
+		if idx < reward_buttons.size():
+			var btn: Button = reward_buttons[idx]
+			if is_instance_valid(btn) and not btn.disabled:
+				btn.pressed.emit()
 
 func _select_card_by_index(idx: int) -> void:
 	if selected_card != null:
@@ -1290,9 +1287,6 @@ func _on_turn_started(_turn: int) -> void:
 	_update_consumable_buttons()
 	if not CombatManager.has_playable_card():
 		_auto_end_turn()
-
-func _on_card_played(_card: CardData) -> void:
-	pass
 
 func _on_cards_drawn(_cards: Array[CardData]) -> void:
 	_update_hand()
@@ -1560,8 +1554,9 @@ func _on_combat_won(rewards: Array) -> void:
 
 func _on_combat_lost() -> void:
 	GameManager.pending_result = &"defeat"
+	GameManager.clear_pending_combat()
 	await get_tree().create_timer(0.5).timeout
-	get_tree().change_scene_to_file("res://scenes/main/game_over.tscn")
+	GameManager.go_to_state(GameManager.GameState.GAME_OVER)
 
 func _on_player_fled() -> void:
 	_return_to_map()
@@ -1570,6 +1565,8 @@ func _show_reward_screen(rewards: Array) -> void:
 	for child in $HandArea.get_children():
 		child.queue_free()
 	_update_controls()
+	reward_buttons.clear()
+	_reward_skip_button = null
 
 	var reward_panel := PanelContainer.new()
 	reward_panel.name = "RewardPanel"
@@ -1615,37 +1612,46 @@ func _show_reward_screen(rewards: Array) -> void:
 			"fuel":
 				var amount: int = reward.get("amount", 0)
 				var fuel_btn := _create_fuel_reward_button(amount)
+				fuel_btn.text = "[%d]\n%s" % [reward_buttons.size() + 1, fuel_btn.text]
 				fuel_btn.pressed.connect(_on_reward_fuel_picked.bind(amount))
 				choice_hbox.add_child(fuel_btn)
+				reward_buttons.append(fuel_btn)
 			"scrap":
 				var amount: int = reward.get("amount", 0)
 				var scrap_btn := _create_scrap_reward_button(amount)
+				scrap_btn.text = "[%d]\n%s" % [reward_buttons.size() + 1, scrap_btn.text]
 				scrap_btn.pressed.connect(_on_reward_scrap_picked.bind(amount))
 				choice_hbox.add_child(scrap_btn)
+				reward_buttons.append(scrap_btn)
 			"relic", "consumable":
 				var item_id: StringName = reward.get("item_id", &"")
 				var item := ItemDatabase.get_item(item_id)
 				if item != null:
 					var item_btn := _create_item_reward_button(item)
+					item_btn.text = "[%d]\n%s" % [reward_buttons.size() + 1, item_btn.text]
 					item_btn.pressed.connect(_on_reward_item_picked.bind(item))
 					choice_hbox.add_child(item_btn)
+					reward_buttons.append(item_btn)
 			_:
 				if pool_idx < pool.size():
 					var card: CardData = pool[pool_idx]
 					pool_idx += 1
 					var btn := _create_card_button(card)
 					btn.disabled = false
+					btn.text = "[%d]\n%s" % [reward_buttons.size() + 1, btn.text]
 					btn.pressed.connect(_on_reward_card_picked.bind(card))
 					choice_hbox.add_child(btn)
+					reward_buttons.append(btn)
 	vbox.add_child(choice_hbox)
 
 	var skip_btn := Button.new()
-	skip_btn.text = "スキップ"
+	skip_btn.text = "スキップ (0/Esc)"
 	skip_btn.custom_minimum_size = Vector2(200, 40)
 	skip_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	skip_btn.add_theme_font_size_override("font_size", 18)
 	skip_btn.pressed.connect(_return_to_map)
 	vbox.add_child(skip_btn)
+	_reward_skip_button = skip_btn
 
 	reward_panel.add_child(vbox)
 	add_child(reward_panel)
@@ -1730,5 +1736,8 @@ func _on_reward_card_picked(card: CardData) -> void:
 	_return_to_map()
 
 func _return_to_map() -> void:
+	awaiting_reward = false
+	GameManager.clear_pending_combat()
 	CombatManager.state = CombatManager.CombatState.INACTIVE
-	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")
+	SaveManager.save_run()
+	GameManager.go_to_state(GameManager.GameState.MAP)

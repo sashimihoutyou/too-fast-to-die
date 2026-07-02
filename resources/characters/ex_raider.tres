@@ -10,3 +10,4 @@ max_hp = 70
 starter_deck_ids = [&"st_ve01", &"st_ve01", &"st_ve01", &"defend", &"defend", &"st_ve02", &"st_intimidate", &"er01", &"er02", &"er11"]
 unique_system = &"heat"
 unlock_condition = "初期解放"
+final_boss_id = &"cockatrice_boss"

@@ -1,6 +1,6 @@
 # Too Fast to Die: Road to Oasis - Image Generation Prompts
 
-`docs/character-visuals.md` の画風を基準に、ゲーム内で必要になる敵・背景・タイトル・ロゴ・UI用素材を生成するためのプロンプト集。
+`docs/art/character-visuals.md` の画風を基準に、ゲーム内で必要になる敵・背景・タイトル・ロゴ・UI用素材を生成するためのプロンプト集。
 
 ## 共通スタイル
 

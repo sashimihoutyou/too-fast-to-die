@@ -10,3 +10,4 @@ max_hp = 65
 starter_deck_ids = [&"st_at01", &"st_at01", &"st_at02", &"defend", &"st_intimidate", &"cu01", &"cu02", &"cu11", &"s_close_encounter", &"s_weak_point"]
 unique_system = &"gear"
 unlock_condition = "初期解放"
+final_boss_id = &"v8cult_high_priest"

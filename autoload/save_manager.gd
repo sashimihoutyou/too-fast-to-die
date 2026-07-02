@@ -25,6 +25,10 @@ func save_run() -> void:
 		var part: BikePartData = ResourceManager.equipped_parts[slot_key]
 		equipped[str(slot_key)] = str(part.id)
 
+	var pending_enemy_ids: Array[String] = []
+	for enemy_id: StringName in GameManager.pending_combat_enemy_ids:
+		pending_enemy_ids.append(str(enemy_id))
+
 	var data := {
 		"character_id": str(GameManager.current_character.id),
 		"current_act": GameManager.current_act,
@@ -33,6 +37,11 @@ func save_run() -> void:
 		"distance_km": GameManager.distance_km,
 		"map_current_row": GameManager.map_current_row,
 		"map_current_node_id": GameManager.map_current_node_id,
+		"pending_combat_node_type": GameManager.pending_combat_node_type,
+		"pending_combat_enemy_ids": pending_enemy_ids,
+		"pending_combat_boss_hp_scale": GameManager.pending_combat_boss_hp_scale,
+		"boss_cleared": GameManager.boss_cleared,
+		"pending_result": str(GameManager.pending_result),
 		"event_flags": GameManager.event_flags,
 		"pursuit_level": GameManager.pursuit_level,
 		"faith": GameManager.faith,
@@ -51,6 +60,7 @@ func save_run() -> void:
 		"secondary_companion_pending_offer": GameManager.secondary_companion_pending_offer,
 		"player_hp": CombatManager.player_hp,
 		"player_max_hp": CombatManager.player_max_hp,
+		"player_heat": CombatManager.player_heat,
 		"player_euphoria": CombatManager.player_euphoria,
 		"fuel": ResourceManager.fuel,
 		"tank_capacity": ResourceManager.tank_capacity,
@@ -63,6 +73,7 @@ func save_run() -> void:
 		"deck": deck_ids,
 		"map_nodes": _serialize_map_nodes(),
 		"inventory": ItemDatabase.get_save_data(),
+		"quests": QuestManager.get_save_data(),
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
@@ -91,6 +102,14 @@ func load_run() -> bool:
 	GameManager.distance_km = int(data.get("distance_km", 0))
 	GameManager.map_current_row = int(data.get("map_current_row", -1))
 	GameManager.map_current_node_id = str(data.get("map_current_node_id", ""))
+	GameManager.pending_combat_node_type = int(data.get("pending_combat_node_type", -1))
+	GameManager.pending_combat_enemy_ids.clear()
+	var pending_enemy_data: Array = data.get("pending_combat_enemy_ids", [])
+	for raw_enemy_id: Variant in pending_enemy_data:
+		GameManager.pending_combat_enemy_ids.append(StringName(str(raw_enemy_id)))
+	GameManager.pending_combat_boss_hp_scale = float(data.get("pending_combat_boss_hp_scale", 1.0))
+	GameManager.boss_cleared = bool(data.get("boss_cleared", false))
+	GameManager.pending_result = StringName(data.get("pending_result", "defeat"))
 	GameManager.event_flags = data.get("event_flags", {})
 	GameManager.pursuit_level = int(data.get("pursuit_level", 0))
 	GameManager.faith = int(data.get("faith", 80))
@@ -106,8 +125,6 @@ func load_run() -> bool:
 	GameManager.secondary_companion_bond = int(data.get("secondary_companion_bond", 0))
 	GameManager.secondary_companion_pending_offer = bool(data.get("secondary_companion_pending_offer", false))
 	GameManager.pending_bond_slot = -1
-	GameManager.boss_cleared = false
-	GameManager.pending_result = &"defeat"
 	GameManager.pursuit_triggered = false
 
 	var comp_id: String = data.get("companion_id", "")
@@ -131,6 +148,7 @@ func load_run() -> bool:
 
 	CombatManager.player_hp = int(data.get("player_hp", character.max_hp))
 	CombatManager.player_max_hp = int(data.get("player_max_hp", character.max_hp))
+	CombatManager.player_heat = int(data.get("player_heat", 0))
 	CombatManager.player_euphoria = int(data.get("player_euphoria", 50 if character.unique_system == &"euphoria" else 0))
 
 	ResourceManager.fuel = int(data.get("fuel", 20))
@@ -165,6 +183,7 @@ func load_run() -> bool:
 			DeckManager.master_deck.append(copy)
 
 	ItemDatabase.load_save_data(data.get("inventory", []))
+	QuestManager.load_save_data(data.get("quests", {}))
 
 	GameManager.map_nodes.clear()
 	var map_data: Array = data.get("map_nodes", [])

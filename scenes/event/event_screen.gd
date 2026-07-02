@@ -1,6 +1,8 @@
 extends Control
 
 var current_event: EventData
+var _choice_buttons: Array[Button] = []
+var _continue_button: Button = null
 
 func _ready() -> void:
 	current_event = _pick_event()
@@ -36,12 +38,15 @@ func _pick_event() -> EventData:
 func _build_choices() -> void:
 	for child in $ChoiceContainer.get_children():
 		child.queue_free()
+	_choice_buttons.clear()
+	_continue_button = null
 	for i in current_event.choices.size():
 		var choice: EventChoiceData = current_event.choices[i]
 		var btn := Button.new()
-		btn.text = choice.label
+		btn.text = "%d. %s" % [i + 1, choice.label]
 		btn.custom_minimum_size = Vector2(520, 45)
 		btn.add_theme_font_size_override("font_size", 16)
+		btn.focus_mode = Control.FOCUS_NONE
 		btn.pressed.connect(_on_choice.bind(i))
 		if not _check_requirement(choice.requirement):
 			btn.disabled = true
@@ -58,6 +63,25 @@ func _build_choices() -> void:
 				btn.disabled = true
 				btn.text += " (同行不可)"
 		$ChoiceContainer.add_child(btn)
+		_choice_buttons.append(btn)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	var key := key_event.keycode
+	if _continue_button != null and is_instance_valid(_continue_button):
+		if key == KEY_ENTER or key == KEY_KP_ENTER or key == KEY_SPACE or key == KEY_ESCAPE:
+			_continue_button.pressed.emit()
+		return
+	if key >= KEY_1 and key <= KEY_9:
+		var idx: int = key - KEY_1
+		if idx < _choice_buttons.size():
+			var btn: Button = _choice_buttons[idx]
+			if is_instance_valid(btn) and not btn.disabled and btn.visible:
+				btn.pressed.emit()
 
 func _check_requirement(req: String) -> bool:
 	if req == "":
@@ -101,13 +125,16 @@ func _on_choice(idx: int) -> void:
 		return
 	for child in $ChoiceContainer.get_children():
 		child.queue_free()
+	_choice_buttons.clear()
 	$BodyLabel.text = choice.result_text
 	var continue_btn := Button.new()
 	continue_btn.text = "続ける"
 	continue_btn.custom_minimum_size = Vector2(200, 45)
 	continue_btn.add_theme_font_size_override("font_size", 18)
+	continue_btn.focus_mode = Control.FOCUS_NONE
 	continue_btn.pressed.connect(_return_to_map)
 	$ChoiceContainer.add_child(continue_btn)
+	_continue_button = continue_btn
 
 func _apply_choice(choice: EventChoiceData) -> void:
 	if choice.fuel_change > 0:
@@ -170,20 +197,27 @@ func _start_event_combat(enemy_ids: Array[StringName] = []) -> void:
 	if enemies.is_empty():
 		_return_to_map()
 		return
+	GameManager.set_pending_combat(int(MapGenerator.NodeType.COMBAT), enemies)
+	SaveManager.save_run()
 	CombatManager.start_combat(enemies)
-	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.COMBAT)
 
 func _show_fallback() -> void:
 	$TitleLabel.text = "静かな道のり"
 	$BodyLabel.text = "特に何も起こらなかった。あなたは先を急いだ。"
 	for child in $ChoiceContainer.get_children():
 		child.queue_free()
+	_choice_buttons.clear()
 	var btn := Button.new()
 	btn.text = "続ける"
 	btn.custom_minimum_size = Vector2(200, 45)
 	btn.add_theme_font_size_override("font_size", 18)
+	btn.focus_mode = Control.FOCUS_NONE
 	btn.pressed.connect(_return_to_map)
 	$ChoiceContainer.add_child(btn)
+	_continue_button = btn
 
 func _return_to_map() -> void:
-	get_tree().change_scene_to_file("res://scenes/map/map_screen.tscn")
+	GameManager.clear_pending_combat()
+	SaveManager.save_run()
+	GameManager.go_to_state(GameManager.GameState.MAP)

@@ -11,3 +11,4 @@ starter_deck_ids = [&"st_eu01", &"st_eu01", &"st_eu03", &"defend", &"defend", &"
 unique_system = &"euphoria"
 unlock_condition = "初期解放"
 deck_limit = 25
+final_boss_id = &"neon_eden_queen"

@@ -9,6 +9,16 @@ enum GameState { TITLE, CHARACTER_SELECT, MAP, COMBAT, EVENT, SHOP, REST, GAME_O
 
 const MAX_ACT := 5
 const SIDECAR_RELIC_ID := &"sidecar"
+const SCENE_PATHS := {
+	GameState.TITLE: "res://scenes/main/title_screen.tscn",
+	GameState.CHARACTER_SELECT: "res://scenes/main/character_select.tscn",
+	GameState.MAP: "res://scenes/map/map_screen.tscn",
+	GameState.COMBAT: "res://scenes/combat/combat_screen.tscn",
+	GameState.EVENT: "res://scenes/event/event_screen.tscn",
+	GameState.SHOP: "res://scenes/shop/shop_screen.tscn",
+	GameState.REST: "res://scenes/rest/rest_screen.tscn",
+	GameState.GAME_OVER: "res://scenes/main/game_over.tscn",
+}
 
 var current_state: GameState = GameState.TITLE
 var current_character: CharacterData
@@ -20,6 +30,9 @@ var event_flags: Dictionary = {}
 var map_nodes: Array[Dictionary] = []
 var map_current_row: int = -1
 var map_current_node_id: String = ""
+var pending_combat_node_type: int = -1
+var pending_combat_enemy_ids: Array[StringName] = []
+var pending_combat_boss_hp_scale: float = 1.0
 var boss_cleared: bool = false
 var pending_result: StringName = &"defeat"
 var current_companion: CompanionData = null
@@ -119,6 +132,7 @@ func start_run(character: CharacterData) -> void:
 	map_nodes.clear()
 	map_current_row = -1
 	map_current_node_id = ""
+	clear_pending_combat()
 	boss_cleared = false
 	pending_result = &"defeat"
 	current_companion = null
@@ -151,6 +165,27 @@ func start_run(character: CharacterData) -> void:
 func change_state(new_state: GameState) -> void:
 	current_state = new_state
 	state_changed.emit(GameState.keys()[new_state])
+
+func set_pending_combat(node_type: int, enemy_list: Array[EnemyData], boss_hp_scale: float = 1.0) -> void:
+	pending_combat_node_type = node_type
+	pending_combat_enemy_ids.clear()
+	for enemy: EnemyData in enemy_list:
+		if enemy != null:
+			pending_combat_enemy_ids.append(enemy.id)
+	pending_combat_boss_hp_scale = boss_hp_scale
+
+func clear_pending_combat() -> void:
+	pending_combat_node_type = -1
+	pending_combat_enemy_ids.clear()
+	pending_combat_boss_hp_scale = 1.0
+
+func go_to_state(new_state: GameState) -> void:
+	var scene_path: String = String(SCENE_PATHS.get(new_state, ""))
+	if scene_path.is_empty():
+		change_state(new_state)
+		return
+	get_tree().change_scene_to_file(scene_path)
+	change_state(new_state)
 
 func get_travel_resource_name() -> String:
 	if current_character != null and current_character.id == &"conqueror":
@@ -925,6 +960,7 @@ func advance_act() -> void:
 	map_nodes.clear()
 	map_current_row = -1
 	map_current_node_id = ""
+	clear_pending_combat()
 
 func _upgrade_random_card_after_boss() -> void:
 	var upgradeable: Array[CardData] = []
@@ -945,5 +981,4 @@ func end_run(result: StringName) -> void:
 	change_state(GameState.RESULT)
 
 func go_to_title() -> void:
-	get_tree().change_scene_to_file("res://scenes/main/title_screen.tscn")
-	change_state(GameState.TITLE)
+	go_to_state(GameState.TITLE)

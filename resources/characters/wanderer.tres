@@ -11,3 +11,4 @@ starter_deck_ids = [&"st_we01", &"st_we01", &"st_we02", &"defend", &"st_guard_st
 unique_system = &"investigation"
 unlock_condition = "初期解放"
 deck_limit = 25
+final_boss_id = &"chainlink_informant"

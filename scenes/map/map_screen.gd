@@ -1,10 +1,14 @@
 extends Control
 
+const MEDICINE_HEAL_AMOUNT := 15
+const MODAL_OVERLAY_NAME := "ModalOverlay"
+
 var map_nodes: Array[Dictionary] = []
 var current_row: int = -1
 var node_buttons: Dictionary = {}
 var _pending_act_intro: bool = false
 var _awaiting_fragment: bool = false
+var _available_node_ids: Array[String] = []
 
 func _ready() -> void:
 	if _handle_post_boss():
@@ -15,12 +19,16 @@ func _ready() -> void:
 	map_nodes = GameManager.map_nodes
 	current_row = GameManager.map_current_row
 	_draw_map()
+	call_deferred("_scroll_to_current_node")
 	_update_hud()
 	ResourceManager.fuel_changed.connect(_on_fuel_changed)
+	ResourceManager.fuel_warning.connect(_on_fuel_warning)
 	ResourceManager.bike_durability_changed.connect(_on_bike_durability_changed)
 	$HUD/DeckButton.pressed.connect(_show_deck_popup)
 	$HUD/MedicineButton.pressed.connect(_use_medicine)
 	$HUD/CompanionButton.pressed.connect(_show_dismiss_dialog)
+	if _resume_pending_combat_node():
+		return
 	if _pending_act_intro:
 		_pending_act_intro = false
 		_show_notification_then("区間 %d に進んだ。\n複数の旗が同じ道を奪い合っている――" % GameManager.current_act, func() -> void:
@@ -38,7 +46,7 @@ func _handle_post_boss() -> bool:
 	GameManager.boss_cleared = false
 	if GameManager.current_act >= GameManager.MAX_ACT:
 		GameManager.pending_result = &"victory"
-		get_tree().change_scene_to_file("res://scenes/main/game_over.tscn")
+		GameManager.go_to_state(GameManager.GameState.GAME_OVER)
 		return true
 	GameManager.advance_act()
 	_pending_act_intro = true
@@ -142,6 +150,37 @@ func _update_available_nodes() -> void:
 						available_ids.append(conn_id)
 
 	_apply_available_highlights(available_ids)
+	_available_node_ids = available_ids
+	_apply_available_shortcut_labels(available_ids)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _awaiting_fragment or _has_modal_overlay():
+		return
+	if not event is InputEventKey:
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	var key := key_event.keycode
+	if key >= KEY_1 and key <= KEY_9:
+		var idx: int = key - KEY_1
+		if idx < _available_node_ids.size():
+			_on_node_pressed(_available_node_ids[idx])
+
+func _apply_available_shortcut_labels(available_ids: Array[String]) -> void:
+	for nid: String in node_buttons:
+		var node: Dictionary = _find_node_by_id(nid)
+		if node.is_empty():
+			continue
+		var node_type: MapGenerator.NodeType = node["type"]
+		var fuel_reward: int = int(node.get("fuel_reward", 0))
+		var faction: int = int(node.get("faction", MapGenerator.Faction.NONE))
+		var text: String = _get_node_button_text(node_type, fuel_reward, faction)
+		var shortcut_index: int = available_ids.find(nid)
+		if shortcut_index >= 0 and shortcut_index < 9:
+			text = "%d\n%s" % [shortcut_index + 1, text]
+		var btn: Button = node_buttons[nid]
+		btn.text = text
 
 func _apply_available_highlights(available_ids: Array[String]) -> void:
 	for nid: String in available_ids:
@@ -203,7 +242,12 @@ func _on_node_pressed(nid: String) -> void:
 	var travel_cost: int = _get_travel_cost(previous_node, node)
 	if not ResourceManager.consume_fuel(travel_cost):
 		_awaiting_fragment = false
-		_show_notification("%sが足りない。\n必要: %d / 現在: %d" % [_get_travel_resource_name(), travel_cost, ResourceManager.fuel])
+		var message: String = "%sが足りない。\n必要: %d / 現在: %d" % [_get_travel_resource_name(), travel_cost, ResourceManager.fuel]
+		if not _has_affordable_available_node():
+			message += "\nどの道にも、もう届かない。"
+			_show_notification_then(message, Callable(self, "_end_run_out_of_resource"))
+		else:
+			_show_notification(message)
 		return
 
 	node["visited"] = true
@@ -212,6 +256,10 @@ func _on_node_pressed(nid: String) -> void:
 	GameManager.map_current_node_id = nid
 	GameManager.advance_node(travel_cost)
 	var node_type: MapGenerator.NodeType = node["type"]
+	if node_type in [MapGenerator.NodeType.COMBAT, MapGenerator.NodeType.ELITE, MapGenerator.NodeType.BOSS]:
+		_prepare_pending_combat_node(node_type)
+	else:
+		GameManager.clear_pending_combat()
 	var fuel_reward: int = int(node.get("fuel_reward", 0))
 	var fuel_message: String = ""
 	if fuel_reward > 0:
@@ -227,6 +275,8 @@ func _on_node_pressed(nid: String) -> void:
 		_show_pending_companion_prompts(func() -> void:
 			if GameManager.pursuit_triggered:
 				GameManager.pursuit_triggered = false
+				_prepare_pending_pursuit_combat()
+				SaveManager.save_run()
 				AmbientFragment.consume_transient_context()
 				_show_notification_then("追跡部隊が現れた。", Callable(self, "_start_pursuit_combat"))
 				return
@@ -264,17 +314,44 @@ func _process_node_type(node_type: MapGenerator.NodeType) -> void:
 			_enter_info()
 
 func _enter_combat(node_type: MapGenerator.NodeType) -> void:
-	var enemies := _get_enemies_for_node(node_type)
-	var boss_hp_scale := 1.0
-	if node_type == MapGenerator.NodeType.BOSS:
-		var boss_id: StringName = &""
-		if not enemies.is_empty():
-			var boss: EnemyData = enemies[0]
-			boss_id = boss.id
-		var mod := QuestManager.get_boss_modifier(GameManager.current_act, boss_id)
-		boss_hp_scale = float(mod.get("hp_scale", 1.0))
+	var enemies: Array[EnemyData] = _get_pending_combat_enemies()
+	var boss_hp_scale: float = GameManager.pending_combat_boss_hp_scale
+	if enemies.is_empty():
+		_prepare_pending_combat_node(node_type)
+		enemies = _get_pending_combat_enemies()
+		boss_hp_scale = GameManager.pending_combat_boss_hp_scale
+	if enemies.is_empty():
+		enemies = _get_enemies_for_node(node_type)
+		boss_hp_scale = _get_boss_hp_scale(node_type, enemies)
+		GameManager.set_pending_combat(int(node_type), enemies, boss_hp_scale)
 	CombatManager.start_combat(enemies, boss_hp_scale)
-	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.COMBAT)
+
+func _prepare_pending_combat_node(node_type: MapGenerator.NodeType) -> void:
+	var enemies: Array[EnemyData] = _get_enemies_for_node(node_type)
+	var boss_hp_scale: float = _get_boss_hp_scale(node_type, enemies)
+	GameManager.set_pending_combat(int(node_type), enemies, boss_hp_scale)
+
+func _get_boss_hp_scale(node_type: MapGenerator.NodeType, enemies: Array[EnemyData]) -> float:
+	if node_type != MapGenerator.NodeType.BOSS:
+		return 1.0
+	var boss_id: StringName = &""
+	if not enemies.is_empty():
+		var boss: EnemyData = enemies[0]
+		boss_id = boss.id
+	var mod: Dictionary = QuestManager.get_boss_modifier(GameManager.current_act, boss_id)
+	return float(mod.get("hp_scale", 1.0))
+
+func _get_pending_combat_enemies() -> Array[EnemyData]:
+	var enemies: Array[EnemyData] = []
+	if GameManager.pending_combat_enemy_ids.is_empty():
+		return enemies
+	for enemy_id: StringName in GameManager.pending_combat_enemy_ids:
+		var enemy: EnemyData = EnemyDatabase.get_enemy(enemy_id)
+		if enemy == null:
+			return []
+		enemies.append(enemy)
+	return enemies
 
 func _get_enemies_for_node(node_type: MapGenerator.NodeType) -> Array[EnemyData]:
 	var act := GameManager.current_act
@@ -330,16 +407,7 @@ func _get_boss_for_current_act(act: int) -> EnemyData:
 	return EnemyDatabase.get_boss_for_act(act)
 
 func _get_character_final_boss() -> EnemyData:
-	var boss_by_character := {
-		&"cultist": &"v8cult_high_priest",
-		&"ex_raider": &"cockatrice_boss",
-		&"wanderer": &"chainlink_informant",
-		&"beast_master": &"chainlink_executive",
-		&"conqueror": &"gatekeeper",
-		&"hedonist": &"neon_eden_queen",
-	}
-	var char_id: StringName = GameManager.current_character.id
-	var boss_id: StringName = boss_by_character.get(char_id, &"")
+	var boss_id: StringName = GameManager.current_character.final_boss_id
 	if boss_id != &"":
 		return EnemyDatabase.get_enemy(boss_id)
 	return null
@@ -366,44 +434,51 @@ func _make_enemy(id: StringName, display: String, cat: EnemyData.Category, hp: i
 	return e
 
 func _enter_event() -> void:
-	get_tree().change_scene_to_file("res://scenes/event/event_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.EVENT)
 
 func _enter_shop() -> void:
-	get_tree().change_scene_to_file("res://scenes/shop/shop_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.SHOP)
 
 func _enter_rest() -> void:
-	get_tree().change_scene_to_file("res://scenes/rest/rest_screen.tscn")
-
-func _enter_pursuit_combat() -> void:
-	_show_notification("コカトリスの追手が現れた！")
-	var enemies: Array[EnemyData] = []
-	var elites := EnemyDatabase.get_elites_for_act(GameManager.current_act)
-	if not elites.is_empty():
-		elites.shuffle()
-		enemies.append(elites[0])
-	else:
-		enemies.append(_fallback_enemy(GameManager.current_act, true, false))
-	CombatManager.start_combat(enemies)
-	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+	GameManager.go_to_state(GameManager.GameState.REST)
 
 func _enter_info() -> void:
+	GameManager.clear_pending_combat()
 	var info_text := GameManager.advance_oasis_info()
 	_show_notification("オアシスの噂を聞いた…\n%s" % info_text)
 	_draw_map()
+	call_deferred("_scroll_to_current_node")
 
 func _start_pursuit_combat() -> void:
+	if GameManager.pending_combat_enemy_ids.is_empty():
+		_prepare_pending_pursuit_combat()
+	var enemies: Array[EnemyData] = _get_pending_combat_enemies()
+	if enemies.is_empty():
+		_prepare_pending_pursuit_combat()
+		enemies = _get_pending_combat_enemies()
+	if enemies.is_empty():
+		enemies = _build_pursuit_enemies()
+		GameManager.set_pending_combat(int(MapGenerator.NodeType.ELITE), enemies)
+	CombatManager.start_combat(enemies)
+	GameManager.go_to_state(GameManager.GameState.COMBAT)
+
+func _prepare_pending_pursuit_combat() -> void:
+	var enemies: Array[EnemyData] = _build_pursuit_enemies()
+	GameManager.set_pending_combat(int(MapGenerator.NodeType.ELITE), enemies)
+
+func _build_pursuit_enemies() -> Array[EnemyData]:
 	var enemies: Array[EnemyData] = []
-	var elites := EnemyDatabase.get_elites_for_act(GameManager.current_act)
+	var elites: Array[EnemyData] = EnemyDatabase.get_elites_for_act(GameManager.current_act)
 	if not elites.is_empty():
 		elites.shuffle()
 		enemies.append(elites[0])
 	else:
 		enemies.append(_fallback_enemy(GameManager.current_act, true, false))
-	CombatManager.start_combat(enemies)
-	get_tree().change_scene_to_file("res://scenes/combat/combat_screen.tscn")
+	return enemies
 
 func _update_hud() -> void:
 	$HUD/FuelLabel.text = "%s: %d/%d" % [_get_travel_resource_name(), ResourceManager.fuel, ResourceManager.tank_capacity]
+	_apply_fuel_warning(ResourceManager.get_fuel_state())
 	$HUD/ScrapLabel.text = "スクラップ: %d" % ResourceManager.scrap
 	$HUD/MedicineLabel.text = "医薬品: %d/%d" % [ResourceManager.medicine, ResourceManager.medicine_max]
 	$HUD/MedicineButton.disabled = ResourceManager.medicine <= 0 or CombatManager.player_hp >= CombatManager.player_max_hp
@@ -444,6 +519,9 @@ func _update_hud() -> void:
 func _on_fuel_changed(_val: int, _max_val: int) -> void:
 	_update_hud()
 
+func _on_fuel_warning(level: StringName) -> void:
+	_apply_fuel_warning(level)
+
 func _on_bike_durability_changed(_val: int, _max_val: int) -> void:
 	_update_hud()
 
@@ -453,36 +531,13 @@ func _show_notification(text: String) -> void:
 	_show_notification_then(text)
 
 func _show_notification_then(text: String, on_close: Callable = Callable()) -> void:
-	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(400, 200)
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -200
-	panel.offset_top = -100
-	panel.offset_right = 200
-	panel.offset_bottom = 100
-	var label := Label.new()
-	label.text = text
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	label.add_theme_font_size_override("font_size", 18)
-	panel.add_child(label)
-	var close_btn := Button.new()
-	close_btn.text = "閉じる"
-	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	close_btn.custom_minimum_size = Vector2(100, 40)
-	close_btn.offset_left = -50
-	close_btn.offset_top = -50
-	close_btn.offset_right = 50
-	close_btn.offset_bottom = -10
-	close_btn.pressed.connect(func() -> void:
-		panel.queue_free()
+	var dialog := NotificationDialog.new()
+	dialog.closed.connect(func() -> void:
 		if on_close.is_valid():
 			on_close.call()
 	)
-	panel.add_child(close_btn)
-	add_child(panel)
+	add_child(dialog)
+	dialog.setup(text)
 
 func _show_pending_companion_notifications(on_done: Callable = Callable()) -> void:
 	var messages: Array[String] = GameManager.consume_companion_notifications()
@@ -550,6 +605,7 @@ func _show_bond_event(slot: int, on_done: Callable) -> void:
 # コストは選択肢の文面に混ぜず、ボタン下の別ラベルとして表示する。
 func _show_choice_dialog(title_text: String, body_text: String, options: Array[Dictionary], on_pick: Callable) -> void:
 	var overlay := ColorRect.new()
+	overlay.name = MODAL_OVERLAY_NAME
 	overlay.color = Color(0.0, 0.0, 0.0, 0.6)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -671,6 +727,7 @@ func _confirm_dismiss(slot: int) -> void:
 
 func _show_ambient_fragment(fragment: Dictionary, on_close: Callable) -> void:
 	var overlay := ColorRect.new()
+	overlay.name = MODAL_OVERLAY_NAME
 	overlay.color = Color(0.0, 0.0, 0.0, 0.72)
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -792,75 +849,15 @@ func _draw_start_node() -> void:
 		$MapScroll/MapContainer.move_child(line, 0)
 
 func _show_deck_popup() -> void:
-	var overlay := ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.7)
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(overlay)
-
-	var panel := Panel.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(700, 500)
-	panel.offset_left = -350
-	panel.offset_top = -250
-	panel.offset_right = 350
-	panel.offset_bottom = 250
-	overlay.add_child(panel)
-
-	var title := Label.new()
-	title.text = "デッキ (%d枚)" % DeckManager.master_deck.size()
-	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	title.offset_top = 10
-	title.offset_bottom = 35
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
-	panel.add_child(title)
-
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scroll.offset_top = 45
-	scroll.offset_bottom = -50
-	scroll.offset_left = 10
-	scroll.offset_right = -10
-	panel.add_child(scroll)
-
-	var vbox := VBoxContainer.new()
-	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(vbox)
-
-	for card: CardData in DeckManager.master_deck:
-		var label := Label.new()
-		var parts: Array[String] = []
-		parts.append(card.get_display_name())
-		parts.append("AP:%d" % card.ap_cost)
-		if card.get_effective_damage() > 0:
-			parts.append("DMG:%d" % card.get_effective_damage())
-		if card.get_effective_block() > 0:
-			parts.append("BLK:%d" % card.get_effective_block())
-		parts.append(card.description)
-		label.text = " | ".join(parts)
-		label.add_theme_font_size_override("font_size", 14)
-		if card.upgraded:
-			label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
-		vbox.add_child(label)
-
-	var close_btn := Button.new()
-	close_btn.text = "閉じる"
-	close_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	close_btn.custom_minimum_size = Vector2(120, 35)
-	close_btn.offset_left = -60
-	close_btn.offset_top = -45
-	close_btn.offset_right = 60
-	close_btn.offset_bottom = -10
-	close_btn.pressed.connect(overlay.queue_free)
-	panel.add_child(close_btn)
+	var popup := DeckListPopup.new()
+	add_child(popup)
+	popup.setup("デッキ (%d枚)" % DeckManager.master_deck.size(), DeckManager.master_deck)
 
 func _use_medicine() -> void:
 	if ResourceManager.medicine <= 0:
 		_show_notification("医薬品がない。")
 		return
-	var heal_amount := 15
+	var heal_amount: int = MEDICINE_HEAL_AMOUNT
 	if CombatManager.player_hp >= CombatManager.player_max_hp:
 		_show_notification("HPは満タンだ。")
 		return
@@ -892,3 +889,53 @@ func _find_node_by_id(nid: String) -> Dictionary:
 		if _node_id(node) == nid:
 			return node
 	return {}
+
+func _has_modal_overlay() -> bool:
+	for child: Node in get_children():
+		if String(child.name).begins_with(MODAL_OVERLAY_NAME):
+			return true
+	return false
+
+func _resume_pending_combat_node() -> bool:
+	if GameManager.pending_combat_node_type < 0:
+		return false
+	var node_type: MapGenerator.NodeType = GameManager.pending_combat_node_type
+	_enter_combat(node_type)
+	return true
+
+func _scroll_to_current_node() -> void:
+	var target_pos := Vector2(25, 480)
+	if not GameManager.map_current_node_id.is_empty():
+		var current_node: Dictionary = _find_node_by_id(GameManager.map_current_node_id)
+		if not current_node.is_empty():
+			target_pos = current_node["position"]
+	var scroll: ScrollContainer = $MapScroll
+	var visible_width: float = scroll.size.x
+	scroll.scroll_horizontal = maxi(0, int(target_pos.x - visible_width * 0.5))
+
+func _has_affordable_available_node() -> bool:
+	var from_node: Dictionary = _get_current_map_node()
+	for nid: String in _available_node_ids:
+		var node: Dictionary = _find_node_by_id(nid)
+		if node.is_empty():
+			continue
+		var cost: int = _get_travel_cost(from_node, node)
+		if cost <= ResourceManager.fuel:
+			return true
+	return false
+
+func _end_run_out_of_resource() -> void:
+	GameManager.pending_result = &"defeat"
+	SaveManager.delete_save()
+	GameManager.go_to_state(GameManager.GameState.GAME_OVER)
+
+func _apply_fuel_warning(level: StringName) -> void:
+	match level:
+		&"normal":
+			$HUD/FuelLabel.add_theme_color_override("font_color", Color(0.86, 0.86, 0.78))
+		&"warning":
+			$HUD/FuelLabel.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
+		&"danger":
+			$HUD/FuelLabel.add_theme_color_override("font_color", Color(1.0, 0.42, 0.25))
+		&"empty":
+			$HUD/FuelLabel.add_theme_color_override("font_color", Color(0.9, 0.16, 0.12))

@@ -3,7 +3,7 @@
 最終更新: 2026-06-30
 対象: GDD分割後ドキュメント群、実装仕様書、現行コード/リソースの差分、プレイテスト所見
 
-> `docs/archive/remaining_tasks.md` と `docs/archive/game_reassessment.md` の統合版を、2026-06-28時点の実装状況に合わせて再整理したもの。
+> `docs/archive/legacy/remaining-tasks-2026-06-25.md` と `docs/archive/legacy/game-reassessment.md` の統合版を、2026-06-28時点の実装状況に合わせて再整理したもの。
 > 優先度は「コアゲームループ」「説明と実挙動の一致」「プレイヤー判断に必要な情報」「コンテンツ量」の順で評価する。
 
 ## 凡例
